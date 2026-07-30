@@ -1081,7 +1081,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 |---|---|---:|---|
 | Sprint 0: Pre-flight Foundations | Complete | 16 / 16 | Core repo, backend, frontend, Docker, CI, logging, observability, request context, health, envelope, typed errors, and ADR docs are scaffolded and locally verified. |
 | Sprint 1: Tenancy & Auth | Complete | 17 / 17 | Tenant isolation, RLS, auth foundation, Org Admin/Learner RBAC defaults, isolation coverage gate, migration guard, and RLS benchmark are implemented and tested. |
-| Sprint 2: Course Authoring | Not started | 0 / 11 | Depends on tenancy/auth foundations. |
+| Sprint 2: Course Authoring | In progress | 9 / 11 | Backend authoring foundation is implemented and locally verified; media metadata and admin UI remain. |
 | Sprint 3: Learning Experience | Not started | 0 / 11 | Depends on course authoring foundation. |
 | Sprint 4: AI Tutor | Not started | 0 / 17 | Depends on published lesson/course data and async worker foundation. |
 | Sprint 5: Billing, Branding, Analytics, and MVP Polish | Not started | 0 / 15 | Final MVP integration sprint. |
@@ -1181,16 +1181,36 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 
 ### Sprint 2: Course Authoring, Weeks 5-6
 
-- [ ] Create `courses` module.
-- [ ] Implement course, section, lesson, and content block models.
-- [ ] Implement text, video, image, and quiz block schemas.
-- [ ] Implement CRUD repositories and services.
-- [ ] Implement drag/drop reorder with deterministic ordering.
-- [ ] Implement draft to publish workflow.
+#### Sprint 2 Subtask Tracker
+
+| Parent Task | Subtask | Status |
+|---|---|---|
+| Courses module | Add backend `courses` package exports | Complete |
+| Course models | Add course, section, lesson, content block, and audit event models | Complete |
+| Course migrations | Add tenant-owned tables with RLS helpers and grants | Complete |
+| Course schemas | Add text, video, image, and quiz block schemas | Complete |
+| Course services | Add course CRUD repositories and services | Complete |
+| Course services | Add deterministic section reorder without transient position collisions | Complete |
+| Course services | Add cursor pagination for course lists | Complete |
+| Course services | Add draft-to-publish workflow validation | Complete |
+| Course routes | Add protected course-authoring API routes under `/api/v1/courses` | Complete |
+| Course audit | Record create/update/delete/publish audit events | Complete |
+| Course tests | Add model/schema/repository/service/route tests | Complete |
+| Course tests | Add isolation coverage declarations for all course-owned routes | Complete |
+| Media metadata | Add tenant-scoped media object metadata model and API hooks | Pending |
+| Admin frontend | Add admin course list foundation | Pending |
+| Admin frontend | Add course builder foundation | Pending |
+
+- [x] Create `courses` module.
+- [x] Implement course, section, lesson, and content block models.
+- [x] Implement text, video, image, and quiz block schemas.
+- [x] Implement CRUD repositories and services.
+- [x] Implement drag/drop reorder with deterministic ordering.
+- [x] Implement draft to publish workflow.
 - [ ] Implement media upload metadata with tenant-scoped object keys.
-- [ ] Add audit logs for create/update/delete/publish.
-- [ ] Add cursor pagination for course lists.
-- [ ] Add isolation tests for all course-owned routes.
+- [x] Add audit logs for create/update/delete/publish.
+- [x] Add cursor pagination for course lists.
+- [x] Add isolation tests for all course-owned routes.
 - [ ] Add admin frontend course list and builder foundation.
 
 **Exit criteria:** an Org Admin can build and publish a five-lesson course with full audit trail.
