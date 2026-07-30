@@ -12,6 +12,11 @@ create_role_if_missing() {
     --tuples-only \
     --command "SELECT 1 FROM pg_roles WHERE rolname = '$role_name'" |
     grep -q 1; then
+    escaped_password=$(printf "%s" "$role_password" | sed "s/'/''/g")
+    psql \
+      --username "$POSTGRES_USER" \
+      --dbname "$POSTGRES_DB" \
+      --command "ALTER ROLE $role_name PASSWORD '$escaped_password'"
     return 0
   fi
 

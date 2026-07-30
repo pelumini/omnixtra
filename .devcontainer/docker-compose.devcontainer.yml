@@ -1,0 +1,14 @@
+services:
+  api-dev:
+    build:
+      context: ./api
+    command: ["sleep", "infinity"]
+    env_file:
+      - .env.example
+    volumes:
+      - .:/workspaces/omnixtra:cached
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy

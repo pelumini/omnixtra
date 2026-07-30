@@ -1,9 +1,13 @@
 {
   "name": "OmniXtra",
-  "dockerComposeFile": "../docker-compose.yml",
-  "service": "api",
+  "dockerComposeFile": [
+    "../docker-compose.yml",
+    "docker-compose.devcontainer.yml"
+  ],
+  "service": "api-dev",
   "workspaceFolder": "/workspaces/omnixtra",
   "shutdownAction": "stopCompose",
+  "postCreateCommand": "cd api && uv sync --dev && uv run alembic upgrade head",
   "customizations": {
     "vscode": {
       "extensions": [
