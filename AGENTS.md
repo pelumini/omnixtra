@@ -1080,7 +1080,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint / Phase | Status | Completed | Notes |
 |---|---|---:|---|
 | Sprint 0: Pre-flight Foundations | Complete | 16 / 16 | Core repo, backend, frontend, Docker, CI, logging, observability, request context, health, envelope, typed errors, and ADR docs are scaffolded and locally verified. |
-| Sprint 1: Tenancy & Auth | In progress | 4 / 17 | Tenant model/migration, tenant resolver, fail-closed tenant context, and tenant-owned model base are implemented and tested. |
+| Sprint 1: Tenancy & Auth | In progress | 9 / 17 | Tenant model/resolver/context, DB roles, per-cursor RLS variable hook, RLS migration helper, first tenant-owned table, CI migration guard, and tenant-owned table runbook are implemented and tested. |
 | Sprint 2: Course Authoring | Not started | 0 / 11 | Depends on tenancy/auth foundations. |
 | Sprint 3: Learning Experience | Not started | 0 / 11 | Depends on course authoring foundation. |
 | Sprint 4: AI Tutor | Not started | 0 / 17 | Depends on published lesson/course data and async worker foundation. |
@@ -1124,22 +1124,37 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 
 ### Sprint 1: Tenancy & Auth, Weeks 3-4
 
+#### Sprint 1 Subtask Tracker
+
+| Parent Task | Subtask | Status |
+|---|---|---|
+| Create database roles | Add local Postgres init SQL for `omnixtra_app`, `omnixtra_migrations`, and `omnixtra_superadmin` | Complete |
+| Create database roles | Wire local init SQL into Docker Compose | Complete |
+| Create database roles | Verify roles in disposable Docker smoke database | Complete |
+| Per-cursor RLS tenant variable | Add SQLAlchemy engine event hook | Complete |
+| Per-cursor RLS tenant variable | Set `app.current_tenant_id` before every cursor execution when tenant context exists | Complete |
+| Per-cursor RLS tenant variable | Clear `app.current_tenant_id` before every cursor execution when no tenant context exists | Complete |
+| RLS migration helper | Add reusable Alembic helper for tenant-owned table RLS policies | Complete |
+| RLS migration helper | Add first tenant-owned table using the helper | Complete |
+| CI RLS check | Add script that detects tenant-owned migrations missing the helper | Complete |
+| RLS tests | Add static/helper tests for RLS helper and migration guard | Complete |
+
 - [x] Implement tenant model and global tenant table.
-- [ ] Create database roles: `omnixtra_app`, `omnixtra_migrations`, `omnixtra_superadmin`.
+- [x] Create database roles: `omnixtra_app`, `omnixtra_migrations`, `omnixtra_superadmin`.
 - [x] Implement tenant resolver for subdomains and authenticated principal claims.
 - [x] Implement request-scoped tenant context with fail-closed accessor.
 - [x] Implement SQLAlchemy tenant-owned base model.
 - [ ] Implement ORM query filter for tenant-owned SELECT/UPDATE/DELETE.
 - [ ] Auto-populate `tenant_id` on tenant-owned INSERT.
-- [ ] Implement per-cursor RLS tenant variable set/clear.
-- [ ] Implement RLS migration helper and first tenant-owned table.
-- [ ] Add CI check for tenant-owned migrations missing RLS helper.
+- [x] Implement per-cursor RLS tenant variable set/clear.
+- [x] Implement RLS migration helper and first tenant-owned table.
+- [x] Add CI check for tenant-owned migrations missing RLS helper.
 - [ ] Implement signup, login, magic link, password reset.
 - [ ] Implement Org Admin and Learner roles.
 - [ ] Seed RBAC defaults.
 - [ ] Add cross-tenant isolation suite and OpenAPI coverage gate.
 - [ ] Add RLS-as-last-defence raw SQL test.
-- [ ] Add runbook for adding tenant-owned tables.
+- [x] Add runbook for adding tenant-owned tables.
 - [ ] Benchmark RLS overhead on synthetic data.
 
 **Exit criteria:** two tenants cannot read, write, list, search, or infer each other's resources; RLS-last-defence test passes.
