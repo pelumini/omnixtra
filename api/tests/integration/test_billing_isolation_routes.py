@@ -98,7 +98,7 @@ def _signup(client: TestClient, slug: str) -> TenantAccount:
             "email": email,
             "password": TEST_PASSWORD,
         },
-        headers={"host": f"{slug}.localhost"},
+        headers={"host": "localhost"},
     )
     assert response.status_code == 200
     data = response.json()["data"]

@@ -235,6 +235,7 @@ async def issue_certificate(
     existing_by_key = await session.scalar(certificate_by_idempotency_key(idempotency_key))
     if existing_by_key is not None:
         return certificate_response(existing_by_key)
+    await require_enrolled_course(session, learner_id, course_id)
     completion = await session.scalar(completion_by_learner_course(learner_id, course_id))
     if completion is None:
         msg = "course completion is required before certificate issuance"
