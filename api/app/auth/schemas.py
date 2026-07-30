@@ -40,5 +40,14 @@ class PasswordResetRequest(BaseModel):
     email: EmailStr
 
 
+class MagicLinkVerifyRequest(BaseModel):
+    token: str = Field(min_length=32, max_length=256)
+
+
+class PasswordResetCompleteRequest(BaseModel):
+    token: str = Field(min_length=32, max_length=256)
+    password: str = Field(min_length=12, max_length=128)
+
+
 class TokenRequestAccepted(BaseModel):
     accepted: bool

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt.exceptions import InvalidTokenError
 
@@ -14,6 +14,8 @@ from app.core.exceptions import AuthenticationError, AuthorizationError
 from app.core.security import decode_access_token
 
 bearer_scheme = HTTPBearer(auto_error=False)
+ACCESS_TOKEN_COOKIE = "__Host-omnixtra_access"  # noqa: S105
+REFRESH_TOKEN_COOKIE = "__Host-omnixtra_refresh"  # noqa: S105
 
 
 @dataclass(frozen=True)
@@ -25,15 +27,21 @@ class AuthPrincipal:
 
 def require_permission(
     permission: str,
-) -> Callable[[HTTPAuthorizationCredentials | None], AuthPrincipal]:
+) -> Callable[[Request, HTTPAuthorizationCredentials | None], AuthPrincipal]:
     def dependency(
+        request: Request,
         credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
     ) -> AuthPrincipal:
-        if credentials is None:
+        token = (
+            credentials.credentials
+            if credentials is not None
+            else request.cookies.get(ACCESS_TOKEN_COOKIE)
+        )
+        if token is None:
             msg = "authentication required"
             raise AuthenticationError(msg)
         try:
-            payload = decode_access_token(credentials.credentials)
+            payload = decode_access_token(token)
             user_id = UUID(str(payload["sub"]))
             tenant_id = UUID(str(payload["tenant_id"]))
             role = UserRole(str(payload["role"]))
@@ -49,4 +57,4 @@ def require_permission(
     return dependency
 
 
-__all__ = ["AuthPrincipal", "require_permission"]
+__all__ = ["ACCESS_TOKEN_COOKIE", "REFRESH_TOKEN_COOKIE", "AuthPrincipal", "require_permission"]

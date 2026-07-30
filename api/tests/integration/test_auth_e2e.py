@@ -1,9 +1,11 @@
 import os
+from http.cookies import SimpleCookie
 from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
 
+from app.auth.dependencies import ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE
 from app.main import create_app
 
 APP_DATABASE_URL_ENV = "OMNIXTRA_TEST_DATABASE_URL"
@@ -49,3 +51,51 @@ def test_signup_login_and_protected_route_with_tenant_host() -> None:
     )
 
     assert courses_response.status_code == 200
+
+    cookie_courses_response = client.get(
+        "/api/v1/courses",
+        headers={
+            "cookie": f"{ACCESS_TOKEN_COOKIE}={access_token}",
+            "host": f"{tenant_slug}.localhost",
+        },
+    )
+
+    assert cookie_courses_response.status_code == 200
+
+    cookies = _cookies(login_response.headers.get_list("set-cookie"))
+    assert cookies[ACCESS_TOKEN_COOKIE]["httponly"] is True
+    assert cookies[ACCESS_TOKEN_COOKIE]["secure"] is True
+    assert cookies[ACCESS_TOKEN_COOKIE]["samesite"] == "lax"
+    assert cookies[REFRESH_TOKEN_COOKIE]["httponly"] is True
+    assert cookies[REFRESH_TOKEN_COOKIE]["secure"] is True
+    assert cookies[REFRESH_TOKEN_COOKIE]["samesite"] == "lax"
+
+    original_refresh_token = cookies[REFRESH_TOKEN_COOKIE].value
+    refresh_response = client.post(
+        "/api/v1/auth/refresh",
+        headers={
+            "cookie": f"{REFRESH_TOKEN_COOKIE}={original_refresh_token}",
+            "host": f"{tenant_slug}.localhost",
+        },
+    )
+
+    assert refresh_response.status_code == 200
+    rotated_cookies = _cookies(refresh_response.headers.get_list("set-cookie"))
+    assert rotated_cookies[REFRESH_TOKEN_COOKIE].value != original_refresh_token
+
+    replay_response = client.post(
+        "/api/v1/auth/refresh",
+        headers={
+            "cookie": f"{REFRESH_TOKEN_COOKIE}={original_refresh_token}",
+            "host": f"{tenant_slug}.localhost",
+        },
+    )
+
+    assert replay_response.status_code == 401
+
+
+def _cookies(headers: list[str]) -> SimpleCookie[str]:
+    cookies: SimpleCookie[str] = SimpleCookie()
+    for header in headers:
+        cookies.load(header)
+    return cookies

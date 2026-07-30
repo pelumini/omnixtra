@@ -8,6 +8,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
+from app.auth.dependencies import ACCESS_TOKEN_COOKIE
 from app.core.context import clear_request_id, clear_tenant_id, set_request_id, set_tenant_id
 from app.core.database import async_session_factory
 from app.core.exceptions import AuthenticationError, NotFoundError
@@ -73,9 +74,11 @@ async def _resolve_request_tenant_id(request: Request) -> UUID | None:
 
 def _require_token_tenant_match(request: Request, tenant_id: UUID) -> None:
     authorization = request.headers.get("authorization")
-    if authorization is None or not authorization.lower().startswith("bearer "):
+    token = request.cookies.get(ACCESS_TOKEN_COOKIE)
+    if authorization is not None and authorization.lower().startswith("bearer "):
+        token = authorization.split(" ", maxsplit=1)[1]
+    if token is None:
         return
-    token = authorization.split(" ", maxsplit=1)[1]
     try:
         payload = decode_access_token(token)
         token_tenant_id = UUID(str(payload["tenant_id"]))

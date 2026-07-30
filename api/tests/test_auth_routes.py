@@ -1,3 +1,14 @@
+from uuid import UUID
+
+import pytest
+from starlette.requests import Request
+from starlette.responses import Response
+
+from app.auth.dependencies import ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE
+from app.auth.routes import _enforce_rate_limit, _rate_limit_buckets, _set_auth_cookies
+from app.auth.schemas import AuthenticatedUser, AuthResponse
+from app.auth.services import AuthSession
+from app.core.exceptions import RateLimitError
 from app.main import create_app
 
 
@@ -7,4 +18,59 @@ def test_auth_routes_are_registered_under_api_v1() -> None:
     assert "/api/v1/auth/signup" in paths
     assert "/api/v1/auth/login" in paths
     assert "/api/v1/auth/magic-link" in paths
+    assert "/api/v1/auth/magic-link/verify" in paths
     assert "/api/v1/auth/password-reset" in paths
+    assert "/api/v1/auth/password-reset/complete" in paths
+    assert "/api/v1/auth/refresh" in paths
+    assert "/api/v1/auth/logout" in paths
+
+
+def test_auth_cookies_are_httponly_secure_samesite_lax() -> None:
+    response = Response()
+    _set_auth_cookies(
+        response,
+        AuthSession(
+            response=AuthResponse(
+                access_token="access-token",
+                user=AuthenticatedUser(
+                    id=str(UUID("00000000-0000-0000-0000-000000000001")),
+                    tenant_id=str(UUID("00000000-0000-0000-0000-000000000002")),
+                    email="admin@example.com",
+                    full_name="Admin User",
+                    role="org_admin",
+                ),
+            ),
+            refresh_token="refresh-token",
+        ),
+    )
+
+    set_cookie_headers = response.headers.getlist("set-cookie")
+
+    assert any(ACCESS_TOKEN_COOKIE in header for header in set_cookie_headers)
+    assert any(REFRESH_TOKEN_COOKIE in header for header in set_cookie_headers)
+    assert all("HttpOnly" in header for header in set_cookie_headers)
+    assert all("Secure" in header for header in set_cookie_headers)
+    assert all("SameSite=lax" in header for header in set_cookie_headers)
+
+
+def test_auth_rate_limit_blocks_excess_attempts() -> None:
+    _rate_limit_buckets.clear()
+    request = _request()
+
+    for _index in range(5):
+        _enforce_rate_limit("login", request, "USER@example.com")
+
+    with pytest.raises(RateLimitError):
+        _enforce_rate_limit("login", request, "user@example.com")
+
+
+def _request() -> Request:
+    return Request(
+        {
+            "type": "http",
+            "method": "POST",
+            "path": "/api/v1/auth/login",
+            "headers": [],
+            "client": ("127.0.0.1", 12345),
+        },
+    )

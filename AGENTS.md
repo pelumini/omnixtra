@@ -4,7 +4,7 @@
 **Source of Truth**: `OmniXtra_Project_Charter_v1.2.docx` + `ADR-002_Multi-Tenant_Isolation.docx`  
 **Charter Version**: 1.2, pre-kickoff draft  
 **ADR Status**: ADR-002 proposed, awaiting sign-off  
-**Status**: Sprint 0 complete; Sprint 1-5 backend foundations under MVP hardening
+**Status**: Sprints 0-1 complete; Sprint 2-5 backend foundations under MVP hardening
 **Scope**: Full-stack LMS, FastAPI backend, Next.js frontend, AI tutor, multi-tenant SaaS
 
 ---
@@ -1081,7 +1081,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint / Phase | Status | Completed | Notes |
 |---|---|---:|---|
 | Sprint 0: Pre-flight Foundations | Complete | 18 / 18 | Core repo, backend/frontend scaffolds, local and remote Git history, Docker services, DevContainer workflow, CI, lint/type/test gates, logging, request context, health, envelope, typed errors, and ADR docs are in place. |
-| Sprint 1: Tenancy & Auth | Remediation in progress | 13 / 17 | Tenant middleware, RLS, auth skeleton, Org Admin/Learner RBAC defaults, migration guard, RLS benchmark, real route attack tests, and recorded-hit isolation coverage gate exist; auth e2e, JWT host matching, and cookie refresh-session contract remain open. |
+| Sprint 1: Tenancy & Auth | Complete | 17 / 17 | Tenant middleware, RLS, auth flows, Org Admin/Learner RBAC defaults, migration guard, RLS benchmark, real route attack tests, recorded-hit isolation coverage gate, cookie auth, refresh-token rotation, replay detection, logout invalidation, verification endpoints, and auth rate limiting are in place. |
 | Sprint 2: Course Authoring | Backend foundation in progress | 9 / 11 | Course authoring backend, media metadata, route coverage declarations, migration smoke, and real route-level attack tests exist; functional admin frontend routes remain open. |
 | Sprint 3: Learning Experience | Backend foundation in progress | 9 / 11 | Learning backend, idempotent learner workflow foundations, and real route-level attack tests exist; functional learner UI routes and verified PDF download workflow remain open. |
 | Sprint 4: AI Tutor | Local/mock foundation in progress | 9 / 17 | Async worker runtime, mock embeddings, hybrid retrieval SQL, Redis Pub/Sub job streaming, LangSmith wrapper, vector isolation coverage, and real tutor route attack tests exist; provider-backed AI, real eval criteria, and functional tutor UI remain open. |
@@ -1156,10 +1156,10 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Auth foundation | Add user and auth-token models/migrations with tenant ownership | Complete |
 | Auth foundation | Add signup and login schemas/services/routes | Complete |
 | Auth foundation | Add magic-link and password-reset request schemas/services/routes | Complete |
-| Auth hardening | Store JWT access and refresh tokens in httpOnly Secure SameSite cookies | Pending |
-| Auth hardening | Add refresh-token rotation, replay detection, and logout invalidation | Pending |
-| Auth hardening | Add magic-link verification and password-reset completion endpoints | Pending |
-| Auth hardening | Add login/signup/password-reset rate limiting | Pending |
+| Auth hardening | Store JWT access and refresh tokens in httpOnly Secure SameSite cookies | Complete |
+| Auth hardening | Add refresh-token rotation, replay detection, and logout invalidation | Complete |
+| Auth hardening | Add magic-link verification and password-reset completion endpoints | Complete |
+| Auth hardening | Add login/signup/password-reset rate limiting | Complete |
 | RBAC foundation | Add Org Admin and Learner role enum/defaults | Complete |
 | Auth tests | Add tests for password hashing, schemas, roles, and auth token flow | Complete |
 | RLS benchmark | Add synthetic dataset benchmark script | Complete |
@@ -1181,7 +1181,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Implement Org Admin and Learner roles.
 - [x] Seed RBAC defaults.
 - [x] Add real cross-tenant isolation suite and OpenAPI coverage gate.
-- [ ] Add RLS-as-last-defence raw SQL test running in CI against `omnixtra_app`.
+- [x] Add RLS-as-last-defence raw SQL test running in CI against `omnixtra_app`.
 - [x] Add runbook for adding tenant-owned tables.
 - [x] Benchmark RLS overhead on synthetic data.
 
