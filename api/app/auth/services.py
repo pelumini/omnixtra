@@ -40,6 +40,7 @@ async def signup(session: AsyncSession, request: SignupRequest) -> AuthResponse:
         status=TenantStatus.active.value,
     )
     session.add(tenant)
+    await session.flush()
     set_tenant_id(str(tenant.id))
     try:
         user = User(
