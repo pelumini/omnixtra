@@ -1079,8 +1079,8 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 
 | Sprint / Phase | Status | Completed | Notes |
 |---|---|---:|---|
-| Sprint 0: Pre-flight Foundations | In progress | 15 / 16 | Core repo, backend, frontend, Docker, CI, logging, observability, request context, health, envelope, and typed errors are scaffolded, locally verified, and committed. |
-| Sprint 1: Tenancy & Auth | Not started | 0 / 17 | Depends on Sprint 0 foundations and ADR-002 sign-off items. |
+| Sprint 0: Pre-flight Foundations | Complete | 16 / 16 | Core repo, backend, frontend, Docker, CI, logging, observability, request context, health, envelope, typed errors, and ADR docs are scaffolded and locally verified. |
+| Sprint 1: Tenancy & Auth | In progress | 4 / 17 | Tenant model/migration, tenant resolver, fail-closed tenant context, and tenant-owned model base are implemented and tested. |
 | Sprint 2: Course Authoring | Not started | 0 / 11 | Depends on tenancy/auth foundations. |
 | Sprint 3: Learning Experience | Not started | 0 / 11 | Depends on course authoring foundation. |
 | Sprint 4: AI Tutor | Not started | 0 / 17 | Depends on published lesson/course data and async worker foundation. |
@@ -1118,17 +1118,17 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Add request ID middleware.
 - [x] Add OpenTelemetry and Sentry scaffolding.
 - [x] Add base response envelope and typed error hierarchy.
-- [ ] Add ADR folder and move/convert root ADR when project docs are formalized.
+- [x] Add ADR folder and move/convert root ADR when project docs are formalized.
 
 **Exit criteria:** `docker compose up` boots cleanly, health smoke test passes, CI green.
 
 ### Sprint 1: Tenancy & Auth, Weeks 3-4
 
-- [ ] Implement tenant model and global tenant table.
+- [x] Implement tenant model and global tenant table.
 - [ ] Create database roles: `omnixtra_app`, `omnixtra_migrations`, `omnixtra_superadmin`.
-- [ ] Implement tenant resolver for subdomains and authenticated principal claims.
-- [ ] Implement request-scoped tenant context with fail-closed accessor.
-- [ ] Implement SQLAlchemy tenant-owned base model.
+- [x] Implement tenant resolver for subdomains and authenticated principal claims.
+- [x] Implement request-scoped tenant context with fail-closed accessor.
+- [x] Implement SQLAlchemy tenant-owned base model.
 - [ ] Implement ORM query filter for tenant-owned SELECT/UPDATE/DELETE.
 - [ ] Auto-populate `tenant_id` on tenant-owned INSERT.
 - [ ] Implement per-cursor RLS tenant variable set/clear.
@@ -1366,7 +1366,8 @@ npx playwright test
 ### Root Source Documents
 
 - `OmniXtra_Project_Charter_v1.2.docx` - Product, architecture, delivery, security, sprint, and decision source of truth.
-- `ADR-002_Multi-Tenant_Isolation.docx` - Controlling decision record for tenant isolation enforcement, RLS, database roles, bypass discipline, and testing.
+- `docs/adr/ADR-002_Multi-Tenant_Isolation.md` - Controlling decision record for tenant isolation enforcement, RLS, database roles, bypass discipline, and testing.
+- `docs/adr/ADR-002_Multi-Tenant_Isolation.docx` - Original ADR-002 source artifact.
 
 ### Future Documentation Locations
 

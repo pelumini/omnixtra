@@ -9,6 +9,7 @@ class Settings(BaseSettings):
 
     app_env: str = Field(default="local", validation_alias="APP_ENV")
     app_name: str = Field(default="OmniXtra", validation_alias="APP_NAME")
+    app_base_domain: str = Field(default="localhost", validation_alias="APP_BASE_DOMAIN")
     database_url: str = Field(
         default="postgresql+asyncpg://omnixtra_app:omnixtra_app_password@localhost:5432/omnixtra",
         validation_alias="DATABASE_URL",
