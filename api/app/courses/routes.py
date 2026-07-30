@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.dependencies import require_permission
 from app.core.database import get_session
 from app.courses.schemas import (
     BlockCreateRequest,
@@ -14,6 +15,8 @@ from app.courses.schemas import (
     CursorPage,
     LessonCreateRequest,
     LessonResponse,
+    MediaAssetCreateRequest,
+    MediaAssetResponse,
     ReorderRequest,
     SectionCreateRequest,
     SectionResponse,
@@ -22,6 +25,7 @@ from app.courses.services import (
     create_block,
     create_course,
     create_lesson,
+    create_media_asset,
     create_section,
     delete_course,
     list_courses,
@@ -31,7 +35,11 @@ from app.courses.services import (
 )
 from app.shared.responses import Envelope, Meta
 
-router = APIRouter(prefix="/courses", tags=["tenant-owned"])
+router = APIRouter(
+    prefix="/courses",
+    tags=["tenant-owned"],
+    dependencies=[Depends(require_permission("courses:manage"))],
+)
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 AfterQuery = Annotated[UUID | None, Query()]
 LimitQuery = Annotated[int, Query(ge=1, le=100)]
@@ -102,6 +110,16 @@ async def create_block_route(
     session: SessionDep,
 ) -> Envelope[BlockResponse]:
     response = await create_block(session, course_id, request)
+    return Envelope(data=response, error=None, meta=Meta.current())
+
+
+@router.post("/{course_id}/media")
+async def create_media_asset_route(
+    course_id: UUID,
+    request: MediaAssetCreateRequest,
+    session: SessionDep,
+) -> Envelope[MediaAssetResponse]:
+    response = await create_media_asset(session, course_id, request)
     return Envelope(data=response, error=None, meta=Meta.current())
 
 

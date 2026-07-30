@@ -1081,7 +1081,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 |---|---|---:|---|
 | Sprint 0: Pre-flight Foundations | Complete | 16 / 16 | Core repo, backend, frontend, Docker, CI, logging, observability, request context, health, envelope, typed errors, and ADR docs are scaffolded and locally verified. |
 | Sprint 1: Tenancy & Auth | Complete | 17 / 17 | Tenant isolation, RLS, auth foundation, Org Admin/Learner RBAC defaults, isolation coverage gate, migration guard, and RLS benchmark are implemented and tested. |
-| Sprint 2: Course Authoring | In progress | 9 / 11 | Backend authoring foundation is implemented and locally verified; media metadata and admin UI remain. |
+| Sprint 2: Course Authoring | Complete | 11 / 11 | Course authoring backend, media metadata, admin UI foundation, tests, isolation declarations, and migration smoke are locally verified. |
 | Sprint 3: Learning Experience | Not started | 0 / 11 | Depends on course authoring foundation. |
 | Sprint 4: AI Tutor | Not started | 0 / 17 | Depends on published lesson/course data and async worker foundation. |
 | Sprint 5: Billing, Branding, Analytics, and MVP Polish | Not started | 0 / 15 | Final MVP integration sprint. |
@@ -1197,9 +1197,9 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Course audit | Record create/update/delete/publish audit events | Complete |
 | Course tests | Add model/schema/repository/service/route tests | Complete |
 | Course tests | Add isolation coverage declarations for all course-owned routes | Complete |
-| Media metadata | Add tenant-scoped media object metadata model and API hooks | Pending |
-| Admin frontend | Add admin course list foundation | Pending |
-| Admin frontend | Add course builder foundation | Pending |
+| Media metadata | Add tenant-scoped media object metadata model and API hooks | Complete |
+| Admin frontend | Add admin course list foundation | Complete |
+| Admin frontend | Add course builder foundation | Complete |
 
 - [x] Create `courses` module.
 - [x] Implement course, section, lesson, and content block models.
@@ -1207,11 +1207,11 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Implement CRUD repositories and services.
 - [x] Implement drag/drop reorder with deterministic ordering.
 - [x] Implement draft to publish workflow.
-- [ ] Implement media upload metadata with tenant-scoped object keys.
+- [x] Implement media upload metadata with tenant-scoped object keys.
 - [x] Add audit logs for create/update/delete/publish.
 - [x] Add cursor pagination for course lists.
 - [x] Add isolation tests for all course-owned routes.
-- [ ] Add admin frontend course list and builder foundation.
+- [x] Add admin frontend course list and builder foundation.
 
 **Exit criteria:** an Org Admin can build and publish a five-lesson course with full audit trail.
 

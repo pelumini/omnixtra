@@ -4,6 +4,7 @@ from pydantic import ValidationError
 from app.courses.schemas import (
     BlockCreateRequest,
     ImageBlockContent,
+    MediaAssetCreateRequest,
     QuizBlockContent,
     QuizOption,
     TextBlockContent,
@@ -50,3 +51,22 @@ def test_block_type_must_match_content_type() -> None:
             content=ImageBlockContent(url="https://cdn.example.com/hero.png", alt_text="Hero"),
             position=0,
         )
+
+
+def test_media_asset_schema_accepts_image_and_video_metadata() -> None:
+    image = MediaAssetCreateRequest(
+        object_key="tenants/tenant-id/courses/course-id/hero.png",
+        file_name="hero.png",
+        content_type="image/png",
+        byte_size=1024,
+    )
+    video = MediaAssetCreateRequest(
+        object_key="tenants/tenant-id/courses/course-id/intro.mp4",
+        file_name="intro.mp4",
+        content_type="video/mp4",
+        byte_size=2048,
+        checksum_sha256="a" * 64,
+    )
+
+    assert image.content_type == "image/png"
+    assert video.checksum_sha256 == "a" * 64

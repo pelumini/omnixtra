@@ -2,6 +2,7 @@ from app.courses.models import (
     Course,
     CourseAuditEvent,
     CourseBlock,
+    CourseMediaAsset,
     CourseSection,
     CourseStatus,
     Lesson,
@@ -15,7 +16,14 @@ def test_course_status_values_are_stable() -> None:
 
 
 def test_course_authoring_tables_are_tenant_owned() -> None:
-    tenant_owned_models = (Course, CourseSection, Lesson, CourseBlock, CourseAuditEvent)
+    tenant_owned_models = (
+        Course,
+        CourseSection,
+        Lesson,
+        CourseBlock,
+        CourseMediaAsset,
+        CourseAuditEvent,
+    )
 
     for model in tenant_owned_models:
         assert "tenant_id" in model.__table__.columns

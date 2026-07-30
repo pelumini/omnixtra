@@ -2,7 +2,7 @@ from uuid import UUID
 
 from sqlalchemy import Select, select
 
-from app.courses.models import Course, CourseSection, Lesson
+from app.courses.models import Course, CourseMediaAsset, CourseSection, Lesson
 
 
 def course_by_id(course_id: UUID) -> Select[tuple[Course]]:
@@ -54,11 +54,19 @@ def lesson_by_id(
     return statement
 
 
+def media_asset_by_object_key(object_key: str) -> Select[tuple[CourseMediaAsset]]:
+    return select(CourseMediaAsset).where(
+        CourseMediaAsset.object_key == object_key,
+        CourseMediaAsset.deleted_at.is_(None),
+    )
+
+
 __all__ = [
     "course_by_id",
     "course_by_slug",
     "courses_page",
     "lesson_by_id",
+    "media_asset_by_object_key",
     "section_by_id",
     "sections_for_course",
 ]

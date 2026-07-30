@@ -8,6 +8,7 @@ from app.courses.models import (
     Course,
     CourseAuditEvent,
     CourseBlock,
+    CourseMediaAsset,
     CourseSection,
     CourseStatus,
     Lesson,
@@ -17,6 +18,7 @@ from app.courses.repositories import (
     course_by_slug,
     courses_page,
     lesson_by_id,
+    media_asset_by_object_key,
     section_by_id,
     sections_for_course,
 )
@@ -29,10 +31,13 @@ from app.courses.schemas import (
     CursorPage,
     LessonCreateRequest,
     LessonResponse,
+    MediaAssetCreateRequest,
+    MediaAssetResponse,
     SectionCreateRequest,
     SectionResponse,
 )
 from app.shared.models import utc_now
+from app.tenancy.context import require_tenant_id
 
 DEFAULT_PAGE_SIZE = 20
 
@@ -145,6 +150,37 @@ async def create_block(
     _audit(session, course_id, actor_id, "block.created", f"Created {block.block_type} block")
     await session.commit()
     return block_response(block)
+
+
+async def create_media_asset(
+    session: AsyncSession,
+    course_id: UUID,
+    request: MediaAssetCreateRequest,
+    actor_id: UUID | None = None,
+) -> MediaAssetResponse:
+    course = await require_course(session, course_id)
+    tenant_id = require_tenant_id()
+    expected_prefix = f"tenants/{tenant_id}/courses/{course_id}/"
+    if not request.object_key.startswith(expected_prefix):
+        msg = "media object key must be tenant and course scoped"
+        raise ValidationAppError(msg)
+    existing = await session.scalar(media_asset_by_object_key(request.object_key))
+    if existing is not None:
+        msg = "media object key is already registered"
+        raise ConflictError(msg)
+    asset = CourseMediaAsset(
+        course_id=course.id,
+        object_key=request.object_key,
+        file_name=request.file_name,
+        content_type=request.content_type,
+        byte_size=request.byte_size,
+        checksum_sha256=request.checksum_sha256,
+    )
+    session.add(asset)
+    await session.flush()
+    _audit(session, course.id, actor_id, "media.registered", f"Registered media {asset.file_name}")
+    await session.commit()
+    return media_asset_response(asset)
 
 
 async def reorder_sections(
@@ -272,6 +308,18 @@ def block_response(block: CourseBlock) -> BlockResponse:
         block_type=block.block_type,
         content=block.content,
         position=block.position,
+    )
+
+
+def media_asset_response(asset: CourseMediaAsset) -> MediaAssetResponse:
+    return MediaAssetResponse(
+        id=asset.id,
+        course_id=asset.course_id,
+        object_key=asset.object_key,
+        file_name=asset.file_name,
+        content_type=asset.content_type,
+        byte_size=asset.byte_size,
+        checksum_sha256=asset.checksum_sha256,
     )
 
 

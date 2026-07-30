@@ -83,6 +83,14 @@ class BlockCreateRequest(BaseModel):
         return self
 
 
+class MediaAssetCreateRequest(BaseModel):
+    object_key: str = Field(min_length=1, max_length=700)
+    file_name: str = Field(min_length=1, max_length=255)
+    content_type: str = Field(pattern=r"^(image|video)/[a-z0-9.+-]+$", max_length=120)
+    byte_size: int = Field(gt=0)
+    checksum_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+
+
 class ReorderRequest(BaseModel):
     ordered_ids: list[UUID] = Field(min_length=1)
 
@@ -117,6 +125,16 @@ class BlockResponse(BaseModel):
     block_type: str
     content: dict[str, object]
     position: int
+
+
+class MediaAssetResponse(BaseModel):
+    id: UUID
+    course_id: UUID
+    object_key: str
+    file_name: str
+    content_type: str
+    byte_size: int
+    checksum_sha256: str | None
 
 
 class CursorPage(BaseModel):

@@ -66,6 +66,21 @@ class CourseBlock(TenantOwnedMixin, TimestampMixin, Base):
     position: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
+class CourseMediaAsset(TenantOwnedMixin, TimestampMixin, Base):
+    __tablename__ = "course_media_assets"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "object_key", name="uq_course_media_tenant_object_key"),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    course_id: Mapped[UUID] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"))
+    object_key: Mapped[str] = mapped_column(String(700), nullable=False)
+    file_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    content_type: Mapped[str] = mapped_column(String(120), nullable=False)
+    byte_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    checksum_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+
 class CourseAuditEvent(TenantOwnedMixin, TimestampMixin, Base):
     __tablename__ = "course_audit_events"
 
