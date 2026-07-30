@@ -1080,7 +1080,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint / Phase | Status | Completed | Notes |
 |---|---|---:|---|
 | Sprint 0: Pre-flight Foundations | Complete | 16 / 16 | Core repo, backend, frontend, Docker, CI, logging, observability, request context, health, envelope, typed errors, and ADR docs are scaffolded and locally verified. |
-| Sprint 1: Tenancy & Auth | In progress | 13 / 17 | Tenant model/resolver/context, DB roles, ORM tenant filters, tenant insert population, RLS foundations, RLS last-defence test, isolation coverage gate, CI migration guard, and tenant-owned table runbook are implemented and tested. |
+| Sprint 1: Tenancy & Auth | In progress | 16 / 17 | Tenant isolation, RLS, auth foundation, Org Admin/Learner RBAC defaults, isolation coverage gate, and migration guard are implemented and tested. |
 | Sprint 2: Course Authoring | Not started | 0 / 11 | Depends on tenancy/auth foundations. |
 | Sprint 3: Learning Experience | Not started | 0 / 11 | Depends on course authoring foundation. |
 | Sprint 4: AI Tutor | Not started | 0 / 17 | Depends on published lesson/course data and async worker foundation. |
@@ -1148,6 +1148,12 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Isolation coverage gate | Add `@covers_isolation(method, path)` pytest decorator | Complete |
 | Isolation coverage gate | Add OpenAPI route inventory comparison script | Complete |
 | Isolation coverage gate | Wire route coverage script into CI | Complete |
+| Auth foundation | Add Argon2id password hashing utilities | Complete |
+| Auth foundation | Add user and auth-token models/migrations with tenant ownership | Complete |
+| Auth foundation | Add signup and login schemas/services/routes | Complete |
+| Auth foundation | Add magic-link and password-reset request schemas/services/routes | Complete |
+| RBAC foundation | Add Org Admin and Learner role enum/defaults | Complete |
+| Auth tests | Add tests for password hashing, schemas, roles, and auth token flow | Complete |
 
 - [x] Implement tenant model and global tenant table.
 - [x] Create database roles: `omnixtra_app`, `omnixtra_migrations`, `omnixtra_superadmin`.
@@ -1159,9 +1165,9 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Implement per-cursor RLS tenant variable set/clear.
 - [x] Implement RLS migration helper and first tenant-owned table.
 - [x] Add CI check for tenant-owned migrations missing RLS helper.
-- [ ] Implement signup, login, magic link, password reset.
-- [ ] Implement Org Admin and Learner roles.
-- [ ] Seed RBAC defaults.
+- [x] Implement signup, login, magic link, password reset.
+- [x] Implement Org Admin and Learner roles.
+- [x] Seed RBAC defaults.
 - [x] Add cross-tenant isolation suite and OpenAPI coverage gate.
 - [x] Add RLS-as-last-defence raw SQL test.
 - [x] Add runbook for adding tenant-owned tables.

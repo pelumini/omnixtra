@@ -10,6 +10,12 @@ class Settings(BaseSettings):
     app_env: str = Field(default="local", validation_alias="APP_ENV")
     app_name: str = Field(default="OmniXtra", validation_alias="APP_NAME")
     app_base_domain: str = Field(default="localhost", validation_alias="APP_BASE_DOMAIN")
+    jwt_secret_key: str = Field(
+        default="local-dev-secret-change-me-32-bytes-minimum",
+        validation_alias="JWT_SECRET_KEY",
+    )
+    jwt_issuer: str = Field(default="omnixtra-api", validation_alias="JWT_ISSUER")
+    access_token_minutes: int = Field(default=15, validation_alias="ACCESS_TOKEN_MINUTES")
     database_url: str = Field(
         default="postgresql+asyncpg://omnixtra_app:omnixtra_app_password@localhost:5432/omnixtra",
         validation_alias="DATABASE_URL",

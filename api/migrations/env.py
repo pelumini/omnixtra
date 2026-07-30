@@ -3,6 +3,7 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from app.auth import models as auth_models  # noqa: F401
 from app.core.config import get_settings
 from app.shared.models import Base
 from app.tenancy import models as tenancy_models  # noqa: F401

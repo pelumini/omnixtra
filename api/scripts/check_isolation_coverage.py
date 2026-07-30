@@ -3,8 +3,6 @@ import inspect
 from pathlib import Path
 from sys import stderr
 
-from fastapi.routing import APIRoute
-
 from app.main import create_app
 
 PROTECTED_ROUTE_TAG = "tenant-owned"
@@ -29,15 +27,12 @@ def missing_isolation_coverage(tests_dir: Path) -> list[str]:
 
 
 def _protected_openapi_routes() -> set[tuple[str, str]]:
-    app = create_app()
     protected: set[tuple[str, str]] = set()
-    for route in app.routes:
-        if not isinstance(route, APIRoute):
-            continue
-        if PROTECTED_ROUTE_TAG not in route.tags:
-            continue
-        for method in route.methods or set():
-            protected.add((method.upper(), route.path))
+    for path, methods in create_app().openapi()["paths"].items():
+        for method, operation in methods.items():
+            tags = operation.get("tags", [])
+            if PROTECTED_ROUTE_TAG in tags:
+                protected.add((method.upper(), path))
     return protected
 
 
