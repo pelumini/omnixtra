@@ -1085,7 +1085,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint 2: Course Authoring | Backend foundation in progress | 9 / 11 | Course authoring backend, media metadata, route coverage declarations, migration smoke, and real route-level attack tests exist; functional admin frontend routes remain open. |
 | Sprint 3: Learning Experience | Backend foundation in progress | 9 / 11 | Learning backend, idempotent learner workflow foundations, and real route-level attack tests exist; functional learner UI routes and verified PDF download workflow remain open. |
 | Sprint 4: AI Tutor | Local/mock foundation in progress | 9 / 17 | Async worker runtime, mock embeddings, hybrid retrieval SQL, Redis Pub/Sub job streaming, LangSmith wrapper, vector isolation coverage, and real tutor route attack tests exist; provider-backed AI, real eval criteria, and functional tutor UI remain open. |
-| Sprint 5: Billing, Branding, Analytics, and MVP Polish | Not started | 0 / 15 | Final MVP integration sprint. |
+| Sprint 5: Billing, Branding, Analytics, and MVP Polish | Backend foundation in progress | 1 / 15 | Billing module, data-driven MVP plan catalog, Stripe checkout provider port, subscription webhook foundation, and billing route isolation coverage exist; live Stripe checkout/webhook verification, branding, analytics, email, onboarding, and Playwright polish remain open. |
 | Phase 2: Months 4-6 | Not started | 0 / 11 | Post-MVP expansion. |
 | Phase 3: Months 7-9 | Not started | 0 / 9 | Post-MVP platform/compliance expansion. |
 
@@ -1313,7 +1313,24 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 
 ### Sprint 5: Billing, Branding, Analytics, and MVP Polish, Weeks 11-12
 
-- [ ] Create `billing` module.
+#### Sprint 5 Subtask Tracker
+
+| Parent Task | Subtask | Status |
+|---|---|---|
+| Billing module | Add backend `billing` package exports | Complete |
+| Billing models | Add data-driven billing plan and tenant subscription models | Complete |
+| Billing migrations | Add plan, subscription, and billing audit tables | Complete |
+| Billing migrations | Seed MVP pricing hypotheses as plan rows | Complete |
+| Billing services | Add plan catalog and current subscription services | Complete |
+| Billing services | Add Stripe checkout provider port with local/mock implementation | Complete |
+| Billing services | Add subscription webhook sync foundation | Complete |
+| Billing routes | Add protected billing API routes under `/api/v1/billing` | Complete |
+| Billing tests | Add model response, route registration, and isolation coverage tests | Complete |
+| Billing provider | Implement signed Stripe SDK checkout session creation | Pending |
+| Billing provider | Verify Stripe webhook signatures and event mapping | Pending |
+| Plan limits | Enforce learner/admin/storage limits in domain services | Pending |
+
+- [x] Create `billing` module.
 - [ ] Implement Stripe checkout.
 - [ ] Implement subscription webhook handling.
 - [ ] Implement plan upgrade/downgrade.

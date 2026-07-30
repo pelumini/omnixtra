@@ -3,6 +3,8 @@ from fastapi import FastAPI
 from app.ai.routes import router as ai_router
 from app.api.router import api_router
 from app.auth.routes import router as auth_router
+from app.billing.routes import router as billing_router
+from app.billing.routes import webhook_router as billing_webhook_router
 from app.core.config import get_settings
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging
@@ -26,6 +28,8 @@ def create_app() -> FastAPI:
     application.include_router(courses_router, prefix="/api/v1")
     application.include_router(learning_router, prefix="/api/v1")
     application.include_router(ai_router, prefix="/api/v1")
+    application.include_router(billing_router, prefix="/api/v1")
+    application.include_router(billing_webhook_router, prefix="/api/v1")
     application.include_router(api_router, prefix="/api/v1")
 
     @application.get("/health", tags=["system"])
