@@ -1,6 +1,12 @@
 from uuid import UUID
 
-from app.ai.graph import run_tutor_graph_skeleton
+from app.ai.graph import build_tutor_graph, run_tutor_graph, run_tutor_graph_skeleton
+
+
+def test_tutor_graph_compiles_langgraph_workflow() -> None:
+    graph = build_tutor_graph()
+
+    assert graph is not None
 
 
 def test_tutor_graph_returns_refusal_for_out_of_scope_question() -> None:
@@ -27,3 +33,16 @@ def test_tutor_graph_returns_ai_generated_answer_with_citations() -> None:
 
     assert result.refused is False
     assert result.citations == [{"chunk_index": 0}]
+
+
+def test_tutor_graph_uses_langgraph_execution() -> None:
+    result = run_tutor_graph(
+        tenant_id=UUID("00000000-0000-0000-0000-000000000001"),
+        course_id=UUID("00000000-0000-0000-0000-000000000002"),
+        question="What is onboarding?",
+        retrieved_context=["Onboarding introduces the learner to required workflows."],
+        citations=[{"chunk_index": 0}],
+    )
+
+    assert result.answer.startswith("AI-generated guidance based on this course")
+    assert result.refused is False

@@ -12,6 +12,13 @@ def tutor_job_by_idempotency_key(idempotency_key: str) -> Select[tuple[TutorJob]
     )
 
 
+def tutor_job_by_id(job_id: UUID) -> Select[tuple[TutorJob]]:
+    return select(TutorJob).where(
+        TutorJob.id == job_id,
+        TutorJob.deleted_at.is_(None),
+    )
+
+
 def conversation_by_id(conversation_id: UUID) -> Select[tuple[TutorConversation]]:
     return select(TutorConversation).where(
         TutorConversation.id == conversation_id,

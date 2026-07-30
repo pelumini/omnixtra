@@ -4,16 +4,21 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header
 from fastapi.responses import StreamingResponse
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.schemas import ConversationResponse, TutorJobResponse, TutorQuestionRequest
 from app.ai.services import enqueue_tutor_job, get_conversation
+from app.ai.streaming import subscribe_tutor_events
 from app.auth.dependencies import AuthPrincipal, require_permission
 from app.core.database import get_session
+from app.core.redis import get_redis
 from app.shared.responses import Envelope, Meta
+from app.tenancy.context import require_tenant_id
 
 router = APIRouter(prefix="/ai", tags=["tenant-owned"])
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
+RedisDep = Annotated[Redis, Depends(get_redis)]
 TutorPrincipal = Annotated[AuthPrincipal, Depends(require_permission("tutor:use"))]
 IdempotencyKey = Annotated[str, Header(min_length=8, max_length=120, alias="Idempotency-Key")]
 
@@ -59,3 +64,22 @@ async def tutor_events_route(
         yield f'event: ready\ndata: {{"course_id":"{course_id}"}}\n\n'.encode()
 
     return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+@router.get("/courses/{course_id}/tutor/jobs/{job_id}/events")
+async def tutor_job_events_route(
+    course_id: UUID,
+    job_id: UUID,
+    redis_client: RedisDep,
+    _principal: TutorPrincipal,
+) -> StreamingResponse:
+    tenant_id = UUID(require_tenant_id())
+    return StreamingResponse(
+        subscribe_tutor_events(
+            redis_client,
+            tenant_id=tenant_id,
+            course_id=course_id,
+            job_id=job_id,
+        ),
+        media_type="text/event-stream",
+    )

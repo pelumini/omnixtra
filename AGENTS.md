@@ -1083,7 +1083,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint 1: Tenancy & Auth | Complete | 17 / 17 | Tenant isolation, RLS, auth foundation, Org Admin/Learner RBAC defaults, isolation coverage gate, migration guard, and RLS benchmark are implemented and tested. |
 | Sprint 2: Course Authoring | Complete | 11 / 11 | Course authoring backend, media metadata, admin UI foundation, tests, isolation declarations, and migration smoke are locally verified. |
 | Sprint 3: Learning Experience | Complete | 11 / 11 | Learning backend, idempotent learner workflows, course player UI foundation, tests, isolation declarations, and migration smoke are locally verified. |
-| Sprint 4: AI Tutor | In progress | 11 / 17 | AI tutor storage, chunking, enqueue route, provider/cache/guardrail foundations, tutor UI, tests, and pgvector migration smoke are locally verified. |
+| Sprint 4: AI Tutor | Complete | 17 / 17 | AI tutor worker execution, hybrid retrieval, LangGraph orchestration, Redis Pub/Sub streaming, LangSmith tracing, eval/cache metrics, and vector isolation coverage are locally verified. |
 | Sprint 5: Billing, Branding, Analytics, and MVP Polish | Not started | 0 / 15 | Final MVP integration sprint. |
 | Phase 2: Months 4-6 | Not started | 0 / 11 | Post-MVP expansion. |
 | Phase 3: Months 7-9 | Not started | 0 / 9 | Post-MVP platform/compliance expansion. |
@@ -1260,41 +1260,41 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | AI storage | Add embeddings, conversations, messages, and tutor jobs models | Complete |
 | AI migrations | Add tenant-owned AI tables with RLS helpers, pgvector, HNSW, and compound indexes | Complete |
 | AI jobs | Add async tutor job enqueue foundation | Complete |
-| AI jobs | Add Dramatiq embedding and tutor execution workers | Pending |
+| AI jobs | Add Dramatiq embedding and tutor execution workers | Complete |
 | AI retrieval | Add tenant/course-scoped retrieval repository foundation | Complete |
-| AI retrieval | Add true hybrid vector plus Postgres full-text retrieval | Pending |
+| AI retrieval | Add true hybrid vector plus Postgres full-text retrieval | Complete |
 | AI graph | Add tutor graph orchestration skeleton | Complete |
-| AI graph | Wire actual LangGraph tutor execution | Pending |
+| AI graph | Wire actual LangGraph tutor execution | Complete |
 | AI providers | Add OpenAI and Anthropic provider abstraction | Complete |
 | AI streaming | Add tenant-scoped SSE event route foundation | Complete |
-| AI streaming | Wire Redis Pub/Sub fanout for tutor jobs | Pending |
+| AI streaming | Wire Redis Pub/Sub fanout for tutor jobs | Complete |
 | AI conversations | Add conversation history service | Complete |
 | AI cache | Add tenant/course semantic cache foundation | Complete |
 | AI citations | Add citation extraction from retrieved chunks | Complete |
 | AI guardrails | Add scope refusal and quiz-answer guardrail | Complete |
 | AI observability | Add trace metadata and eval dataset scaffold | Complete |
-| AI observability | Wire LangSmith tracing for tutor graph runs | Pending |
+| AI observability | Wire LangSmith tracing for tutor graph runs | Complete |
 | Tutor frontend | Add tutor UI panel in learner course player | Complete |
 | AI tests | Add route isolation declarations and retrieval scope tests | Complete |
-| AI tests | Add live cross-tenant vector retrieval integration tests | Pending |
+| AI tests | Add live cross-tenant vector retrieval integration tests | Complete |
 | AI tests | Add prompt-injection regression tests | Complete |
 
 - [x] Create MVP `ai` module structure.
 - [x] Implement lesson chunking by lesson version.
 - [x] Add embeddings table with pgvector and tenant/course scope.
 - [x] Add HNSW index and compound tenant/course indexes.
-- [ ] Implement embedding worker.
-- [ ] Implement hybrid retrieval.
-- [ ] Implement LangGraph tutor graph.
+- [x] Implement embedding worker.
+- [x] Implement hybrid retrieval.
+- [x] Implement LangGraph tutor graph.
 - [x] Implement provider abstraction for OpenAI and Anthropic.
-- [ ] Implement SSE streaming via Redis Pub/Sub.
+- [x] Implement SSE streaming via Redis Pub/Sub.
 - [x] Implement conversation history.
 - [x] Implement semantic cache.
 - [x] Implement citation extraction.
 - [x] Implement scope refusal and quiz-answer guardrail.
-- [ ] Add LangSmith tracing and eval dataset.
+- [x] Add LangSmith tracing and eval dataset.
 - [x] Add tutor UI panel in learner course player.
-- [ ] Add cross-tenant vector retrieval tests.
+- [x] Add cross-tenant vector retrieval tests.
 - [x] Add prompt-injection regression tests.
 
 **Exit criteria:** tutor answers with citations on a 20-question eval set; repeat-query cache hit rate exceeds 40%; no AI work blocks HTTP handlers.

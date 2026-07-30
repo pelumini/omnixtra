@@ -6,6 +6,7 @@ from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstr
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.ai.types import Vector
 from app.shared.models import Base, TenantOwnedMixin, TimestampMixin
 
 
@@ -36,7 +37,7 @@ class LessonEmbedding(TenantOwnedMixin, TimestampMixin, Base):
     lesson_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
     chunk_text: Mapped[str] = mapped_column(Text, nullable=False)
-    embedding: Mapped[list[float]] = mapped_column(JSONB, nullable=False)
+    embedding: Mapped[list[float]] = mapped_column(Vector(), nullable=False)
 
 
 class TutorConversation(TenantOwnedMixin, TimestampMixin, Base):

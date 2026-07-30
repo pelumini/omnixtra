@@ -2,6 +2,7 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.ai.dispatch import dispatch_tutor_job
 from app.ai.models import (
     ConversationRole,
     TutorConversation,
@@ -12,6 +13,7 @@ from app.ai.models import (
 from app.ai.repositories import conversation_by_id, tutor_job_by_idempotency_key
 from app.ai.schemas import ConversationResponse, TutorJobResponse, TutorQuestionRequest
 from app.core.exceptions import NotFoundError
+from app.tenancy.context import require_tenant_id
 
 
 async def enqueue_tutor_job(
@@ -56,7 +58,14 @@ async def enqueue_tutor_job(
     )
     session.add(job)
     await session.flush()
+    tenant_id = UUID(require_tenant_id())
     await session.commit()
+    dispatch_tutor_job(
+        tenant_id=tenant_id,
+        job_id=job.id,
+        course_id=course_id,
+        learner_id=learner_id,
+    )
     return tutor_job_response(job)
 
 
