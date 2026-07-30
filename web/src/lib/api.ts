@@ -2,6 +2,7 @@ import {
   coursePageEnvelopeSchema,
   coursePlayerEnvelopeSchema,
   healthEnvelopeSchema,
+  tutorJobEnvelopeSchema,
 } from "@/lib/schemas";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -27,4 +28,19 @@ export async function getCoursePlayer(courseId: string) {
   const body: unknown = await response.json();
 
   return coursePlayerEnvelopeSchema.parse(body);
+}
+
+export async function createTutorJob(courseId: string, question: string, idempotencyKey: string) {
+  const response = await fetch(`${apiUrl}/api/v1/ai/courses/${courseId}/tutor/jobs`, {
+    body: JSON.stringify({ question }),
+    cache: "no-store",
+    headers: {
+      "Content-Type": "application/json",
+      "Idempotency-Key": idempotencyKey,
+    },
+    method: "POST",
+  });
+  const body: unknown = await response.json();
+
+  return tutorJobEnvelopeSchema.parse(body);
 }

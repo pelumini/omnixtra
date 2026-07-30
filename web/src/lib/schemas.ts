@@ -123,6 +123,20 @@ export const coursePlayerEnvelopeSchema = z.object({
   meta: metaSchema,
 });
 
+export const tutorJobSchema = z.object({
+  id: z.string().uuid(),
+  conversation_id: z.string().uuid(),
+  course_id: z.string().uuid(),
+  status: z.enum(["queued", "running", "completed", "failed"]),
+});
+
+export const tutorJobEnvelopeSchema = z.object({
+  data: tutorJobSchema,
+  error: z.null(),
+  meta: metaSchema,
+});
+
 export type Course = z.infer<typeof courseSchema>;
 export type CoursePlayer = z.infer<typeof coursePlayerSchema>;
 export type MediaAsset = z.infer<typeof mediaAssetSchema>;
+export type TutorJob = z.infer<typeof tutorJobSchema>;

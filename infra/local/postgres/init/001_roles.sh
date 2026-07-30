@@ -27,6 +27,7 @@ create_role_if_missing "omnixtra_migrations" "$OMNIXTRA_MIGRATIONS_PASSWORD" "NO
 create_role_if_missing "omnixtra_superadmin" "$OMNIXTRA_SUPERADMIN_PASSWORD" "BYPASSRLS"
 
 psql --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<'SQL'
+CREATE EXTENSION IF NOT EXISTS vector;
 GRANT CONNECT ON DATABASE omnixtra TO omnixtra_app, omnixtra_migrations, omnixtra_superadmin;
 GRANT CREATE, USAGE ON SCHEMA public TO omnixtra_migrations;
 GRANT USAGE ON SCHEMA public TO omnixtra_app, omnixtra_superadmin;

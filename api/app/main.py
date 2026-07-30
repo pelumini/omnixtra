@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from app.ai.routes import router as ai_router
 from app.api.router import api_router
 from app.auth.routes import router as auth_router
 from app.core.config import get_settings
@@ -23,6 +24,7 @@ def create_app() -> FastAPI:
     application.include_router(auth_router, prefix="/api/v1")
     application.include_router(courses_router, prefix="/api/v1")
     application.include_router(learning_router, prefix="/api/v1")
+    application.include_router(ai_router, prefix="/api/v1")
     application.include_router(api_router, prefix="/api/v1")
 
     @application.get("/health", tags=["system"])

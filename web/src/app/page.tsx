@@ -1,6 +1,7 @@
 import {
   Award,
   BadgeCheck,
+  Bot,
   BookOpen,
   CheckCircle2,
   CircleDashed,
@@ -265,6 +266,30 @@ export default function Home() {
         </section>
 
         <aside className="grid content-start gap-4">
+          <section className="border border-[var(--border)] bg-white">
+            <div className="flex items-center gap-2 border-b border-[var(--border)] px-4 py-3">
+              <Bot aria-hidden="true" className="size-4 text-gray-500" />
+              <h2 className="text-sm font-semibold">Tutor</h2>
+            </div>
+            <div className="grid gap-3 px-4 py-4">
+              <div className="border border-[var(--border)] bg-gray-50 px-3 py-3 text-sm leading-6 text-gray-700">
+                AI-generated guidance will cite lesson chunks and stay inside this course.
+              </div>
+              <div className="grid gap-2">
+                {["Where did I stop?", "Explain implementation planning", "Review quiz topic"].map(
+                  (question) => (
+                    <Button
+                      className="h-10 justify-start bg-white text-gray-700 ring-1 ring-[var(--border)] hover:bg-gray-100"
+                      key={question}
+                    >
+                      {question}
+                    </Button>
+                  ),
+                )}
+              </div>
+            </div>
+          </section>
+
           <section className="border border-[var(--border)] bg-white">
             <div className="border-b border-[var(--border)] px-4 py-3">
               <h2 className="text-sm font-semibold">Quiz</h2>

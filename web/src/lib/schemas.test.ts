@@ -6,6 +6,7 @@ import {
   coursePlayerEnvelopeSchema,
   healthEnvelopeSchema,
   mediaAssetSchema,
+  tutorJobEnvelopeSchema,
 } from "@/lib/schemas";
 
 describe("healthEnvelopeSchema", () => {
@@ -111,5 +112,22 @@ describe("coursePlayerEnvelopeSchema", () => {
         meta: { request_id: "req_test", timestamp: null },
       }).data.sections[0]?.lessons[0]?.percent_complete,
     ).toBe(80);
+  });
+});
+
+describe("tutorJobEnvelopeSchema", () => {
+  it("accepts queued tutor job responses", () => {
+    expect(
+      tutorJobEnvelopeSchema.parse({
+        data: {
+          id: "00000000-0000-0000-0000-000000000020",
+          conversation_id: "00000000-0000-0000-0000-000000000021",
+          course_id: "00000000-0000-0000-0000-000000000010",
+          status: "queued",
+        },
+        error: null,
+        meta: { request_id: "req_test", timestamp: null },
+      }).data.status,
+    ).toBe("queued");
   });
 });

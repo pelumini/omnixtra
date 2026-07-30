@@ -3,6 +3,7 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+import app.ai.models as ai_models  # noqa: F401
 from app.auth import models as auth_models  # noqa: F401
 from app.core.config import get_settings
 from app.courses import models as course_models  # noqa: F401
