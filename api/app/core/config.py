@@ -41,6 +41,8 @@ class Settings(BaseSettings):
         default="claude-3-5-haiku-latest",
         validation_alias="ANTHROPIC_MODEL",
     )
+    stripe_secret_key: str = Field(default="", validation_alias="STRIPE_SECRET_KEY")
+    stripe_webhook_secret: str = Field(default="", validation_alias="STRIPE_WEBHOOK_SECRET")
 
 
 @lru_cache

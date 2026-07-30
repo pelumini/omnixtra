@@ -1,8 +1,25 @@
+import hashlib
+import hmac
 from datetime import UTC, datetime
 from uuid import UUID
 
+import httpx
+import pytest
+
 from app.billing.models import BillingPlan, SubscriptionStatus, TenantSubscription
-from app.billing.services import plan_response, subscription_response
+from app.billing.services import (
+    CheckoutSessionCreate,
+    StripeBillingProvider,
+    ensure_learner_capacity,
+    ensure_storage_capacity,
+    increment_learner_usage,
+    plan_response,
+    stripe_event_to_subscription_event,
+    subscription_response,
+    verify_stripe_webhook_payload,
+)
+from app.core.config import get_settings
+from app.core.exceptions import ValidationAppError
 
 TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
 PLAN_ID = UUID("00000000-0000-0000-0000-000000000010")
@@ -62,3 +79,170 @@ def test_subscription_response_joins_subscription_to_plan_slug() -> None:
     assert response.status == "active"
     assert response.current_period_end == period_end
     assert response.seats_used == 2
+
+
+@pytest.mark.anyio
+async def test_stripe_checkout_provider_posts_signed_session_request(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    get_settings.cache_clear()
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_123")
+    plan = BillingPlan(
+        id=PLAN_ID,
+        slug="starter",
+        name="Starter",
+        monthly_price_cents=4900,
+        currency="usd",
+        included_admin_seats=3,
+        included_learners=50,
+        included_storage_gb=10,
+        trial_days=14,
+        stripe_price_id="price_123",
+        status="active",
+    )
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        body = request.content.decode("utf-8")
+        assert request.headers["authorization"] == "Bearer sk_test_123"
+        assert request.headers["idempotency-key"] == "checkout-key"
+        assert "metadata%5Btenant_id%5D=" in body
+        assert "line_items%5B0%5D%5Bprice%5D=price_123" in body
+        return httpx.Response(
+            200,
+            json={"id": "cs_test_123", "url": "https://checkout.stripe.test"},
+        )
+
+    provider = StripeBillingProvider(
+        client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+    )
+
+    response = await provider.create_checkout_session(
+        CheckoutSessionCreate(
+            tenant_id=TENANT_ID,
+            plan=plan,
+            success_url="https://app.example/success",
+            cancel_url="https://app.example/cancel",
+            idempotency_key="checkout-key",
+        ),
+    )
+
+    assert response.provider_session_id == "cs_test_123"
+    assert response.url == "https://checkout.stripe.test"
+    get_settings.cache_clear()
+
+
+def test_stripe_webhook_signature_verification_accepts_valid_payload(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    get_settings.cache_clear()
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+    payload = b'{"type":"customer.subscription.updated","data":{"object":{}}}'
+    timestamp = 1_000
+    signature = _stripe_signature(payload, timestamp=timestamp, secret="whsec_test")
+
+    event = verify_stripe_webhook_payload(payload, f"t={timestamp},v1={signature}", now=timestamp)
+
+    assert event["type"] == "customer.subscription.updated"
+    get_settings.cache_clear()
+
+
+def test_stripe_event_maps_subscription_payload() -> None:
+    event = {
+        "type": "customer.subscription.updated",
+        "data": {
+            "object": {
+                "cancel_at_period_end": False,
+                "current_period_end": 1_785_366_000,
+                "current_period_start": 1_782_774_000,
+                "customer": "cus_123",
+                "id": "sub_123",
+                "metadata": {"plan_slug": "growth", "tenant_id": str(TENANT_ID)},
+                "status": "active",
+            },
+        },
+    }
+
+    mapped = stripe_event_to_subscription_event(event)
+
+    assert mapped.tenant_id == TENANT_ID
+    assert mapped.plan_slug == "growth"
+    assert mapped.stripe_subscription_id == "sub_123"
+
+
+@pytest.mark.anyio
+async def test_ensure_learner_capacity_rejects_full_plan() -> None:
+    plan = _plan(included_learners=1, included_storage_gb=10)
+    subscription = _subscription(seats_used=1)
+    session = _BillingLimitSession(subscription=subscription, plan=plan)
+
+    with pytest.raises(ValidationAppError, match="learner limit"):
+        await ensure_learner_capacity(session)
+
+
+@pytest.mark.anyio
+async def test_increment_learner_usage_updates_subscription_usage() -> None:
+    plan = _plan(included_learners=2, included_storage_gb=10)
+    subscription = _subscription(seats_used=0)
+    session = _BillingLimitSession(subscription=subscription, plan=plan)
+
+    await increment_learner_usage(session)
+
+    assert subscription.seats_used == 1
+
+
+@pytest.mark.anyio
+async def test_ensure_storage_capacity_rejects_overage() -> None:
+    plan = _plan(included_learners=50, included_storage_gb=1)
+    subscription = _subscription(seats_used=0)
+    session = _BillingLimitSession(subscription=subscription, plan=plan)
+
+    with pytest.raises(ValidationAppError, match="storage limit"):
+        await ensure_storage_capacity(
+            session,
+            additional_bytes=2,
+            current_storage_bytes=1024 * 1024 * 1024,
+        )
+
+
+def _stripe_signature(payload: bytes, *, timestamp: int, secret: str) -> str:
+    signed_payload = f"{timestamp}.{payload.decode('utf-8')}".encode()
+    return hmac.new(secret.encode("utf-8"), signed_payload, hashlib.sha256).hexdigest()
+
+
+def _plan(*, included_learners: int, included_storage_gb: int) -> BillingPlan:
+    return BillingPlan(
+        id=PLAN_ID,
+        slug="starter",
+        name="Starter",
+        monthly_price_cents=4900,
+        currency="usd",
+        included_admin_seats=3,
+        included_learners=included_learners,
+        included_storage_gb=included_storage_gb,
+        trial_days=14,
+        status="active",
+    )
+
+
+def _subscription(*, seats_used: int) -> TenantSubscription:
+    return TenantSubscription(
+        id=SUBSCRIPTION_ID,
+        tenant_id=TENANT_ID,
+        plan_id=PLAN_ID,
+        status=SubscriptionStatus.active.value,
+        stripe_customer_id="cus_123",
+        stripe_subscription_id="sub_123",
+        seats_used=seats_used,
+    )
+
+
+class _BillingLimitSession:
+    def __init__(self, *, subscription: TenantSubscription, plan: BillingPlan) -> None:
+        self.subscription = subscription
+        self.plan = plan
+
+    async def scalar(self, _statement: object) -> TenantSubscription:
+        return self.subscription
+
+    async def get(self, _model: object, _identifier: object) -> BillingPlan:
+        return self.plan

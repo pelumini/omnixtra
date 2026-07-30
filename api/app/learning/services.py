@@ -4,6 +4,7 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.billing.services import ensure_learner_capacity, increment_learner_usage
 from app.core.exceptions import NotFoundError, ValidationAppError
 from app.courses.models import Course, CourseBlock, Lesson
 from app.learning.models import (
@@ -61,6 +62,7 @@ async def enrol_in_course(
     existing = await session.scalar(enrolment_by_learner_course(learner_id, course_id))
     if existing is not None:
         return enrolment_response(existing)
+    await ensure_learner_capacity(session)
     enrolment = Enrolment(
         learner_id=learner_id,
         course_id=course_id,
@@ -69,6 +71,7 @@ async def enrol_in_course(
     )
     session.add(enrolment)
     await session.flush()
+    await increment_learner_usage(session)
     _audit(session, learner_id, course_id, "enrolment.created", "Learner enrolled")
     await session.commit()
     return enrolment_response(enrolment)

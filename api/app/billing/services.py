@@ -1,7 +1,13 @@
+import hashlib
+import hmac
+import json
+import time
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Protocol
 from uuid import UUID
 
+import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.billing.models import BillingAuditEvent, BillingPlan, TenantSubscription
@@ -18,8 +24,9 @@ from app.billing.schemas import (
     StripeSubscriptionEvent,
     SubscriptionResponse,
 )
+from app.core.config import get_settings
 from app.core.context import clear_tenant_id, set_tenant_id
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import NotFoundError, ValidationAppError
 from app.tenancy.context import require_tenant_id
 
 
@@ -50,6 +57,45 @@ class LocalBillingProvider:
             provider_session_id=provider_session_id,
             url=f"https://billing.local/checkout/{provider_session_id}",
         )
+
+
+class StripeBillingProvider:
+    def __init__(self, *, client: httpx.AsyncClient | None = None) -> None:
+        self.client = client
+
+    async def create_checkout_session(
+        self,
+        request: CheckoutSessionCreate,
+    ) -> CheckoutSessionResponse:
+        settings = get_settings()
+        if not settings.stripe_secret_key:
+            msg = "Stripe secret key is not configured"
+            raise ValidationAppError(msg)
+        if request.plan.stripe_price_id is None:
+            msg = "billing plan is missing Stripe price id"
+            raise ValidationAppError(msg)
+        payload = {
+            "cancel_url": request.cancel_url,
+            "client_reference_id": str(request.tenant_id),
+            "line_items[0][price]": request.plan.stripe_price_id,
+            "line_items[0][quantity]": "1",
+            "metadata[plan_slug]": request.plan.slug,
+            "metadata[tenant_id]": str(request.tenant_id),
+            "mode": "subscription",
+            "subscription_data[metadata][plan_slug]": request.plan.slug,
+            "subscription_data[metadata][tenant_id]": str(request.tenant_id),
+            "success_url": request.success_url,
+        }
+        data = await _post_stripe_form(
+            "https://api.stripe.com/v1/checkout/sessions",
+            payload,
+            api_key=settings.stripe_secret_key,
+            idempotency_key=request.idempotency_key,
+            client=self.client,
+        )
+        session_id = _required_str(data, "id")
+        url = _required_str(data, "url")
+        return CheckoutSessionResponse(provider_session_id=session_id, url=url)
 
 
 async def list_plans(session: AsyncSession) -> list[BillingPlanResponse]:
@@ -150,6 +196,118 @@ async def apply_stripe_subscription_event(
         clear_tenant_id()
 
 
+async def apply_signed_stripe_webhook(
+    session: AsyncSession,
+    *,
+    payload: bytes,
+    signature_header: str,
+) -> SubscriptionResponse | None:
+    event = verify_stripe_webhook_payload(payload, signature_header)
+    event_type = str(event.get("type", ""))
+    if event_type not in {
+        "checkout.session.completed",
+        "customer.subscription.created",
+        "customer.subscription.updated",
+        "customer.subscription.deleted",
+    }:
+        return None
+    subscription_event = stripe_event_to_subscription_event(event)
+    return await apply_stripe_subscription_event(session, subscription_event)
+
+
+def verify_stripe_webhook_payload(
+    payload: bytes,
+    signature_header: str,
+    *,
+    tolerance_seconds: int = 300,
+    now: int | None = None,
+) -> dict[str, object]:
+    settings = get_settings()
+    if not settings.stripe_webhook_secret:
+        msg = "Stripe webhook secret is not configured"
+        raise ValidationAppError(msg)
+    timestamp, signatures = _parse_stripe_signature_header(signature_header)
+    current_time = int(time.time()) if now is None else now
+    if abs(current_time - timestamp) > tolerance_seconds:
+        msg = "Stripe webhook signature timestamp is outside tolerance"
+        raise ValidationAppError(msg)
+    signed_payload = f"{timestamp}.{payload.decode('utf-8')}".encode()
+    expected = hmac.new(
+        settings.stripe_webhook_secret.encode("utf-8"),
+        signed_payload,
+        hashlib.sha256,
+    ).hexdigest()
+    if not any(hmac.compare_digest(expected, signature) for signature in signatures):
+        msg = "Stripe webhook signature verification failed"
+        raise ValidationAppError(msg)
+    try:
+        data = json.loads(payload.decode("utf-8"))
+    except json.JSONDecodeError as exc:
+        msg = "Stripe webhook payload must be valid JSON"
+        raise ValidationAppError(msg) from exc
+    if not isinstance(data, dict):
+        msg = "Stripe webhook payload must be an object"
+        raise ValidationAppError(msg)
+    return data
+
+
+def stripe_event_to_subscription_event(event: dict[str, object]) -> StripeSubscriptionEvent:
+    data = _mapping(_mapping(event.get("data")).get("object"))
+    metadata = _mapping(data.get("metadata"))
+    tenant_id = UUID(_required_str(metadata, "tenant_id"))
+    plan_slug = _required_str(metadata, "plan_slug")
+    status = str(data.get("status", "active"))
+    subscription_id = str(data.get("subscription") or data.get("id") or "")
+    if subscription_id == "":
+        msg = "Stripe event is missing subscription id"
+        raise ValidationAppError(msg)
+    return StripeSubscriptionEvent(
+        tenant_id=tenant_id,
+        plan_slug=plan_slug,
+        status=status,
+        stripe_customer_id=_required_str(data, "customer"),
+        stripe_subscription_id=subscription_id,
+        current_period_start=_stripe_timestamp(data.get("current_period_start")),
+        current_period_end=_stripe_timestamp(data.get("current_period_end")),
+        trial_ends_at=_stripe_timestamp(data.get("trial_end")),
+        cancel_at_period_end=bool(data.get("cancel_at_period_end", False)),
+    )
+
+
+async def ensure_learner_capacity(session: AsyncSession) -> None:
+    result = await _current_plan_and_subscription(session)
+    if result is None:
+        return
+    plan, subscription = result
+    if subscription.seats_used >= plan.included_learners:
+        msg = "learner limit exceeded for current plan"
+        raise ValidationAppError(msg)
+
+
+async def increment_learner_usage(session: AsyncSession) -> None:
+    result = await _current_plan_and_subscription(session)
+    if result is None:
+        return
+    _plan, subscription = result
+    subscription.seats_used += 1
+
+
+async def ensure_storage_capacity(
+    session: AsyncSession,
+    *,
+    additional_bytes: int,
+    current_storage_bytes: int,
+) -> None:
+    result = await _current_plan_and_subscription(session)
+    if result is None:
+        return
+    plan, _subscription = result
+    limit_bytes = plan.included_storage_gb * 1024 * 1024 * 1024
+    if current_storage_bytes + additional_bytes > limit_bytes:
+        msg = "storage limit exceeded for current plan"
+        raise ValidationAppError(msg)
+
+
 async def require_plan(session: AsyncSession, slug: str) -> BillingPlan:
     plan = await session.scalar(billing_plan_by_slug(slug))
     if plan is None:
@@ -207,15 +365,107 @@ def _audit(
     )
 
 
+async def _current_plan_and_subscription(
+    session: AsyncSession,
+) -> tuple[BillingPlan, TenantSubscription] | None:
+    subscription = await session.scalar(current_tenant_subscription())
+    if subscription is None:
+        return None
+    plan = await session.get(BillingPlan, subscription.plan_id)
+    if plan is None:
+        msg = "billing plan not found"
+        raise NotFoundError(msg)
+    return plan, subscription
+
+
+async def _post_stripe_form(
+    url: str,
+    payload: dict[str, str],
+    *,
+    api_key: str,
+    idempotency_key: str,
+    client: httpx.AsyncClient | None,
+) -> dict[str, object]:
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Idempotency-Key": idempotency_key,
+    }
+    if client is not None:
+        response = await client.post(url, data=payload, headers=headers)
+    else:
+        async with httpx.AsyncClient(timeout=30.0) as transient_client:
+            response = await transient_client.post(url, data=payload, headers=headers)
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        msg = "Stripe checkout session creation failed"
+        raise ValidationAppError(msg) from exc
+    try:
+        data = response.json()
+    except ValueError as exc:
+        msg = "Stripe response must be valid JSON"
+        raise ValidationAppError(msg) from exc
+    if not isinstance(data, dict):
+        msg = "Stripe response must be a JSON object"
+        raise ValidationAppError(msg)
+    return data
+
+
+def _parse_stripe_signature_header(header: str) -> tuple[int, list[str]]:
+    expected_parts = 2
+    values: dict[str, list[str]] = {}
+    for part in header.split(","):
+        pieces = part.split("=", maxsplit=1)
+        if len(pieces) != expected_parts:
+            continue
+        key, value = pieces
+        values.setdefault(key, []).append(value)
+    timestamp = values.get("t", [None])[0]
+    signatures = values.get("v1", [])
+    if timestamp is None or not signatures:
+        msg = "Stripe signature header is malformed"
+        raise ValidationAppError(msg)
+    try:
+        return int(timestamp), signatures
+    except ValueError as exc:
+        msg = "Stripe signature header is malformed"
+        raise ValidationAppError(msg) from exc
+
+
+def _mapping(value: object) -> dict[str, object]:
+    return value if isinstance(value, dict) else {}
+
+
+def _required_str(mapping: dict[str, object], key: str) -> str:
+    value = mapping.get(key)
+    if not isinstance(value, str) or value == "":
+        msg = f"Stripe payload is missing {key}"
+        raise ValidationAppError(msg)
+    return value
+
+
+def _stripe_timestamp(value: object) -> datetime | None:
+    if not isinstance(value, int | float):
+        return None
+    return datetime.fromtimestamp(value, tz=UTC)
+
+
 __all__ = [
     "BillingProvider",
     "CheckoutSessionCreate",
     "LocalBillingProvider",
+    "StripeBillingProvider",
+    "apply_signed_stripe_webhook",
     "apply_stripe_subscription_event",
     "create_checkout_session",
+    "ensure_learner_capacity",
+    "ensure_storage_capacity",
     "get_current_subscription",
+    "increment_learner_usage",
     "list_plans",
     "plan_response",
     "require_plan",
+    "stripe_event_to_subscription_event",
     "subscription_response",
+    "verify_stripe_webhook_payload",
 ]

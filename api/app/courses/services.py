@@ -3,6 +3,7 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.billing.services import ensure_storage_capacity
 from app.core.exceptions import ConflictError, NotFoundError, ValidationAppError
 from app.courses.models import (
     Course,
@@ -168,6 +169,16 @@ async def create_media_asset(
     if existing is not None:
         msg = "media object key is already registered"
         raise ConflictError(msg)
+    current_storage_bytes = await session.scalar(
+        select(func.coalesce(func.sum(CourseMediaAsset.byte_size), 0)).where(
+            CourseMediaAsset.deleted_at.is_(None),
+        ),
+    )
+    await ensure_storage_capacity(
+        session,
+        additional_bytes=request.byte_size,
+        current_storage_bytes=int(current_storage_bytes or 0),
+    )
     asset = CourseMediaAsset(
         course_id=course.id,
         object_key=request.object_key,

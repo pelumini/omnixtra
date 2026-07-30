@@ -4,7 +4,7 @@
 **Source of Truth**: `OmniXtra_Project_Charter_v1.2.docx` + `ADR-002_Multi-Tenant_Isolation.docx`  
 **Charter Version**: 1.2, pre-kickoff draft  
 **ADR Status**: ADR-002 proposed, awaiting sign-off  
-**Status**: Sprints 0-4 complete; Sprint 5 backend foundation under MVP hardening
+**Status**: Sprints 0-4 complete; Sprint 5 billing hardening in progress
 **Scope**: Full-stack LMS, FastAPI backend, Next.js frontend, AI tutor, multi-tenant SaaS
 
 ---
@@ -1085,7 +1085,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint 2: Course Authoring | Complete | 11 / 11 | Course authoring backend, media metadata, route coverage declarations, migration smoke, real route-level attack tests, admin course list, and course builder foundation are in place. |
 | Sprint 3: Learning Experience | Complete | 11 / 11 | Learning backend, idempotent learner workflows, real route-level attack tests, learner course player, quiz/completion UI, and certificate PDF download workflow are in place. |
 | Sprint 4: AI Tutor | Complete | 17 / 17 | Async worker runtime, provider-backed AI clients, hybrid retrieval SQL, Redis Pub/Sub job streaming, LangSmith wrapper, vector isolation coverage, real tutor route attack tests, eval/cache metrics, and functional tutor UI are in place. |
-| Sprint 5: Billing, Branding, Analytics, and MVP Polish | Backend foundation in progress | 1 / 15 | Billing module, data-driven MVP plan catalog, Stripe checkout provider port, subscription webhook foundation, and billing route isolation coverage exist; live Stripe checkout/webhook verification, branding, analytics, email, onboarding, and Playwright polish remain open. |
+| Sprint 5: Billing, Branding, Analytics, and MVP Polish | Billing hardening in progress | 3 / 15 | Billing module, data-driven MVP plan catalog, live Stripe checkout provider, signed Stripe webhook verification/event mapping, learner/storage plan-limit gates, and billing route isolation coverage exist; admin-seat limits, plan changes, branding, analytics, email, onboarding, and Playwright polish remain open. |
 | Phase 2: Months 4-6 | Not started | 0 / 11 | Post-MVP expansion. |
 | Phase 3: Months 7-9 | Not started | 0 / 9 | Post-MVP platform/compliance expansion. |
 
@@ -1328,13 +1328,14 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Billing services | Add subscription webhook sync foundation | Complete |
 | Billing routes | Add protected billing API routes under `/api/v1/billing` | Complete |
 | Billing tests | Add model response, route registration, and isolation coverage tests | Complete |
-| Billing provider | Implement signed Stripe SDK checkout session creation | Pending |
-| Billing provider | Verify Stripe webhook signatures and event mapping | Pending |
-| Plan limits | Enforce learner/admin/storage limits in domain services | Pending |
+| Billing provider | Implement signed Stripe checkout session creation | Complete |
+| Billing provider | Verify Stripe webhook signatures and event mapping | Complete |
+| Plan limits | Enforce learner and storage limits in domain services | Complete |
+| Plan limits | Enforce admin-seat limits when tenant user management/invites are introduced | Pending |
 
 - [x] Create `billing` module.
-- [ ] Implement Stripe checkout.
-- [ ] Implement subscription webhook handling.
+- [x] Implement Stripe checkout.
+- [x] Implement subscription webhook handling.
 - [ ] Implement plan upgrade/downgrade.
 - [ ] Implement per-seat plan limits.
 - [ ] Implement tenant branding settings.

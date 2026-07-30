@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import AuthPrincipal, require_permission
@@ -15,11 +15,14 @@ from app.billing.schemas import (
 from app.billing.services import (
     BillingProvider,
     LocalBillingProvider,
+    StripeBillingProvider,
+    apply_signed_stripe_webhook,
     apply_stripe_subscription_event,
     create_checkout_session,
     get_current_subscription,
     list_plans,
 )
+from app.core.config import get_settings
 from app.core.database import get_session
 from app.shared.responses import Envelope, Meta
 
@@ -29,6 +32,8 @@ IdempotencyKeyHeader = Annotated[str, Header(min_length=8, max_length=120)]
 
 
 def get_billing_provider() -> BillingProvider:
+    if get_settings().stripe_secret_key:
+        return StripeBillingProvider()
     return LocalBillingProvider()
 
 
@@ -80,6 +85,21 @@ async def stripe_subscription_webhook_route(
     session: SessionDep,
 ) -> Envelope[WebhookAcceptedResponse]:
     await apply_stripe_subscription_event(session, request)
+    return Envelope(data=WebhookAcceptedResponse(accepted=True), error=None, meta=Meta.current())
+
+
+@webhook_router.post("/stripe")
+async def stripe_signed_webhook_route(
+    request: Request,
+    session: SessionDep,
+    stripe_signature: Annotated[str, Header(alias="Stripe-Signature")],
+) -> Envelope[WebhookAcceptedResponse]:
+    payload = await request.body()
+    await apply_signed_stripe_webhook(
+        session,
+        payload=payload,
+        signature_header=stripe_signature,
+    )
     return Envelope(data=WebhookAcceptedResponse(accepted=True), error=None, meta=Meta.current())
 
 
