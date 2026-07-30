@@ -63,7 +63,15 @@ jobs:
       - run: uv run mypy app --strict
       - run: uv run python -m scripts.check_rls_migrations
       - run: uv run python -m scripts.check_isolation_coverage
-      - run: uv run alembic upgrade head
+      - name: Migration smoke
+        run: |
+          uv run alembic upgrade head
+          uv run alembic downgrade base
+          uv run alembic upgrade head
+      - name: Integration tests use real database
+        run: |
+          uv run pytest tests/integration -m integration -rs | tee integration.log
+          ! grep -q "OMNIXTRA_TEST_DATABASE_URL is not set" integration.log
       - run: uv run pytest
 
   frontend:
