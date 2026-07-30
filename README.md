@@ -6,7 +6,7 @@ The project source of truth is [AGENTS.md](./AGENTS.md). Sprint progress is trac
 
 ## Current Status
 
-Sprint 0-4 backend foundations are implemented, with MVP hardening in progress. The API has tenant/RLS foundations, auth skeletons, course and learning backends, and a local/mock AI tutor runtime. The frontend currently contains static foundations rather than full workflow routes. `AGENTS.md` is the detailed tracker and now distinguishes implemented foundations from remaining production gaps.
+Sprint 0-4 foundations are under remediation. The API has tenant/RLS foundations, auth skeletons, course and learning backends, and a local/mock AI tutor runtime, but real route-level isolation tests, Docker migration wiring, auth hardening, provider-backed AI, and functional frontend workflows remain open. `AGENTS.md` is the detailed tracker and distinguishes implemented foundations from remaining production gaps.
 
 ## Local Development
 

@@ -1074,16 +1074,17 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - Keep incomplete, blocked, deferred, or partially implemented work as `- [ ]`.
 - When completing a task, add or update the related tests in the same change whenever the Definition of Done requires them.
 - Update the sprint status table whenever a task changes state.
+- A checkbox may only be marked complete when its verification can be reproduced by a fresh clone running documented commands.
 
 ### Sprint Status Summary
 
 | Sprint / Phase | Status | Completed | Notes |
 |---|---|---:|---|
-| Sprint 0: Pre-flight Foundations | Complete | 16 / 16 | Core repo, backend, frontend, Docker, CI, logging, observability, request context, health, envelope, typed errors, and ADR docs are scaffolded and locally verified. |
-| Sprint 1: Tenancy & Auth | Hardening in progress | 15 / 17 | Tenant middleware, RLS, auth skeleton, Org Admin/Learner RBAC defaults, coverage gate, migration guard, and RLS benchmark are implemented; cookie refresh-session contract and full attack-test coverage remain open. |
-| Sprint 2: Course Authoring | Backend foundation complete | 9 / 11 | Course authoring backend, media metadata, route coverage declarations, and migration smoke are locally verified; real route-level attack tests and functional frontend routes remain open. |
-| Sprint 3: Learning Experience | Backend foundation complete | 9 / 11 | Learning backend and idempotent learner workflows are locally verified; real route-level attack tests and functional learner UI routes remain open. |
-| Sprint 4: AI Tutor | Local/mock foundation complete | 14 / 17 | Async worker runtime, mock embeddings, hybrid retrieval SQL, LangGraph orchestration, Redis Pub/Sub job streaming, LangSmith wrapper, eval/cache metrics, and vector isolation coverage are locally verified; real provider-backed AI remains open. |
+| Sprint 0: Pre-flight Foundations | Remediation in progress | 14 / 16 | Core repo, backend/frontend scaffolds, Docker services, lint/type/test gates, logging, request context, health, envelope, typed errors, and ADR docs exist; compose migration path and fresh-clone verification remain open. |
+| Sprint 1: Tenancy & Auth | Remediation in progress | 12 / 17 | Tenant middleware, RLS, auth skeleton, Org Admin/Learner RBAC defaults, migration guard, and RLS benchmark exist; auth e2e, JWT host matching, cookie refresh-session contract, and real route attack coverage remain open. |
+| Sprint 2: Course Authoring | Backend foundation in progress | 8 / 11 | Course authoring backend, media metadata, route coverage declarations, and migration smoke exist; real route-level attack tests and functional admin frontend routes remain open. |
+| Sprint 3: Learning Experience | Backend foundation in progress | 8 / 11 | Learning backend and idempotent learner workflow foundations exist; real route-level attack tests, functional learner UI routes, and verified PDF download workflow remain open. |
+| Sprint 4: AI Tutor | Local/mock foundation in progress | 9 / 17 | Async worker runtime, mock embeddings, hybrid retrieval SQL, Redis Pub/Sub job streaming, LangSmith wrapper, and vector isolation coverage exist; provider-backed AI, real eval criteria, and functional tutor UI remain open. |
 | Sprint 5: Billing, Branding, Analytics, and MVP Polish | Not started | 0 / 15 | Final MVP integration sprint. |
 | Phase 2: Months 4-6 | Not started | 0 / 11 | Post-MVP expansion. |
 | Phase 3: Months 7-9 | Not started | 0 / 9 | Post-MVP platform/compliance expansion. |
@@ -1110,10 +1111,10 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Establish initial commit after Sprint 0 scaffold is reproducible.
 - [x] Configure backend Python 3.12, `uv`, Ruff, mypy strict, pytest.
 - [x] Configure frontend Next.js App Router, TypeScript strict, TailwindCSS, shadcn/ui, ESLint, Prettier.
-- [x] Add DevContainer and Docker Compose for API, worker, PostgreSQL 16 + pgvector, Redis 7.
+- [ ] Add DevContainer and Docker Compose migration path for API, worker, PostgreSQL 16 + pgvector, Redis 7.
 - [x] Add health checks and `depends_on: condition: service_healthy`.
 - [x] Add `.env.example` with local defaults.
-- [x] Add CI for backend lint/type/test and frontend lint/type/test.
+- [ ] Add CI for backend lint/type/test, frontend lint/type/test, real PostgreSQL/Redis integration tests, and migration smoke.
 - [x] Add structlog JSON logging with redaction foundation.
 - [x] Add request ID middleware.
 - [x] Add OpenTelemetry and Sentry scaffolding.
@@ -1177,8 +1178,8 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Implement signup, login, magic link, password reset.
 - [x] Implement Org Admin and Learner roles.
 - [x] Seed RBAC defaults.
-- [x] Add cross-tenant isolation suite and OpenAPI coverage gate.
-- [x] Add RLS-as-last-defence raw SQL test.
+- [ ] Add real cross-tenant isolation suite and OpenAPI coverage gate.
+- [ ] Add RLS-as-last-defence raw SQL test running in CI against `omnixtra_app`.
 - [x] Add runbook for adding tenant-owned tables.
 - [x] Benchmark RLS overhead on synthetic data.
 
@@ -1204,8 +1205,8 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Course tests | Add isolation coverage declarations for all course-owned routes | Complete |
 | Course tests | Add real cross-tenant route attack tests for course APIs | Pending |
 | Media metadata | Add tenant-scoped media object metadata model and API hooks | Complete |
-| Admin frontend | Add admin course list foundation | Complete |
-| Admin frontend | Add course builder foundation | Complete |
+| Admin frontend | Add functional admin course list foundation | Pending |
+| Admin frontend | Add functional course builder foundation | Pending |
 
 - [x] Create `courses` module.
 - [x] Implement course, section, lesson, and content block models.
@@ -1216,8 +1217,8 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Implement media upload metadata with tenant-scoped object keys.
 - [x] Add audit logs for create/update/delete/publish.
 - [x] Add cursor pagination for course lists.
-- [x] Add isolation tests for all course-owned routes.
-- [x] Add admin frontend course list and builder foundation.
+- [ ] Add real isolation tests for all course-owned routes.
+- [ ] Add functional admin frontend course list and builder foundation.
 
 **Exit criteria:** an Org Admin can build and publish a five-lesson course with full audit trail.
 
@@ -1239,8 +1240,8 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Learning routes | Add protected learning API routes under `/api/v1/learning` | Complete |
 | Learning tests | Add model/schema/service/route tests and isolation coverage declarations | Complete |
 | Learning tests | Add real cross-tenant route attack tests for learning APIs | Pending |
-| Learner frontend | Add learner course player foundation | Complete |
-| Learner frontend | Add quiz and completion UI foundation | Complete |
+| Learner frontend | Add functional learner course player foundation | Pending |
+| Learner frontend | Add functional quiz and completion UI foundation | Pending |
 
 - [x] Create `learning` module.
 - [x] Implement enrolments.
@@ -1248,11 +1249,11 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Implement lesson resume/progress tracking.
 - [x] Implement quiz scoring.
 - [x] Implement course completion rules.
-- [x] Implement certificate PDF generation.
+- [ ] Implement certificate PDF download workflow.
 - [x] Add idempotency for enrolment, completion, and certificate issuance.
-- [x] Add learner frontend course player.
-- [x] Add quiz and completion UI.
-- [x] Add isolation tests for enrolments, progress, and certificates.
+- [ ] Add functional learner frontend course player.
+- [ ] Add functional quiz and completion UI.
+- [ ] Add real isolation tests for enrolments, progress, and certificates.
 
 **Exit criteria:** learner can enrol, resume, complete a course, pass quiz flow, and download certificate; idempotency is tested.
 
@@ -1267,11 +1268,11 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | AI storage | Add embeddings, conversations, messages, and tutor jobs models | Complete |
 | AI migrations | Add tenant-owned AI tables with RLS helpers, pgvector, HNSW, and compound indexes | Complete |
 | AI jobs | Add async tutor job enqueue foundation | Complete |
-| AI jobs | Add Dramatiq embedding and tutor execution workers | Complete |
+| AI jobs | Add Dramatiq mock embedding and tutor execution workers | Complete |
 | AI retrieval | Add tenant/course-scoped retrieval repository foundation | Complete |
 | AI retrieval | Add true hybrid vector plus Postgres full-text retrieval | Complete |
 | AI graph | Add tutor graph orchestration skeleton | Complete |
-| AI graph | Wire actual LangGraph tutor execution | Complete |
+| AI graph | Wire local/mock LangGraph tutor execution | Complete |
 | AI providers | Add OpenAI and Anthropic provider abstraction | Complete |
 | AI providers | Implement provider-backed LLM and embedding calls with mocked tests | Pending |
 | AI streaming | Add tenant-scoped SSE event route foundation | Complete |
@@ -1282,7 +1283,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | AI guardrails | Add scope refusal and quiz-answer guardrail | Complete |
 | AI observability | Add trace metadata and eval dataset scaffold | Complete |
 | AI observability | Wire LangSmith tracing for tutor graph runs | Complete |
-| Tutor frontend | Add static tutor UI panel in learner course player | Complete |
+| Tutor frontend | Add functional tutor UI panel in learner course player | Pending |
 | Tutor frontend | Add functional tutor route/component wired to job SSE | Pending |
 | AI tests | Add route isolation declarations and retrieval scope tests | Complete |
 | AI tests | Add live cross-tenant vector retrieval integration tests | Complete |
@@ -1292,9 +1293,9 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Implement lesson chunking by lesson version.
 - [x] Add embeddings table with pgvector and tenant/course scope.
 - [x] Add HNSW index and compound tenant/course indexes.
-- [x] Implement embedding worker.
+- [x] Implement mock embedding worker.
 - [x] Implement hybrid retrieval.
-- [x] Implement LangGraph tutor graph.
+- [x] Implement local/mock LangGraph tutor graph.
 - [x] Implement provider abstraction for OpenAI and Anthropic.
 - [ ] Implement provider-backed LLM and embedding calls.
 - [x] Implement SSE streaming via Redis Pub/Sub.
@@ -1302,8 +1303,8 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Implement semantic cache.
 - [x] Implement citation extraction.
 - [x] Implement scope refusal and quiz-answer guardrail.
-- [x] Add LangSmith tracing and eval dataset.
-- [x] Add tutor UI panel in learner course player.
+- [ ] Add verified 20-question tutor eval pass and repeat-query cache-rate measurement.
+- [ ] Add functional tutor UI panel in learner course player.
 - [ ] Wire tutor UI to API job creation and Redis-backed SSE events.
 - [x] Add cross-tenant vector retrieval tests.
 - [x] Add prompt-injection regression tests.
