@@ -4,7 +4,12 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.dialects import postgresql
 
 from app.tenancy.models import Tenant
-from app.tenancy.orm import TENANT_FILTER_BYPASS_OPTION, apply_tenant_criteria, populate_tenant_id
+from app.tenancy.orm import (
+    TENANT_FILTER_BYPASS_OPTION,
+    _populate_tenant_ids,
+    apply_tenant_criteria,
+    populate_tenant_id,
+)
 from app.tenancy.probe import TenantIsolationProbe
 
 TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
@@ -64,6 +69,14 @@ def test_populate_tenant_id_preserves_explicit_tenant_id() -> None:
     populate_tenant_id(probe, TENANT_ID)
 
     assert probe.tenant_id == explicit_tenant_id
+
+
+def test_before_flush_allows_global_only_objects_without_tenant_context() -> None:
+    class FakeSession:
+        def __init__(self) -> None:
+            self.new = [Tenant(slug="acme", name="Acme")]
+
+    _populate_tenant_ids(FakeSession(), object(), object())  # type: ignore[arg-type]
 
 
 def _compile(statement: object) -> str:

@@ -68,8 +68,13 @@ def _add_tenant_criteria(execute_state: ORMExecuteState) -> None:
 
 
 def _populate_tenant_ids(session: Session, _flush_context: object, _instances: object) -> None:
+    tenant_owned_instances = [
+        instance for instance in session.new if isinstance(instance, TenantOwnedMixin)
+    ]
+    if not tenant_owned_instances:
+        return
     tenant_id = current_tenant_uuid()
-    for instance in session.new:
+    for instance in tenant_owned_instances:
         populate_tenant_id(instance, tenant_id)
 
 

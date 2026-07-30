@@ -1471,6 +1471,8 @@ npx playwright test
 | D-021 | Encryption | AES-256 at rest | Auditor-friendly SOC 2 evidence |
 | D-022 | Isolation testing | Zero-trust per-endpoint tests | Assumes any tenant token may be compromised |
 | D-023 | Residency | US MVP, EU Phase 2 | Avoid premature multi-region cost while preserving path |
+| D-024 | MVP auth token transport | Bearer JWT returned in response body until auth hardening | Accepted only for current MVP skeleton; httpOnly Secure SameSite cookie access/refresh sessions must be revisited before Phase 2. |
+| D-025 | RLS tenant variable scope | Transaction-local `set_config(..., true)` before each cursor execution | Self-resets on transaction end and reduces pooled-connection tenant bleed risk. |
 
 ---
 

@@ -10,6 +10,7 @@ from starlette.responses import Response
 from app.core.context import get_tenant_id
 from app.core.exceptions import NotFoundError
 from app.core.middleware import RequestContextMiddleware, _resolve_request_tenant_id
+from app.core.security import create_access_token
 from app.tenancy.models import Tenant, TenantStatus
 
 
@@ -58,16 +59,45 @@ def test_root_domain_does_not_bind_tenant(monkeypatch: pytest.MonkeyPatch) -> No
     assert asyncio.run(_resolve_request_tenant_id(_request("localhost"))) is None
 
 
-def _request(host: str) -> Request:
+def test_bearer_token_for_different_tenant_is_rejected(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tenant_id = UUID("00000000-0000-0000-0000-000000000001")
+    other_tenant_id = UUID("00000000-0000-0000-0000-000000000002")
+    _patch_tenant_lookup(monkeypatch, _tenant(tenant_id, status=TenantStatus.active.value))
+    middleware = RequestContextMiddleware(app=_noop_app)
+    token = create_access_token(
+        subject=UUID("00000000-0000-0000-0000-000000000003"),
+        tenant_id=other_tenant_id,
+        role="org_admin",
+    )
+    request = _request("acme.localhost", authorization=f"Bearer {token}")
+    called = False
+
+    async def call_next(_request: Request) -> Response:
+        nonlocal called
+        called = True
+        return Response()
+
+    response = asyncio.run(middleware.dispatch(request, call_next))
+
+    assert response.status_code == 401
+    assert called is False
+
+
+def _request(host: str, *, authorization: str | None = None) -> Request:
     app = SimpleNamespace(
         state=SimpleNamespace(settings=SimpleNamespace(app_base_domain="localhost")),
     )
+    headers = [(b"host", host.encode())]
+    if authorization is not None:
+        headers.append((b"authorization", authorization.encode()))
     return Request(
         {
             "type": "http",
             "method": "GET",
             "path": "/api/v1/auth/login",
-            "headers": [(b"host", host.encode())],
+            "headers": headers,
             "app": app,
         },
     )
