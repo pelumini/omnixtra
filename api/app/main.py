@@ -13,6 +13,7 @@ from app.core.observability import configure_observability
 from app.courses.routes import router as courses_router
 from app.learning.routes import router as learning_router
 from app.shared.responses import Envelope, Meta
+from app.tenancy.routes import router as tenancy_router
 
 
 def create_app() -> FastAPI:
@@ -30,6 +31,7 @@ def create_app() -> FastAPI:
     application.include_router(ai_router, prefix="/api/v1")
     application.include_router(billing_router, prefix="/api/v1")
     application.include_router(billing_webhook_router, prefix="/api/v1")
+    application.include_router(tenancy_router, prefix="/api/v1")
     application.include_router(api_router, prefix="/api/v1")
 
     @application.get("/health", tags=["system"])

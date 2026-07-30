@@ -13,6 +13,20 @@ export const healthEnvelopeSchema = z.object({
   meta: metaSchema,
 });
 
+export const tenantBrandingSchema = z.object({
+  tenant_name: z.string().min(1).max(200),
+  logo_url: z.string().url().nullable(),
+  primary_color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  locale: z.string().min(2).max(16),
+  time_zone: z.string().min(1).max(64),
+});
+
+export const tenantBrandingEnvelopeSchema = z.object({
+  data: tenantBrandingSchema,
+  error: z.null(),
+  meta: metaSchema,
+});
+
 export const errorDetailSchema = z.object({
   field: z.string(),
   constraint: z.string(),
@@ -336,5 +350,6 @@ export type Certificate = z.infer<typeof certificateSchema>;
 export type QuizAttempt = z.infer<typeof quizAttemptSchema>;
 export type Section = z.infer<typeof sectionSchema>;
 export type SectionCreateRequest = z.infer<typeof sectionCreateRequestSchema>;
+export type TenantBranding = z.infer<typeof tenantBrandingSchema>;
 export type TutorJob = z.infer<typeof tutorJobSchema>;
 export type TutorEvent = z.infer<typeof tutorEventSchema>;

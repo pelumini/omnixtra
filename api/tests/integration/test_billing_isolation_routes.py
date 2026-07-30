@@ -16,6 +16,7 @@ TEST_PASSWORD = "correct horse battery staple"  # noqa: S105
 @pytest.mark.integration
 @covers_isolation("GET", "/api/v1/billing/plans")
 @covers_isolation("GET", "/api/v1/billing/subscription")
+@covers_isolation("PATCH", "/api/v1/billing/subscription/plan")
 @covers_isolation("POST", "/api/v1/billing/checkout-sessions")
 def test_tenant_b_does_not_see_tenant_a_subscription() -> None:
     if not os.getenv(APP_DATABASE_URL_ENV):
@@ -79,6 +80,30 @@ def test_tenant_b_does_not_see_tenant_a_subscription() -> None:
     )
     assert checkout_response.status_code == 200
     assert checkout_response.json()["data"]["provider_session_id"].startswith("local_checkout_")
+
+    webhook_response_b = client.post(
+        "/api/v1/billing/webhooks/stripe/subscription",
+        json={
+            "tenant_id": str(tenant_b.tenant_id),
+            "plan_slug": "starter",
+            "status": "active",
+            "stripe_customer_id": "cus_billing_b",
+            "stripe_subscription_id": "sub_billing_b",
+            "cancel_at_period_end": False,
+        },
+    )
+    assert webhook_response_b.status_code == 200
+
+    plan_change_response = isolation_client.patch(
+        "/api/v1/billing/subscription/plan",
+        json={"plan_slug": "growth"},
+        headers={
+            **_headers(tenant_b.slug, tenant_b.access_token),
+            "idempotency-key": f"plan-change-{uuid4()}",
+        },
+    )
+    assert plan_change_response.status_code == 200
+    assert plan_change_response.json()["data"]["plan_slug"] == "growth"
 
 
 @dataclass(frozen=True)

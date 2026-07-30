@@ -40,6 +40,10 @@ class CheckoutSessionResponse(BaseModel):
     url: str
 
 
+class PlanChangeRequest(BaseModel):
+    plan_slug: str = Field(min_length=2, max_length=64, pattern=r"^[a-z0-9-]+$")
+
+
 class StripeSubscriptionEvent(BaseModel):
     tenant_id: UUID
     plan_slug: str = Field(min_length=2, max_length=64, pattern=r"^[a-z0-9-]+$")
@@ -60,6 +64,7 @@ __all__ = [
     "BillingPlanResponse",
     "CheckoutSessionRequest",
     "CheckoutSessionResponse",
+    "PlanChangeRequest",
     "StripeSubscriptionEvent",
     "SubscriptionResponse",
     "WebhookAcceptedResponse",

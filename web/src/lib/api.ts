@@ -20,6 +20,7 @@ import {
   quizAttemptRequestSchema,
   sectionCreateRequestSchema,
   sectionEnvelopeSchema,
+  tenantBrandingEnvelopeSchema,
   tutorJobEnvelopeSchema,
   tutorEventSchema,
 } from "@/lib/schemas";
@@ -44,6 +45,17 @@ export async function getHealth() {
   const body: unknown = await response.json();
 
   return healthEnvelopeSchema.parse(body);
+}
+
+export async function getTenantBranding(context: RequestContext = {}) {
+  const response = await fetch(`${apiUrl}/api/v1/tenant/branding`, {
+    cache: "no-store",
+    headers: requestHeaders(context),
+  });
+  const body: unknown = await response.json();
+  throwIfApiError(response, body);
+
+  return tenantBrandingEnvelopeSchema.parse(body);
 }
 
 export async function getCourses(context: RequestContext = {}) {

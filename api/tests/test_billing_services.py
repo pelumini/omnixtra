@@ -10,6 +10,7 @@ from app.billing.models import BillingPlan, SubscriptionStatus, TenantSubscripti
 from app.billing.services import (
     CheckoutSessionCreate,
     StripeBillingProvider,
+    change_subscription_plan,
     ensure_learner_capacity,
     ensure_storage_capacity,
     increment_learner_usage,
@@ -131,6 +132,43 @@ async def test_stripe_checkout_provider_posts_signed_session_request(
     get_settings.cache_clear()
 
 
+@pytest.mark.anyio
+async def test_stripe_provider_updates_subscription_item_price(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    get_settings.cache_clear()
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_123")
+    subscription = _subscription(seats_used=1)
+    subscription.stripe_subscription_id = "sub_123"
+    target_plan = _plan(included_learners=50, included_storage_gb=10)
+    target_plan.stripe_price_id = "price_growth"
+    requests: list[tuple[str, str, str]] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        body = request.content.decode("utf-8")
+        requests.append((request.method, str(request.url), body))
+        assert request.headers["authorization"] == "Bearer sk_test_123"
+        if request.method == "GET":
+            return httpx.Response(200, json={"items": {"data": [{"id": "si_123"}]}})
+        assert request.headers["idempotency-key"] == "plan-change-key"
+        assert "items%5B0%5D%5Bid%5D=si_123" in body
+        assert "items%5B0%5D%5Bprice%5D=price_growth" in body
+        return httpx.Response(200, json={"id": "sub_123"})
+
+    provider = StripeBillingProvider(
+        client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+    )
+
+    await provider.change_subscription_plan(
+        subscription=subscription,
+        target_plan=target_plan,
+        idempotency_key="plan-change-key",
+    )
+
+    assert [request[0] for request in requests] == ["GET", "POST"]
+    get_settings.cache_clear()
+
+
 def test_stripe_webhook_signature_verification_accepts_valid_payload(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -204,6 +242,28 @@ async def test_ensure_storage_capacity_rejects_overage() -> None:
         )
 
 
+@pytest.mark.anyio
+async def test_change_subscription_plan_rejects_downgrade_below_usage() -> None:
+    current_plan = _plan(included_learners=50, included_storage_gb=10)
+    target_plan = _plan(included_learners=1, included_storage_gb=10)
+    target_plan.id = UUID("00000000-0000-0000-0000-000000000011")
+    target_plan.slug = "starter-small"
+    subscription = _subscription(seats_used=2)
+    session = _PlanChangeSession(
+        subscription=subscription,
+        current_plan=current_plan,
+        target_plan=target_plan,
+    )
+
+    with pytest.raises(ValidationAppError, match="learner limit"):
+        await change_subscription_plan(
+            session,
+            request=type("PlanChange", (), {"plan_slug": "starter-small"})(),
+            provider=_NoopBillingProvider(),
+            idempotency_key="plan-change-key",
+        )
+
+
 def _stripe_signature(payload: bytes, *, timestamp: int, secret: str) -> str:
     signed_payload = f"{timestamp}.{payload.decode('utf-8')}".encode()
     return hmac.new(secret.encode("utf-8"), signed_payload, hashlib.sha256).hexdigest()
@@ -246,3 +306,48 @@ class _BillingLimitSession:
 
     async def get(self, _model: object, _identifier: object) -> BillingPlan:
         return self.plan
+
+
+class _PlanChangeSession:
+    def __init__(
+        self,
+        *,
+        subscription: TenantSubscription,
+        current_plan: BillingPlan,
+        target_plan: BillingPlan,
+    ) -> None:
+        self.subscription = subscription
+        self.current_plan = current_plan
+        self.target_plan = target_plan
+
+    async def scalar(self, _statement: object) -> TenantSubscription | BillingPlan | int:
+        if getattr(_statement, "column_descriptions", [{}])[0].get("entity") is BillingPlan:
+            return self.target_plan
+        return self.subscription
+
+    async def get(self, _model: object, _identifier: object) -> BillingPlan:
+        return self.current_plan
+
+    def add(self, _instance: object) -> None:
+        pass
+
+    async def commit(self) -> None:
+        pass
+
+
+class _NoopBillingProvider:
+    async def create_checkout_session(
+        self,
+        request: CheckoutSessionCreate,
+    ) -> object:
+        _ = request
+        return object()
+
+    async def change_subscription_plan(
+        self,
+        *,
+        subscription: TenantSubscription,
+        target_plan: BillingPlan,
+        idempotency_key: str,
+    ) -> None:
+        _ = (subscription, target_plan, idempotency_key)

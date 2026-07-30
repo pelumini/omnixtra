@@ -12,6 +12,7 @@ import {
   mediaAssetCreateRequestSchema,
   mediaAssetSchema,
   quizAttemptRequestSchema,
+  tenantBrandingEnvelopeSchema,
   tutorEventSchema,
   tutorJobEnvelopeSchema,
 } from "@/lib/schemas";
@@ -29,6 +30,24 @@ describe("healthEnvelopeSchema", () => {
       error: null,
       meta: { request_id: "req_test", timestamp: null },
     });
+  });
+});
+
+describe("tenantBrandingEnvelopeSchema", () => {
+  it("accepts configurable tenant branding responses", () => {
+    expect(
+      tenantBrandingEnvelopeSchema.parse({
+        data: {
+          locale: "en-GB",
+          logo_url: "https://cdn.example/acme.png",
+          primary_color: "#224466",
+          tenant_name: "Acme Learning",
+          time_zone: "Europe/London",
+        },
+        error: null,
+        meta: { request_id: "req_test", timestamp: null },
+      }).data.primary_color,
+    ).toBe("#224466");
   });
 });
 

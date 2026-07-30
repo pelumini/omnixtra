@@ -8,6 +8,7 @@ from typing import Protocol
 from uuid import UUID
 
 import httpx
+from sqlalchemy import column, func, select, table
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.billing.models import BillingAuditEvent, BillingPlan, TenantSubscription
@@ -21,6 +22,7 @@ from app.billing.schemas import (
     BillingPlanResponse,
     CheckoutSessionRequest,
     CheckoutSessionResponse,
+    PlanChangeRequest,
     StripeSubscriptionEvent,
     SubscriptionResponse,
 )
@@ -46,6 +48,15 @@ class BillingProvider(Protocol):
     ) -> CheckoutSessionResponse:
         pass
 
+    async def change_subscription_plan(
+        self,
+        *,
+        subscription: TenantSubscription,
+        target_plan: BillingPlan,
+        idempotency_key: str,
+    ) -> None:
+        pass
+
 
 class LocalBillingProvider:
     async def create_checkout_session(
@@ -57,6 +68,15 @@ class LocalBillingProvider:
             provider_session_id=provider_session_id,
             url=f"https://billing.local/checkout/{provider_session_id}",
         )
+
+    async def change_subscription_plan(
+        self,
+        *,
+        subscription: TenantSubscription,
+        target_plan: BillingPlan,
+        idempotency_key: str,
+    ) -> None:
+        _ = (subscription, target_plan, idempotency_key)
 
 
 class StripeBillingProvider:
@@ -96,6 +116,42 @@ class StripeBillingProvider:
         session_id = _required_str(data, "id")
         url = _required_str(data, "url")
         return CheckoutSessionResponse(provider_session_id=session_id, url=url)
+
+    async def change_subscription_plan(
+        self,
+        *,
+        subscription: TenantSubscription,
+        target_plan: BillingPlan,
+        idempotency_key: str,
+    ) -> None:
+        settings = get_settings()
+        if not settings.stripe_secret_key:
+            msg = "Stripe secret key is not configured"
+            raise ValidationAppError(msg)
+        if subscription.stripe_subscription_id is None:
+            msg = "current subscription is missing Stripe subscription id"
+            raise ValidationAppError(msg)
+        if target_plan.stripe_price_id is None:
+            msg = "target billing plan is missing Stripe price id"
+            raise ValidationAppError(msg)
+        subscription_item_id = await _stripe_subscription_item_id(
+            subscription.stripe_subscription_id,
+            api_key=settings.stripe_secret_key,
+            client=self.client,
+        )
+        await _post_stripe_form(
+            f"https://api.stripe.com/v1/subscriptions/{subscription.stripe_subscription_id}",
+            {
+                "items[0][id]": subscription_item_id,
+                "items[0][price]": target_plan.stripe_price_id,
+                "metadata[plan_slug]": target_plan.slug,
+                "metadata[tenant_id]": str(subscription.tenant_id),
+                "proration_behavior": "create_prorations",
+            },
+            api_key=settings.stripe_secret_key,
+            idempotency_key=idempotency_key,
+            client=self.client,
+        )
 
 
 async def list_plans(session: AsyncSession) -> list[BillingPlanResponse]:
@@ -146,6 +202,46 @@ async def create_checkout_session(
     )
     await session.commit()
     return checkout
+
+
+async def change_subscription_plan(
+    session: AsyncSession,
+    request: PlanChangeRequest,
+    provider: BillingProvider,
+    *,
+    actor_id: UUID | None = None,
+    idempotency_key: str,
+) -> SubscriptionResponse:
+    subscription = await session.scalar(current_tenant_subscription())
+    if subscription is None:
+        msg = "current subscription not found"
+        raise NotFoundError(msg)
+    current_plan = await session.get(BillingPlan, subscription.plan_id)
+    if current_plan is None:
+        msg = "billing plan not found"
+        raise NotFoundError(msg)
+    target_plan = await require_plan(session, request.plan_slug)
+    await _ensure_plan_change_capacity(session, subscription, target_plan)
+    if target_plan.id != subscription.plan_id:
+        await provider.change_subscription_plan(
+            subscription=subscription,
+            target_plan=target_plan,
+            idempotency_key=idempotency_key,
+        )
+        subscription.plan_id = target_plan.id
+    _audit(
+        session,
+        actor_id,
+        "billing.subscription.plan_changed",
+        f"Changed subscription plan from {current_plan.slug} to {target_plan.slug}",
+        {
+            "from_plan_slug": current_plan.slug,
+            "idempotency_key": idempotency_key,
+            "to_plan_slug": target_plan.slug,
+        },
+    )
+    await session.commit()
+    return subscription_response(subscription, target_plan)
 
 
 async def apply_stripe_subscription_event(
@@ -378,6 +474,35 @@ async def _current_plan_and_subscription(
     return plan, subscription
 
 
+async def _ensure_plan_change_capacity(
+    session: AsyncSession,
+    subscription: TenantSubscription,
+    target_plan: BillingPlan,
+) -> None:
+    if subscription.seats_used > target_plan.included_learners:
+        msg = "learner limit exceeded for target plan"
+        raise ValidationAppError(msg)
+    current_storage_bytes = await _current_storage_bytes(session)
+    target_storage_bytes = target_plan.included_storage_gb * 1024 * 1024 * 1024
+    if current_storage_bytes > target_storage_bytes:
+        msg = "storage limit exceeded for target plan"
+        raise ValidationAppError(msg)
+
+
+async def _current_storage_bytes(session: AsyncSession) -> int:
+    course_media_assets = table(
+        "course_media_assets",
+        column("byte_size"),
+        column("deleted_at"),
+    )
+    current_storage_bytes = await session.scalar(
+        select(func.coalesce(func.sum(course_media_assets.c.byte_size), 0)).where(
+            course_media_assets.c.deleted_at.is_(None),
+        ),
+    )
+    return int(current_storage_bytes or 0)
+
+
 async def _post_stripe_form(
     url: str,
     payload: dict[str, str],
@@ -409,6 +534,54 @@ async def _post_stripe_form(
         msg = "Stripe response must be a JSON object"
         raise ValidationAppError(msg)
     return data
+
+
+async def _get_stripe_json(
+    url: str,
+    *,
+    api_key: str,
+    client: httpx.AsyncClient | None,
+) -> dict[str, object]:
+    headers = {"Authorization": f"Bearer {api_key}"}
+    if client is not None:
+        response = await client.get(url, headers=headers)
+    else:
+        async with httpx.AsyncClient(timeout=30.0) as transient_client:
+            response = await transient_client.get(url, headers=headers)
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        msg = "Stripe subscription retrieval failed"
+        raise ValidationAppError(msg) from exc
+    try:
+        data = response.json()
+    except ValueError as exc:
+        msg = "Stripe response must be valid JSON"
+        raise ValidationAppError(msg) from exc
+    if not isinstance(data, dict):
+        msg = "Stripe response must be a JSON object"
+        raise ValidationAppError(msg)
+    return data
+
+
+async def _stripe_subscription_item_id(
+    stripe_subscription_id: str,
+    *,
+    api_key: str,
+    client: httpx.AsyncClient | None,
+) -> str:
+    data = await _get_stripe_json(
+        f"https://api.stripe.com/v1/subscriptions/{stripe_subscription_id}",
+        api_key=api_key,
+        client=client,
+    )
+    items = _mapping(data.get("items"))
+    item_rows = items.get("data")
+    if not isinstance(item_rows, list) or not item_rows:
+        msg = "Stripe subscription has no subscription items"
+        raise ValidationAppError(msg)
+    first_item = _mapping(item_rows[0])
+    return _required_str(first_item, "id")
 
 
 def _parse_stripe_signature_header(header: str) -> tuple[int, list[str]]:
@@ -457,6 +630,7 @@ __all__ = [
     "StripeBillingProvider",
     "apply_signed_stripe_webhook",
     "apply_stripe_subscription_event",
+    "change_subscription_plan",
     "create_checkout_session",
     "ensure_learner_capacity",
     "ensure_storage_capacity",

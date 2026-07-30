@@ -8,6 +8,7 @@ from app.billing.schemas import (
     BillingPlanResponse,
     CheckoutSessionRequest,
     CheckoutSessionResponse,
+    PlanChangeRequest,
     StripeSubscriptionEvent,
     SubscriptionResponse,
     WebhookAcceptedResponse,
@@ -18,6 +19,7 @@ from app.billing.services import (
     StripeBillingProvider,
     apply_signed_stripe_webhook,
     apply_stripe_subscription_event,
+    change_subscription_plan,
     create_checkout_session,
     get_current_subscription,
     list_plans,
@@ -70,6 +72,24 @@ async def create_checkout_session_route(
     idempotency_key: IdempotencyKeyHeader,
 ) -> Envelope[CheckoutSessionResponse]:
     response = await create_checkout_session(
+        session,
+        request,
+        provider,
+        actor_id=principal.user_id,
+        idempotency_key=idempotency_key,
+    )
+    return Envelope(data=response, error=None, meta=Meta.current())
+
+
+@router.patch("/subscription/plan")
+async def change_subscription_plan_route(
+    request: PlanChangeRequest,
+    session: SessionDep,
+    principal: PrincipalDep,
+    provider: ProviderDep,
+    idempotency_key: IdempotencyKeyHeader,
+) -> Envelope[SubscriptionResponse]:
+    response = await change_subscription_plan(
         session,
         request,
         provider,
