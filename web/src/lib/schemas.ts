@@ -314,6 +314,11 @@ export const tutorJobEnvelopeSchema = z.object({
   meta: metaSchema,
 });
 
+export const tutorEventSchema = z.object({
+  event: z.string(),
+  data: z.record(z.unknown()),
+});
+
 export type Block = z.infer<typeof blockSchema>;
 export type Course = z.infer<typeof courseSchema>;
 export type CourseCompletion = z.infer<typeof courseCompletionSchema>;
@@ -332,3 +337,4 @@ export type QuizAttempt = z.infer<typeof quizAttemptSchema>;
 export type Section = z.infer<typeof sectionSchema>;
 export type SectionCreateRequest = z.infer<typeof sectionCreateRequestSchema>;
 export type TutorJob = z.infer<typeof tutorJobSchema>;
+export type TutorEvent = z.infer<typeof tutorEventSchema>;

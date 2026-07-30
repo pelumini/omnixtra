@@ -15,6 +15,7 @@ import { useMemo, useState, useTransition } from "react";
 import type { FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
+import { TutorPanel } from "@/components/learning/tutor-panel";
 import {
   certificateDownloadUrl,
   completeCourse,
@@ -211,6 +212,8 @@ export function LearnerCoursePlayer({
         </section>
 
         <aside className="grid content-start gap-4">
+          <TutorPanel courseId={courseId} />
+
           <form className="grid gap-3 border border-[var(--border)] bg-white p-4" onSubmit={handleQuiz}>
             <div className="flex items-center gap-2">
               <ListChecks aria-hidden="true" className="size-4 text-gray-500" />

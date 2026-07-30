@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from app.ai.graph import TutorGraphResult
+
 
 @dataclass(frozen=True)
 class TutorEvalCase:
@@ -119,4 +121,18 @@ def cache_hit_rate(*, hits: int, misses: int) -> float:
     return hits / total
 
 
-__all__ = ["EVAL_DATASET", "TutorEvalCase", "cache_hit_rate"]
+def tutor_eval_pass_rate(results: list[tuple[TutorEvalCase, TutorGraphResult]]) -> float:
+    if not results:
+        return 0.0
+    passed = 0
+    for case, result in results:
+        citation_count = len(result.citations)
+        if (
+            result.refused == case.expected_refusal
+            and citation_count >= case.expected_citation_count
+        ):
+            passed += 1
+    return passed / len(results)
+
+
+__all__ = ["EVAL_DATASET", "TutorEvalCase", "cache_hit_rate", "tutor_eval_pass_rate"]

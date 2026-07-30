@@ -21,6 +21,7 @@ import {
   sectionCreateRequestSchema,
   sectionEnvelopeSchema,
   tutorJobEnvelopeSchema,
+  tutorEventSchema,
 } from "@/lib/schemas";
 import type {
   CourseCreateRequest,
@@ -144,6 +145,14 @@ export async function createTutorJob(courseId: string, question: string, idempot
   throwIfApiError(response, body);
 
   return tutorJobEnvelopeSchema.parse(body);
+}
+
+export function tutorJobEventsUrl(courseId: string, jobId: string) {
+  return `${apiUrl}/api/v1/ai/courses/${courseId}/tutor/jobs/${jobId}/events`;
+}
+
+export function parseTutorEventMessage(data: string) {
+  return tutorEventSchema.parse(JSON.parse(data));
 }
 
 export async function createCourse(request: CourseCreateRequest) {

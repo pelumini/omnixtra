@@ -12,6 +12,7 @@ import {
   mediaAssetCreateRequestSchema,
   mediaAssetSchema,
   quizAttemptRequestSchema,
+  tutorEventSchema,
   tutorJobEnvelopeSchema,
 } from "@/lib/schemas";
 
@@ -200,5 +201,20 @@ describe("tutorJobEnvelopeSchema", () => {
         meta: { request_id: "req_test", timestamp: null },
       }).data.status,
     ).toBe("queued");
+  });
+});
+
+describe("tutorEventSchema", () => {
+  it("accepts Redis-backed tutor completion events", () => {
+    expect(
+      tutorEventSchema.parse({
+        data: {
+          answer: "AI-generated guidance",
+          citations: [{ chunk_index: 0 }],
+          status: "completed",
+        },
+        event: "completed",
+      }).event,
+    ).toBe("completed");
   });
 });

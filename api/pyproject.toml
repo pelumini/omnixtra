@@ -9,6 +9,7 @@ dependencies = [
     "dramatiq[redis]>=2.2.0",
     "email-validator>=2.3.0",
     "fastapi>=0.116.0",
+    "httpx>=0.28.0",
     "langgraph>=1.2.10",
     "langsmith>=0.10.12",
     "opentelemetry-api>=1.36.0",
@@ -27,7 +28,6 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "httpx>=0.28.0",
     "mypy>=1.17.0",
     "pytest>=8.4.0",
     "ruff>=0.12.0",

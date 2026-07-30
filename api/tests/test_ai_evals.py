@@ -1,4 +1,5 @@
-from app.ai.evals import EVAL_DATASET, cache_hit_rate
+from app.ai.evals import EVAL_DATASET, cache_hit_rate, tutor_eval_pass_rate
+from app.ai.graph import TutorGraphResult
 
 
 def test_eval_dataset_covers_guardrails_and_citations() -> None:
@@ -9,3 +10,19 @@ def test_eval_dataset_covers_guardrails_and_citations() -> None:
 
 def test_repeat_query_cache_hit_metric_exceeds_sprint_exit_threshold() -> None:
     assert cache_hit_rate(hits=5, misses=5) > 0.4
+
+
+def test_twenty_question_eval_pass_rate_accepts_matching_results() -> None:
+    results = [
+        (
+            case,
+            TutorGraphResult(
+                answer="AI-generated answer",
+                citations=[{"chunk_index": 0}] * case.expected_citation_count,
+                refused=case.expected_refusal,
+            ),
+        )
+        for case in EVAL_DATASET
+    ]
+
+    assert tutor_eval_pass_rate(results) == 1.0

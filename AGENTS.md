@@ -4,7 +4,7 @@
 **Source of Truth**: `OmniXtra_Project_Charter_v1.2.docx` + `ADR-002_Multi-Tenant_Isolation.docx`  
 **Charter Version**: 1.2, pre-kickoff draft  
 **ADR Status**: ADR-002 proposed, awaiting sign-off  
-**Status**: Sprints 0-3 complete; Sprint 4-5 backend foundations under MVP hardening
+**Status**: Sprints 0-4 complete; Sprint 5 backend foundation under MVP hardening
 **Scope**: Full-stack LMS, FastAPI backend, Next.js frontend, AI tutor, multi-tenant SaaS
 
 ---
@@ -1084,7 +1084,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint 1: Tenancy & Auth | Complete | 17 / 17 | Tenant middleware, RLS, auth flows, Org Admin/Learner RBAC defaults, migration guard, RLS benchmark, real route attack tests, recorded-hit isolation coverage gate, cookie auth, refresh-token rotation, replay detection, logout invalidation, verification endpoints, and auth rate limiting are in place. |
 | Sprint 2: Course Authoring | Complete | 11 / 11 | Course authoring backend, media metadata, route coverage declarations, migration smoke, real route-level attack tests, admin course list, and course builder foundation are in place. |
 | Sprint 3: Learning Experience | Complete | 11 / 11 | Learning backend, idempotent learner workflows, real route-level attack tests, learner course player, quiz/completion UI, and certificate PDF download workflow are in place. |
-| Sprint 4: AI Tutor | Local/mock foundation in progress | 9 / 17 | Async worker runtime, mock embeddings, hybrid retrieval SQL, Redis Pub/Sub job streaming, LangSmith wrapper, vector isolation coverage, and real tutor route attack tests exist; provider-backed AI, real eval criteria, and functional tutor UI remain open. |
+| Sprint 4: AI Tutor | Complete | 17 / 17 | Async worker runtime, provider-backed AI clients, hybrid retrieval SQL, Redis Pub/Sub job streaming, LangSmith wrapper, vector isolation coverage, real tutor route attack tests, eval/cache metrics, and functional tutor UI are in place. |
 | Sprint 5: Billing, Branding, Analytics, and MVP Polish | Backend foundation in progress | 1 / 15 | Billing module, data-driven MVP plan catalog, Stripe checkout provider port, subscription webhook foundation, and billing route isolation coverage exist; live Stripe checkout/webhook verification, branding, analytics, email, onboarding, and Playwright polish remain open. |
 | Phase 2: Months 4-6 | Not started | 0 / 11 | Post-MVP expansion. |
 | Phase 3: Months 7-9 | Not started | 0 / 9 | Post-MVP platform/compliance expansion. |
@@ -1276,7 +1276,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | AI graph | Add tutor graph orchestration skeleton | Complete |
 | AI graph | Wire local/mock LangGraph tutor execution | Complete |
 | AI providers | Add OpenAI and Anthropic provider abstraction | Complete |
-| AI providers | Implement provider-backed LLM and embedding calls with mocked tests | Pending |
+| AI providers | Implement provider-backed LLM and embedding calls with mocked tests | Complete |
 | AI streaming | Add tenant-scoped SSE event route foundation | Complete |
 | AI streaming | Wire Redis Pub/Sub fanout for tutor jobs | Complete |
 | AI conversations | Add conversation history service | Complete |
@@ -1285,8 +1285,8 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | AI guardrails | Add scope refusal and quiz-answer guardrail | Complete |
 | AI observability | Add trace metadata and eval dataset scaffold | Complete |
 | AI observability | Wire LangSmith tracing for tutor graph runs | Complete |
-| Tutor frontend | Add functional tutor UI panel in learner course player | Pending |
-| Tutor frontend | Add functional tutor route/component wired to job SSE | Pending |
+| Tutor frontend | Add functional tutor UI panel in learner course player | Complete |
+| Tutor frontend | Add functional tutor route/component wired to job SSE | Complete |
 | AI tests | Add route isolation declarations and retrieval scope tests | Complete |
 | AI tests | Add live cross-tenant vector retrieval integration tests | Complete |
 | AI tests | Add prompt-injection regression tests | Complete |
@@ -1299,15 +1299,15 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Implement hybrid retrieval.
 - [x] Implement local/mock LangGraph tutor graph.
 - [x] Implement provider abstraction for OpenAI and Anthropic.
-- [ ] Implement provider-backed LLM and embedding calls.
+- [x] Implement provider-backed LLM and embedding calls.
 - [x] Implement SSE streaming via Redis Pub/Sub.
 - [x] Implement conversation history.
 - [x] Implement semantic cache.
 - [x] Implement citation extraction.
 - [x] Implement scope refusal and quiz-answer guardrail.
-- [ ] Add verified 20-question tutor eval pass and repeat-query cache-rate measurement.
-- [ ] Add functional tutor UI panel in learner course player.
-- [ ] Wire tutor UI to API job creation and Redis-backed SSE events.
+- [x] Add verified 20-question tutor eval pass and repeat-query cache-rate measurement.
+- [x] Add functional tutor UI panel in learner course player.
+- [x] Wire tutor UI to API job creation and Redis-backed SSE events.
 - [x] Add cross-tenant vector retrieval tests.
 - [x] Add prompt-injection regression tests.
 

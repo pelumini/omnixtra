@@ -30,6 +30,17 @@ class Settings(BaseSettings):
         default="",
         validation_alias="OTEL_EXPORTER_OTLP_ENDPOINT",
     )
+    openai_api_key: str = Field(default="", validation_alias="OPENAI_API_KEY")
+    openai_model: str = Field(default="gpt-4o-mini", validation_alias="OPENAI_MODEL")
+    openai_embedding_model: str = Field(
+        default="text-embedding-3-small",
+        validation_alias="OPENAI_EMBEDDING_MODEL",
+    )
+    anthropic_api_key: str = Field(default="", validation_alias="ANTHROPIC_API_KEY")
+    anthropic_model: str = Field(
+        default="claude-3-5-haiku-latest",
+        validation_alias="ANTHROPIC_MODEL",
+    )
 
 
 @lru_cache
