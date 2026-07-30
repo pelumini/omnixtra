@@ -12,4 +12,3 @@ def test_course_routes_are_registered_under_api_v1() -> None:
     assert "/api/v1/courses/{course_id}/media" in paths
     assert "/api/v1/courses/{course_id}/sections/order" in paths
     assert "/api/v1/courses/{course_id}/publish" in paths
-

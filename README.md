@@ -37,5 +37,25 @@ Local infrastructure:
 docker compose up
 ```
 
+Fresh-clone Docker flow:
+
+1. Copy `.env.example` values or create a compatible local `.env` if you need overrides.
+2. Run `docker compose up --build`.
+3. Compose starts PostgreSQL and Redis, runs the one-shot `migrate` service with Alembic, then starts the API and worker after migrations complete.
+4. Verify the API health endpoint:
+
+```bash
+curl http://localhost:8000/health
+```
+
+Backend tests against local Compose services can be run with:
+
+```bash
+cd api
+uv sync --dev
+$env:OMNIXTRA_TEST_DATABASE_URL="postgresql://omnixtra_app:omnixtra_app_password@localhost:15432/omnixtra"
+uv run pytest
+```
+
 The API health endpoint is available at `http://localhost:8000/health`.
 PostgreSQL is exposed locally on port `15432` and Redis on `16379` by default to avoid common local-service collisions.
