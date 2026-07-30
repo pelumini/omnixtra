@@ -1,5 +1,4 @@
 from app.main import create_app
-from app.tenancy.isolation import covers_isolation
 
 
 def test_course_routes_are_registered_under_api_v1() -> None:
@@ -14,16 +13,3 @@ def test_course_routes_are_registered_under_api_v1() -> None:
     assert "/api/v1/courses/{course_id}/sections/order" in paths
     assert "/api/v1/courses/{course_id}/publish" in paths
 
-
-@covers_isolation("POST", "/api/v1/courses")
-@covers_isolation("GET", "/api/v1/courses")
-@covers_isolation("PATCH", "/api/v1/courses/{course_id}")
-@covers_isolation("DELETE", "/api/v1/courses/{course_id}")
-@covers_isolation("POST", "/api/v1/courses/{course_id}/sections")
-@covers_isolation("POST", "/api/v1/courses/{course_id}/lessons")
-@covers_isolation("POST", "/api/v1/courses/{course_id}/blocks")
-@covers_isolation("POST", "/api/v1/courses/{course_id}/media")
-@covers_isolation("PUT", "/api/v1/courses/{course_id}/sections/order")
-@covers_isolation("POST", "/api/v1/courses/{course_id}/publish")
-def test_course_routes_have_isolation_coverage_declarations() -> None:
-    assert True

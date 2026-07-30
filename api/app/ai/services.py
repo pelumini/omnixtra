@@ -13,6 +13,7 @@ from app.ai.models import (
 from app.ai.repositories import conversation_by_id, tutor_job_by_idempotency_key
 from app.ai.schemas import ConversationResponse, TutorJobResponse, TutorQuestionRequest
 from app.core.exceptions import NotFoundError
+from app.courses.services import require_course
 from app.tenancy.context import require_tenant_id
 
 
@@ -24,6 +25,7 @@ async def enqueue_tutor_job(
     request: TutorQuestionRequest,
     idempotency_key: str,
 ) -> TutorJobResponse:
+    await require_course(session, course_id)
     existing = await session.scalar(tutor_job_by_idempotency_key(idempotency_key))
     if existing is not None:
         return tutor_job_response(existing)

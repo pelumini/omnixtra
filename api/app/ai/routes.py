@@ -6,11 +6,13 @@ from fastapi.responses import StreamingResponse
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.ai.repositories import tutor_job_by_id
 from app.ai.schemas import ConversationResponse, TutorJobResponse, TutorQuestionRequest
 from app.ai.services import enqueue_tutor_job, get_conversation
 from app.ai.streaming import subscribe_tutor_events
 from app.auth.dependencies import AuthPrincipal, require_permission
 from app.core.database import get_session
+from app.core.exceptions import NotFoundError
 from app.core.redis import get_redis
 from app.shared.responses import Envelope, Meta
 from app.tenancy.context import require_tenant_id
@@ -58,9 +60,14 @@ async def get_conversation_route(
 async def tutor_job_events_route(
     course_id: UUID,
     job_id: UUID,
+    session: SessionDep,
     redis_client: RedisDep,
     _principal: TutorPrincipal,
 ) -> StreamingResponse:
+    job = await session.scalar(tutor_job_by_id(job_id))
+    if job is None or job.course_id != course_id:
+        msg = "tutor job not found"
+        raise NotFoundError(msg)
     tenant_id = UUID(require_tenant_id())
     return StreamingResponse(
         subscribe_tutor_events(

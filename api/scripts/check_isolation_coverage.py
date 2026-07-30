@@ -38,7 +38,7 @@ def _protected_openapi_routes() -> set[tuple[str, str]]:
 
 def _covered_routes(tests_dir: Path) -> set[tuple[str, str]]:
     covered: set[tuple[str, str]] = set()
-    for test_path in sorted(tests_dir.glob("test_*.py")):
+    for test_path in sorted(tests_dir.rglob("test_*.py")):
         module = _load_module(test_path)
         for _, member in inspect.getmembers(module):
             coverage: set[tuple[str, str]] = getattr(member, "__covers_isolation__", set())
