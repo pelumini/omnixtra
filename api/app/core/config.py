@@ -14,6 +14,10 @@ class Settings(BaseSettings):
         default="postgresql+asyncpg://omnixtra_app:omnixtra_app_password@localhost:5432/omnixtra",
         validation_alias="DATABASE_URL",
     )
+    migrations_database_url: str = Field(
+        default="postgresql+psycopg://omnixtra_migrations:omnixtra_migrations_password@localhost:5432/omnixtra",
+        validation_alias="MIGRATIONS_DATABASE_URL",
+    )
     redis_url: str = Field(default="redis://localhost:6379/0", validation_alias="REDIS_URL")
     sentry_dsn: str = Field(default="", validation_alias="SENTRY_DSN")
     otel_exporter_otlp_endpoint: str = Field(

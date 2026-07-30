@@ -17,7 +17,7 @@ target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    url = get_settings().database_url.replace("+asyncpg", "")
+    url = get_settings().migrations_database_url
     context.configure(url=url, target_metadata=target_metadata, literal_binds=True)
 
     with context.begin_transaction():
@@ -26,7 +26,7 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = get_settings().database_url.replace("+asyncpg", "")
+    configuration["sqlalchemy.url"] = get_settings().migrations_database_url
     connectable = engine_from_config(
         configuration,
         prefix="sqlalchemy.",

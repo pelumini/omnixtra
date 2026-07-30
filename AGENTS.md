@@ -1080,7 +1080,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint / Phase | Status | Completed | Notes |
 |---|---|---:|---|
 | Sprint 0: Pre-flight Foundations | Complete | 16 / 16 | Core repo, backend, frontend, Docker, CI, logging, observability, request context, health, envelope, typed errors, and ADR docs are scaffolded and locally verified. |
-| Sprint 1: Tenancy & Auth | In progress | 11 / 17 | Tenant model/resolver/context, DB roles, ORM tenant filters, tenant insert population, RLS foundations, CI migration guard, and tenant-owned table runbook are implemented and tested. |
+| Sprint 1: Tenancy & Auth | In progress | 13 / 17 | Tenant model/resolver/context, DB roles, ORM tenant filters, tenant insert population, RLS foundations, RLS last-defence test, isolation coverage gate, CI migration guard, and tenant-owned table runbook are implemented and tested. |
 | Sprint 2: Course Authoring | Not started | 0 / 11 | Depends on tenancy/auth foundations. |
 | Sprint 3: Learning Experience | Not started | 0 / 11 | Depends on course authoring foundation. |
 | Sprint 4: AI Tutor | Not started | 0 / 17 | Depends on published lesson/course data and async worker foundation. |
@@ -1143,6 +1143,11 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | ORM tenant filter | Inject tenant predicate for tenant-owned UPDATE and DELETE statements | Complete |
 | ORM tenant inserts | Auto-populate `tenant_id` on new tenant-owned ORM objects | Complete |
 | ORM tenant tests | Add unit tests for SELECT/UPDATE/DELETE filtering and INSERT population | Complete |
+| RLS integration tests | Make Alembic use the migration database role URL | Complete |
+| RLS integration tests | Add disposable-Postgres raw SQL last-defence test | Complete |
+| Isolation coverage gate | Add `@covers_isolation(method, path)` pytest decorator | Complete |
+| Isolation coverage gate | Add OpenAPI route inventory comparison script | Complete |
+| Isolation coverage gate | Wire route coverage script into CI | Complete |
 
 - [x] Implement tenant model and global tenant table.
 - [x] Create database roles: `omnixtra_app`, `omnixtra_migrations`, `omnixtra_superadmin`.
@@ -1157,8 +1162,8 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [ ] Implement signup, login, magic link, password reset.
 - [ ] Implement Org Admin and Learner roles.
 - [ ] Seed RBAC defaults.
-- [ ] Add cross-tenant isolation suite and OpenAPI coverage gate.
-- [ ] Add RLS-as-last-defence raw SQL test.
+- [x] Add cross-tenant isolation suite and OpenAPI coverage gate.
+- [x] Add RLS-as-last-defence raw SQL test.
 - [x] Add runbook for adding tenant-owned tables.
 - [ ] Benchmark RLS overhead on synthetic data.
 

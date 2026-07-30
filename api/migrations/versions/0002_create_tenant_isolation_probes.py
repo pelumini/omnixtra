@@ -1,7 +1,7 @@
 """Create tenant isolation probes table.
 
-Revision ID: 0002_create_tenant_isolation_probes
-Revises: 0001_create_tenants
+Revision ID: 0002_rls_probes
+Revises: 0001_tenants
 Create Date: 2026-07-30
 """
 
@@ -10,10 +10,11 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
+from app.core.db_privileges import grant_table_privileges
 from app.tenancy.rls import disable_tenant_rls, enable_tenant_rls
 
-revision: str = "0002_create_tenant_isolation_probes"
-down_revision: str | None = "0001_create_tenants"
+revision: str = "0002_rls_probes"
+down_revision: str | None = "0001_tenants"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
@@ -36,6 +37,7 @@ def upgrade() -> None:
         ["tenant_id", "id"],
     )
     enable_tenant_rls(op, "tenant_isolation_probes")
+    grant_table_privileges(op, "tenant_isolation_probes")
 
 
 def downgrade() -> None:

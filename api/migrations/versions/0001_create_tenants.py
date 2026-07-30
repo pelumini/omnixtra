@@ -1,6 +1,6 @@
 """Create tenants table.
 
-Revision ID: 0001_create_tenants
+Revision ID: 0001_tenants
 Revises:
 Create Date: 2026-07-30
 """
@@ -10,7 +10,9 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0001_create_tenants"
+from app.core.db_privileges import grant_table_privileges
+
+revision: str = "0001_tenants"
 down_revision: str | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
@@ -34,6 +36,7 @@ def upgrade() -> None:
         sa.UniqueConstraint("slug", name="uq_tenants_slug"),
     )
     op.create_index("ix_tenants_slug_status", "tenants", ["slug", "status"])
+    grant_table_privileges(op, "tenants")
 
 
 def downgrade() -> None:
