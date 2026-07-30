@@ -1,4 +1,5 @@
 from typing import Protocol
+from uuid import UUID
 
 from sqlalchemy import Engine, event
 
@@ -12,10 +13,10 @@ class Cursor(Protocol):
 
 
 def apply_tenant_session_variable(cursor: Cursor) -> None:
-    tenant_id = get_tenant_id() or ""
+    tenant_id = _validated_tenant_id()
     cursor.execute(
-        "SELECT set_config('app.current_tenant_id', %s, true)",
-        (tenant_id,),
+        f"SELECT set_config('{TENANT_SESSION_VARIABLE}', '{tenant_id}', true)",
+        (),
     )
 
 
@@ -32,3 +33,10 @@ def _set_tenant_before_cursor_execute(
     _executemany: object,
 ) -> None:
     apply_tenant_session_variable(cursor)
+
+
+def _validated_tenant_id() -> str:
+    tenant_id = get_tenant_id()
+    if tenant_id is None or tenant_id == "":
+        return ""
+    return str(UUID(tenant_id))

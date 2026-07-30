@@ -25,8 +25,13 @@ def test_apply_tenant_session_variable_sets_current_tenant() -> None:
 
     assert cursor.operations == [
         (
-            f"SELECT set_config('{TENANT_SESSION_VARIABLE}', %s, true)",
-            ("00000000-0000-0000-0000-000000000001",),
+            (
+                "SELECT set_config("
+                f"'{TENANT_SESSION_VARIABLE}', "
+                "'00000000-0000-0000-0000-000000000001', "
+                "true)"
+            ),
+            (),
         ),
     ]
     clear_tenant_id()
@@ -40,8 +45,8 @@ def test_apply_tenant_session_variable_clears_missing_tenant() -> None:
 
     assert cursor.operations == [
         (
-            f"SELECT set_config('{TENANT_SESSION_VARIABLE}', %s, true)",
-            ("",),
+            f"SELECT set_config('{TENANT_SESSION_VARIABLE}', '', true)",
+            (),
         ),
     ]
 
