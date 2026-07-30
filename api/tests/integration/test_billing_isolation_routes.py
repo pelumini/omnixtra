@@ -23,8 +23,9 @@ def test_tenant_b_does_not_see_tenant_a_subscription() -> None:
 
     client = TestClient(create_app())
     isolation_client = IsolationTestClient(client)
-    tenant_a = _signup(client, "billing-a")
-    tenant_b = _signup(client, "billing-b")
+    run_id = uuid4().hex[:12]
+    tenant_a = _signup(client, f"billing-a-{run_id}")
+    tenant_b = _signup(client, f"billing-b-{run_id}")
 
     webhook_response = client.post(
         "/api/v1/billing/webhooks/stripe/subscription",
@@ -88,7 +89,7 @@ class TenantAccount:
 
 
 def _signup(client: TestClient, slug: str) -> TenantAccount:
-    email = f"admin@{slug}.test"
+    email = f"admin-{slug}@example.com"
     response = client.post(
         "/api/v1/auth/signup",
         json={
@@ -100,7 +101,7 @@ def _signup(client: TestClient, slug: str) -> TenantAccount:
         },
         headers={"host": "localhost"},
     )
-    assert response.status_code == 200
+    assert response.status_code == 200, response.text
     data = response.json()["data"]
     return TenantAccount(
         slug=slug,
