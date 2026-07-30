@@ -1080,7 +1080,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint / Phase | Status | Completed | Notes |
 |---|---|---:|---|
 | Sprint 0: Pre-flight Foundations | Complete | 16 / 16 | Core repo, backend, frontend, Docker, CI, logging, observability, request context, health, envelope, typed errors, and ADR docs are scaffolded and locally verified. |
-| Sprint 1: Tenancy & Auth | In progress | 16 / 17 | Tenant isolation, RLS, auth foundation, Org Admin/Learner RBAC defaults, isolation coverage gate, and migration guard are implemented and tested. |
+| Sprint 1: Tenancy & Auth | Complete | 17 / 17 | Tenant isolation, RLS, auth foundation, Org Admin/Learner RBAC defaults, isolation coverage gate, migration guard, and RLS benchmark are implemented and tested. |
 | Sprint 2: Course Authoring | Not started | 0 / 11 | Depends on tenancy/auth foundations. |
 | Sprint 3: Learning Experience | Not started | 0 / 11 | Depends on course authoring foundation. |
 | Sprint 4: AI Tutor | Not started | 0 / 17 | Depends on published lesson/course data and async worker foundation. |
@@ -1154,6 +1154,10 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Auth foundation | Add magic-link and password-reset request schemas/services/routes | Complete |
 | RBAC foundation | Add Org Admin and Learner role enum/defaults | Complete |
 | Auth tests | Add tests for password hashing, schemas, roles, and auth token flow | Complete |
+| RLS benchmark | Add synthetic dataset benchmark script | Complete |
+| RLS benchmark | Compare tenant-scoped RLS table reads with equivalent non-RLS table reads | Complete |
+| RLS benchmark | Document local benchmark command and approximate threshold | Complete |
+| RLS benchmark | Run benchmark smoke on disposable Postgres | Complete |
 
 - [x] Implement tenant model and global tenant table.
 - [x] Create database roles: `omnixtra_app`, `omnixtra_migrations`, `omnixtra_superadmin`.
@@ -1171,7 +1175,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Add cross-tenant isolation suite and OpenAPI coverage gate.
 - [x] Add RLS-as-last-defence raw SQL test.
 - [x] Add runbook for adding tenant-owned tables.
-- [ ] Benchmark RLS overhead on synthetic data.
+- [x] Benchmark RLS overhead on synthetic data.
 
 **Exit criteria:** two tenants cannot read, write, list, search, or infer each other's resources; RLS-last-defence test passes.
 
