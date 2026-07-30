@@ -1080,7 +1080,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 
 | Sprint / Phase | Status | Completed | Notes |
 |---|---|---:|---|
-| Sprint 0: Pre-flight Foundations | Remediation in progress | 14 / 18 | Core repo, backend/frontend scaffolds, local Git history, Docker services, lint/type/test gates, logging, request context, health, envelope, typed errors, and ADR docs exist; Git remote, remote CI confirmation, compose migration path, and fresh-clone verification remain open. |
+| Sprint 0: Pre-flight Foundations | Remediation in progress | 17 / 18 | Core repo, backend/frontend scaffolds, local and remote Git history, Docker services, CI, lint/type/test gates, logging, request context, health, envelope, typed errors, and ADR docs exist; DevContainer/fresh-clone workflow polish remains open. |
 | Sprint 1: Tenancy & Auth | Remediation in progress | 13 / 17 | Tenant middleware, RLS, auth skeleton, Org Admin/Learner RBAC defaults, migration guard, RLS benchmark, real route attack tests, and recorded-hit isolation coverage gate exist; auth e2e, JWT host matching, and cookie refresh-session contract remain open. |
 | Sprint 2: Course Authoring | Backend foundation in progress | 9 / 11 | Course authoring backend, media metadata, route coverage declarations, migration smoke, and real route-level attack tests exist; functional admin frontend routes remain open. |
 | Sprint 3: Learning Experience | Backend foundation in progress | 9 / 11 | Learning backend, idempotent learner workflow foundations, and real route-level attack tests exist; functional learner UI routes and verified PDF download workflow remain open. |
@@ -1109,14 +1109,14 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Add root `.gitignore` for Python, Node, environment, build, editor, and OS artifacts.
 - [x] Add root `README.md` with local setup, development commands, and project status.
 - [x] Establish initial commit after Sprint 0 scaffold is reproducible.
-- [ ] Configure Git remote origin for hosted repository.
-- [ ] Push `main` and verify remote CI run visibility.
+- [x] Configure Git remote origin for hosted repository.
+- [x] Push `main` and verify remote CI run visibility.
 - [x] Configure backend Python 3.12, `uv`, Ruff, mypy strict, pytest.
 - [x] Configure frontend Next.js App Router, TypeScript strict, TailwindCSS, shadcn/ui, ESLint, Prettier.
 - [ ] Add DevContainer and Docker Compose migration path for API, worker, PostgreSQL 16 + pgvector, Redis 7.
 - [x] Add health checks and `depends_on: condition: service_healthy`.
 - [x] Add `.env.example` with local defaults.
-- [ ] Add CI for backend lint/type/test, frontend lint/type/test, real PostgreSQL/Redis integration tests, and migration smoke.
+- [x] Add CI for backend lint/type/test, frontend lint/type/test, real PostgreSQL/Redis integration tests, and migration smoke.
 - [x] Add structlog JSON logging with redaction foundation.
 - [x] Add request ID middleware.
 - [x] Add OpenTelemetry and Sentry scaffolding.
