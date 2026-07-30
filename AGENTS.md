@@ -4,7 +4,7 @@
 **Source of Truth**: `OmniXtra_Project_Charter_v1.2.docx` + `ADR-002_Multi-Tenant_Isolation.docx`  
 **Charter Version**: 1.2, pre-kickoff draft  
 **ADR Status**: ADR-002 proposed, awaiting sign-off  
-**Status**: Sprints 0-2 complete; Sprint 3-5 backend foundations under MVP hardening
+**Status**: Sprints 0-3 complete; Sprint 4-5 backend foundations under MVP hardening
 **Scope**: Full-stack LMS, FastAPI backend, Next.js frontend, AI tutor, multi-tenant SaaS
 
 ---
@@ -1083,7 +1083,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint 0: Pre-flight Foundations | Complete | 18 / 18 | Core repo, backend/frontend scaffolds, local and remote Git history, Docker services, DevContainer workflow, CI, lint/type/test gates, logging, request context, health, envelope, typed errors, and ADR docs are in place. |
 | Sprint 1: Tenancy & Auth | Complete | 17 / 17 | Tenant middleware, RLS, auth flows, Org Admin/Learner RBAC defaults, migration guard, RLS benchmark, real route attack tests, recorded-hit isolation coverage gate, cookie auth, refresh-token rotation, replay detection, logout invalidation, verification endpoints, and auth rate limiting are in place. |
 | Sprint 2: Course Authoring | Complete | 11 / 11 | Course authoring backend, media metadata, route coverage declarations, migration smoke, real route-level attack tests, admin course list, and course builder foundation are in place. |
-| Sprint 3: Learning Experience | Backend foundation in progress | 9 / 11 | Learning backend, idempotent learner workflow foundations, and real route-level attack tests exist; functional learner UI routes and verified PDF download workflow remain open. |
+| Sprint 3: Learning Experience | Complete | 11 / 11 | Learning backend, idempotent learner workflows, real route-level attack tests, learner course player, quiz/completion UI, and certificate PDF download workflow are in place. |
 | Sprint 4: AI Tutor | Local/mock foundation in progress | 9 / 17 | Async worker runtime, mock embeddings, hybrid retrieval SQL, Redis Pub/Sub job streaming, LangSmith wrapper, vector isolation coverage, and real tutor route attack tests exist; provider-backed AI, real eval criteria, and functional tutor UI remain open. |
 | Sprint 5: Billing, Branding, Analytics, and MVP Polish | Backend foundation in progress | 1 / 15 | Billing module, data-driven MVP plan catalog, Stripe checkout provider port, subscription webhook foundation, and billing route isolation coverage exist; live Stripe checkout/webhook verification, branding, analytics, email, onboarding, and Playwright polish remain open. |
 | Phase 2: Months 4-6 | Not started | 0 / 11 | Post-MVP expansion. |
@@ -1242,8 +1242,8 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Learning routes | Add protected learning API routes under `/api/v1/learning` | Complete |
 | Learning tests | Add model/schema/service/route tests and isolation coverage declarations | Complete |
 | Learning tests | Add real cross-tenant route attack tests for learning APIs | Complete |
-| Learner frontend | Add functional learner course player foundation | Pending |
-| Learner frontend | Add functional quiz and completion UI foundation | Pending |
+| Learner frontend | Add functional learner course player foundation | Complete |
+| Learner frontend | Add functional quiz and completion UI foundation | Complete |
 
 - [x] Create `learning` module.
 - [x] Implement enrolments.
@@ -1251,10 +1251,10 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Implement lesson resume/progress tracking.
 - [x] Implement quiz scoring.
 - [x] Implement course completion rules.
-- [ ] Implement certificate PDF download workflow.
+- [x] Implement certificate PDF download workflow.
 - [x] Add idempotency for enrolment, completion, and certificate issuance.
-- [ ] Add functional learner frontend course player.
-- [ ] Add functional quiz and completion UI.
+- [x] Add functional learner frontend course player.
+- [x] Add functional quiz and completion UI.
 - [x] Add real isolation tests for enrolments, progress, and certificates.
 
 **Exit criteria:** learner can enrol, resume, complete a course, pass quiz flow, and download certificate; idempotency is tested.

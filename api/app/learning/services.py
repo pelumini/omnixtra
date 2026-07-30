@@ -260,6 +260,20 @@ async def issue_certificate(
     return certificate_response(certificate)
 
 
+async def get_certificate_pdf(
+    session: AsyncSession,
+    *,
+    learner_id: UUID,
+    course_id: UUID,
+) -> tuple[CertificateResponse, bytes]:
+    await require_enrolled_course(session, learner_id, course_id)
+    certificate = await session.scalar(certificate_by_learner_course(learner_id, course_id))
+    if certificate is None or certificate.status != CertificateStatus.issued.value:
+        msg = "certificate not found"
+        raise NotFoundError(msg)
+    return certificate_response(certificate), render_certificate_pdf(certificate)
+
+
 def render_certificate_pdf(certificate: Certificate) -> bytes:
     title = f"OmniXtra Certificate {certificate.certificate_number}"
     body = (

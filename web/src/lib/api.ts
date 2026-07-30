@@ -1,16 +1,23 @@
 import {
   blockCreateRequestSchema,
   blockEnvelopeSchema,
+  certificateEnvelopeSchema,
+  courseCompletionEnvelopeSchema,
   courseCreateRequestSchema,
   courseEnvelopeSchema,
   coursePageEnvelopeSchema,
   coursePlayerEnvelopeSchema,
+  enrolmentEnvelopeSchema,
   errorBodySchema,
   healthEnvelopeSchema,
   lessonCreateRequestSchema,
   lessonEnvelopeSchema,
+  lessonProgressEnvelopeSchema,
+  lessonProgressRequestSchema,
   mediaAssetCreateRequestSchema,
   mediaAssetEnvelopeSchema,
+  quizAttemptEnvelopeSchema,
+  quizAttemptRequestSchema,
   sectionCreateRequestSchema,
   sectionEnvelopeSchema,
   tutorJobEnvelopeSchema,
@@ -19,6 +26,7 @@ import type {
   CourseCreateRequest,
   CourseUpdateRequest,
   LessonCreateRequest,
+  LessonProgressRequest,
   MediaAssetCreateRequest,
   SectionCreateRequest,
 } from "@/lib/schemas";
@@ -49,14 +57,77 @@ export async function getCourses(context: RequestContext = {}) {
   return coursePageEnvelopeSchema.parse(body);
 }
 
-export async function getCoursePlayer(courseId: string) {
+export async function getCoursePlayer(courseId: string, context: RequestContext = {}) {
   const response = await fetch(`${apiUrl}/api/v1/learning/courses/${courseId}/player`, {
     cache: "no-store",
+    credentials: "include",
+    headers: requestHeaders(context),
   });
   const body: unknown = await response.json();
   throwIfApiError(response, body);
 
   return coursePlayerEnvelopeSchema.parse(body);
+}
+
+export async function enrolInCourse(courseId: string, idempotencyKey: string) {
+  const response = await postJson(`/api/v1/learning/courses/${courseId}/enrolments`, null, {
+    "Idempotency-Key": idempotencyKey,
+  });
+
+  return enrolmentEnvelopeSchema.parse(response);
+}
+
+export async function updateLessonProgress(
+  courseId: string,
+  lessonId: string,
+  request: LessonProgressRequest,
+) {
+  const body = lessonProgressRequestSchema.parse(request);
+  const response = await fetch(
+    `${apiUrl}/api/v1/learning/courses/${courseId}/lessons/${lessonId}/progress`,
+    {
+      body: JSON.stringify(body),
+      cache: "no-store",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      method: "PUT",
+    },
+  );
+  const responseBody: unknown = await response.json();
+  throwIfApiError(response, responseBody);
+
+  return lessonProgressEnvelopeSchema.parse(responseBody);
+}
+
+export async function submitQuizAttempt(
+  courseId: string,
+  blockId: string,
+  selectedOptionId: string,
+) {
+  const body = quizAttemptRequestSchema.parse({ selected_option_id: selectedOptionId });
+  const response = await postJson(`/api/v1/learning/courses/${courseId}/quizzes/${blockId}/attempts`, body);
+
+  return quizAttemptEnvelopeSchema.parse(response);
+}
+
+export async function completeCourse(courseId: string, idempotencyKey: string) {
+  const response = await postJson(`/api/v1/learning/courses/${courseId}/completion`, null, {
+    "Idempotency-Key": idempotencyKey,
+  });
+
+  return courseCompletionEnvelopeSchema.parse(response);
+}
+
+export async function issueCertificate(courseId: string, idempotencyKey: string) {
+  const response = await postJson(`/api/v1/learning/courses/${courseId}/certificate`, null, {
+    "Idempotency-Key": idempotencyKey,
+  });
+
+  return certificateEnvelopeSchema.parse(response);
+}
+
+export function certificateDownloadUrl(courseId: string) {
+  return `${apiUrl}/api/v1/learning/courses/${courseId}/certificate/download`;
 }
 
 export async function createTutorJob(courseId: string, question: string, idempotencyKey: string) {
@@ -141,12 +212,12 @@ function requestHeaders(context: RequestContext): HeadersInit {
   return headers;
 }
 
-async function postJson(path: string, body: unknown) {
+async function postJson(path: string, body: unknown, headers: HeadersInit = {}) {
   const response = await fetch(`${apiUrl}${path}`, {
     body: body === null ? undefined : JSON.stringify(body),
     cache: "no-store",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...headers },
     method: "POST",
   });
   const responseBody: unknown = await response.json();

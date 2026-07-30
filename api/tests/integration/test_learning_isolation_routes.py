@@ -21,6 +21,7 @@ TEST_PASSWORD = "correct horse battery staple"  # noqa: S105
 @covers_isolation("POST", "/api/v1/learning/courses/{course_id}/quizzes/{block_id}/attempts")
 @covers_isolation("POST", "/api/v1/learning/courses/{course_id}/completion")
 @covers_isolation("POST", "/api/v1/learning/courses/{course_id}/certificate")
+@covers_isolation("GET", "/api/v1/learning/courses/{course_id}/certificate/download")
 def test_tenant_b_cannot_attack_tenant_a_learning_routes() -> None:
     if os.getenv(APP_DATABASE_URL_ENV) is None:
         pytest.skip(f"{APP_DATABASE_URL_ENV} is not set")
@@ -82,6 +83,13 @@ def test_tenant_b_cannot_attack_tenant_a_learning_routes() -> None:
             "/api/v1/learning/courses/{course_id}/certificate",
             f"/api/v1/learning/courses/{course_id}/certificate",
             headers={**learner_headers_b, "idempotency-key": f"certificate-{uuid4()}"},
+        ),
+    )
+    _assert_not_found(
+        isolation_client.get(
+            "/api/v1/learning/courses/{course_id}/certificate/download",
+            f"/api/v1/learning/courses/{course_id}/certificate/download",
+            headers=learner_headers_b,
         ),
     )
 

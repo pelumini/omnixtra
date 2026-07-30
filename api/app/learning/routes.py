@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import AuthPrincipal, require_permission
@@ -19,6 +19,7 @@ from app.learning.schemas import (
 from app.learning.services import (
     complete_course,
     enrol_in_course,
+    get_certificate_pdf,
     get_course_player,
     issue_certificate,
     submit_quiz_attempt,
@@ -125,3 +126,21 @@ async def issue_certificate_route(
         idempotency_key=idempotency_key,
     )
     return Envelope(data=response, error=None, meta=Meta.current())
+
+
+@router.get("/courses/{course_id}/certificate/download")
+async def download_certificate_route(
+    course_id: UUID,
+    session: SessionDep,
+    principal: LearnerPrincipal,
+) -> Response:
+    certificate, pdf = await get_certificate_pdf(
+        session,
+        learner_id=principal.user_id,
+        course_id=course_id,
+    )
+    headers = {
+        "Content-Disposition": (f'attachment; filename="{certificate.certificate_number}.pdf"'),
+        "X-Certificate-Number": certificate.certificate_number,
+    }
+    return Response(content=pdf, media_type="application/pdf", headers=headers)

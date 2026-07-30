@@ -216,6 +216,91 @@ export const coursePlayerEnvelopeSchema = z.object({
   meta: metaSchema,
 });
 
+export const enrolmentSchema = z.object({
+  id: z.string().uuid(),
+  learner_id: z.string().uuid(),
+  course_id: z.string().uuid(),
+  status: z.string(),
+});
+
+export const enrolmentEnvelopeSchema = z.object({
+  data: enrolmentSchema,
+  error: z.null(),
+  meta: metaSchema,
+});
+
+export const lessonProgressRequestSchema = z.object({
+  last_position: z.number().int().nonnegative(),
+  percent_complete: z.number().int().min(0).max(100),
+});
+
+export const lessonProgressSchema = z.object({
+  id: z.string().uuid(),
+  learner_id: z.string().uuid(),
+  course_id: z.string().uuid(),
+  lesson_id: z.string().uuid(),
+  last_position: z.number().int().nonnegative(),
+  percent_complete: z.number().int().min(0).max(100),
+  completed_at: z.string().datetime().nullable(),
+});
+
+export const lessonProgressEnvelopeSchema = z.object({
+  data: lessonProgressSchema,
+  error: z.null(),
+  meta: metaSchema,
+});
+
+export const quizAttemptRequestSchema = z.object({
+  selected_option_id: z.string().min(1).max(64),
+});
+
+export const quizAttemptSchema = z.object({
+  id: z.string().uuid(),
+  learner_id: z.string().uuid(),
+  course_id: z.string().uuid(),
+  lesson_id: z.string().uuid(),
+  block_id: z.string().uuid(),
+  selected_option_id: z.string(),
+  score_percent: z.number().int().min(0).max(100),
+  passed: z.boolean(),
+});
+
+export const quizAttemptEnvelopeSchema = z.object({
+  data: quizAttemptSchema,
+  error: z.null(),
+  meta: metaSchema,
+});
+
+export const courseCompletionSchema = z.object({
+  id: z.string().uuid(),
+  learner_id: z.string().uuid(),
+  course_id: z.string().uuid(),
+  status: z.string(),
+  completed_at: z.string().datetime(),
+});
+
+export const courseCompletionEnvelopeSchema = z.object({
+  data: courseCompletionSchema,
+  error: z.null(),
+  meta: metaSchema,
+});
+
+export const certificateSchema = z.object({
+  id: z.string().uuid(),
+  learner_id: z.string().uuid(),
+  course_id: z.string().uuid(),
+  completion_id: z.string().uuid(),
+  certificate_number: z.string(),
+  status: z.string(),
+  pdf_object_key: z.string().nullable(),
+});
+
+export const certificateEnvelopeSchema = z.object({
+  data: certificateSchema,
+  error: z.null(),
+  meta: metaSchema,
+});
+
 export const tutorJobSchema = z.object({
   id: z.string().uuid(),
   conversation_id: z.string().uuid(),
@@ -231,13 +316,19 @@ export const tutorJobEnvelopeSchema = z.object({
 
 export type Block = z.infer<typeof blockSchema>;
 export type Course = z.infer<typeof courseSchema>;
+export type CourseCompletion = z.infer<typeof courseCompletionSchema>;
 export type CourseCreateRequest = z.infer<typeof courseCreateRequestSchema>;
 export type CoursePlayer = z.infer<typeof coursePlayerSchema>;
 export type CourseUpdateRequest = z.infer<typeof courseUpdateRequestSchema>;
+export type Enrolment = z.infer<typeof enrolmentSchema>;
 export type Lesson = z.infer<typeof lessonSchema>;
 export type LessonCreateRequest = z.infer<typeof lessonCreateRequestSchema>;
+export type LessonProgress = z.infer<typeof lessonProgressSchema>;
+export type LessonProgressRequest = z.infer<typeof lessonProgressRequestSchema>;
 export type MediaAsset = z.infer<typeof mediaAssetSchema>;
 export type MediaAssetCreateRequest = z.infer<typeof mediaAssetCreateRequestSchema>;
+export type Certificate = z.infer<typeof certificateSchema>;
+export type QuizAttempt = z.infer<typeof quizAttemptSchema>;
 export type Section = z.infer<typeof sectionSchema>;
 export type SectionCreateRequest = z.infer<typeof sectionCreateRequestSchema>;
 export type TutorJob = z.infer<typeof tutorJobSchema>;

@@ -4,11 +4,14 @@ import {
   blockCreateRequestSchema,
   blockContentSchema,
   courseCreateRequestSchema,
+  courseCompletionEnvelopeSchema,
   coursePageEnvelopeSchema,
   coursePlayerEnvelopeSchema,
   healthEnvelopeSchema,
+  lessonProgressRequestSchema,
   mediaAssetCreateRequestSchema,
   mediaAssetSchema,
+  quizAttemptRequestSchema,
   tutorJobEnvelopeSchema,
 } from "@/lib/schemas";
 
@@ -154,6 +157,32 @@ describe("coursePlayerEnvelopeSchema", () => {
         meta: { request_id: "req_test", timestamp: null },
       }).data.sections[0]?.lessons[0]?.percent_complete,
     ).toBe(80);
+  });
+});
+
+describe("learning workflow schemas", () => {
+  it("validates lesson progress and quiz attempt payloads", () => {
+    expect(lessonProgressRequestSchema.parse({ last_position: 30, percent_complete: 80 })).toEqual({
+      last_position: 30,
+      percent_complete: 80,
+    });
+    expect(quizAttemptRequestSchema.parse({ selected_option_id: "a" }).selected_option_id).toBe("a");
+  });
+
+  it("accepts course completion envelopes", () => {
+    expect(
+      courseCompletionEnvelopeSchema.parse({
+        data: {
+          completed_at: "2026-07-30T10:00:00Z",
+          course_id: "00000000-0000-0000-0000-000000000010",
+          id: "00000000-0000-0000-0000-000000000013",
+          learner_id: "00000000-0000-0000-0000-000000000014",
+          status: "completed",
+        },
+        error: null,
+        meta: { request_id: "req_test", timestamp: null },
+      }).data.status,
+    ).toBe("completed");
   });
 });
 
