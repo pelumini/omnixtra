@@ -8,6 +8,7 @@ from httpx import Response
 from app.core.security import create_access_token
 from app.main import create_app
 from app.tenancy.isolation import covers_isolation
+from tests.isolation_client import IsolationTestClient
 
 APP_DATABASE_URL_ENV = "OMNIXTRA_TEST_DATABASE_URL"
 TEST_PASSWORD = "correct horse battery staple"  # noqa: S105
@@ -22,6 +23,7 @@ def test_tenant_b_cannot_attack_tenant_a_ai_routes() -> None:
         pytest.skip(f"{APP_DATABASE_URL_ENV} is not set")
 
     client = TestClient(create_app())
+    isolation_client = IsolationTestClient(client)
     tenant_a = _signup(client, "ai-a")
     tenant_b = _signup(client, "ai-b")
     admin_headers_a = _headers(tenant_a.slug, tenant_a.access_token)
@@ -29,7 +31,8 @@ def test_tenant_b_cannot_attack_tenant_a_ai_routes() -> None:
     tutor_headers_b = _headers(tenant_b.slug, _learner_token(tenant_b))
     course_id = _course_with_lesson(client, admin_headers_a)
 
-    job_response = client.post(
+    job_response = isolation_client.post(
+        "/api/v1/ai/courses/{course_id}/tutor/jobs",
         f"/api/v1/ai/courses/{course_id}/tutor/jobs",
         json={"question": "What is private onboarding?"},
         headers={**tutor_headers_a, "idempotency-key": f"ai-job-{uuid4()}"},
@@ -38,17 +41,23 @@ def test_tenant_b_cannot_attack_tenant_a_ai_routes() -> None:
     job = job_response.json()["data"]
 
     _assert_not_found(
-        client.post(
+        isolation_client.post(
+            "/api/v1/ai/courses/{course_id}/tutor/jobs",
             f"/api/v1/ai/courses/{course_id}/tutor/jobs",
             json={"question": "What is private onboarding?"},
             headers={**tutor_headers_b, "idempotency-key": f"ai-attack-{uuid4()}"},
         ),
     )
     _assert_not_found(
-        client.get(f"/api/v1/ai/conversations/{job['conversation_id']}", headers=tutor_headers_b),
+        isolation_client.get(
+            "/api/v1/ai/conversations/{conversation_id}",
+            f"/api/v1/ai/conversations/{job['conversation_id']}",
+            headers=tutor_headers_b,
+        ),
     )
     _assert_not_found(
-        client.get(
+        isolation_client.get(
+            "/api/v1/ai/courses/{course_id}/tutor/jobs/{job_id}/events",
             f"/api/v1/ai/courses/{course_id}/tutor/jobs/{job['id']}/events",
             headers=tutor_headers_b,
         ),

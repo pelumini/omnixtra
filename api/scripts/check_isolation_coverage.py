@@ -1,5 +1,6 @@
 import importlib.util
 import inspect
+import json
 from pathlib import Path
 from sys import stderr
 
@@ -7,18 +8,25 @@ from app.main import create_app
 
 PROTECTED_ROUTE_TAG = "tenant-owned"
 TESTS_DIR = Path("tests")
+DEFAULT_HITS_PATH = Path("tests/.isolation_hits.json")
 
 
 def main() -> int:
-    missing = missing_isolation_coverage(TESTS_DIR)
+    missing = missing_isolation_coverage(TESTS_DIR, hits_path=DEFAULT_HITS_PATH)
     for route in missing:
         stderr.write(f"{route}\n")
     return 1 if missing else 0
 
 
-def missing_isolation_coverage(tests_dir: Path) -> list[str]:
+def missing_isolation_coverage(
+    tests_dir: Path,
+    *,
+    hits_path: Path | None = None,
+) -> list[str]:
     protected_routes = _protected_openapi_routes()
-    covered_routes = _covered_routes(tests_dir)
+    declared_routes = _declared_routes(tests_dir)
+    hit_routes = _hit_routes(hits_path or DEFAULT_HITS_PATH)
+    covered_routes = declared_routes & hit_routes
     return [
         f"{method} {path}"
         for method, path in sorted(protected_routes)
@@ -36,7 +44,7 @@ def _protected_openapi_routes() -> set[tuple[str, str]]:
     return protected
 
 
-def _covered_routes(tests_dir: Path) -> set[tuple[str, str]]:
+def _declared_routes(tests_dir: Path) -> set[tuple[str, str]]:
     covered: set[tuple[str, str]] = set()
     for test_path in sorted(tests_dir.rglob("test_*.py")):
         module = _load_module(test_path)
@@ -44,6 +52,13 @@ def _covered_routes(tests_dir: Path) -> set[tuple[str, str]]:
             coverage: set[tuple[str, str]] = getattr(member, "__covers_isolation__", set())
             covered.update(coverage)
     return covered
+
+
+def _hit_routes(hits_path: Path) -> set[tuple[str, str]]:
+    if not hits_path.exists():
+        return set()
+    data = json.loads(hits_path.read_text(encoding="utf-8"))
+    return {(str(item["method"]).upper(), str(item["path"])) for item in data}
 
 
 def _load_module(test_path: Path) -> object:

@@ -7,6 +7,7 @@ from httpx import Response
 
 from app.main import create_app
 from app.tenancy.isolation import covers_isolation
+from tests.isolation_client import IsolationTestClient
 
 APP_DATABASE_URL_ENV = "OMNIXTRA_TEST_DATABASE_URL"
 TEST_PASSWORD = "correct horse battery staple"  # noqa: S105
@@ -28,6 +29,7 @@ def test_tenant_b_cannot_attack_tenant_a_course_routes() -> None:
         pytest.skip(f"{APP_DATABASE_URL_ENV} is not set")
 
     client = TestClient(create_app())
+    isolation_client = IsolationTestClient(client)
     tenant_a = _signup(client, "tenant-a")
     tenant_b = _signup(client, "tenant-b")
     token_a = _login(client, tenant_a.slug, tenant_a.email)
@@ -35,7 +37,7 @@ def test_tenant_b_cannot_attack_tenant_a_course_routes() -> None:
     headers_a = _headers(tenant_a.slug, token_a)
     headers_b = _headers(tenant_b.slug, token_b)
 
-    course_response = client.post(
+    course_response = isolation_client.post(
         "/api/v1/courses",
         json={
             "title": "Tenant A Security",
@@ -47,7 +49,8 @@ def test_tenant_b_cannot_attack_tenant_a_course_routes() -> None:
     assert course_response.status_code == 200
     course_id = course_response.json()["data"]["id"]
 
-    section_response = client.post(
+    section_response = isolation_client.post(
+        "/api/v1/courses/{course_id}/sections",
         f"/api/v1/courses/{course_id}/sections",
         json={"title": "Private Section", "position": 0},
         headers=headers_a,
@@ -55,7 +58,8 @@ def test_tenant_b_cannot_attack_tenant_a_course_routes() -> None:
     assert section_response.status_code == 200
     section_id = section_response.json()["data"]["id"]
 
-    lesson_response = client.post(
+    lesson_response = isolation_client.post(
+        "/api/v1/courses/{course_id}/lessons",
         f"/api/v1/courses/{course_id}/lessons",
         json={"section_id": section_id, "title": "Private Lesson", "position": 0},
         headers=headers_a,
@@ -63,11 +67,12 @@ def test_tenant_b_cannot_attack_tenant_a_course_routes() -> None:
     assert lesson_response.status_code == 200
     lesson_id = lesson_response.json()["data"]["id"]
 
-    list_response = client.get("/api/v1/courses", headers=headers_b)
+    list_response = isolation_client.get("/api/v1/courses", headers=headers_b)
     assert list_response.status_code == 200
     assert list_response.json()["data"] == {"items": [], "next_cursor": None}
 
-    patch_response = client.patch(
+    patch_response = isolation_client.patch(
+        "/api/v1/courses/{course_id}",
         f"/api/v1/courses/{course_id}",
         json={"title": "Tenant B Mutated Title"},
         headers=headers_b,
@@ -75,26 +80,33 @@ def test_tenant_b_cannot_attack_tenant_a_course_routes() -> None:
     assert patch_response.status_code == 404
     assert "Tenant A Security" in _tenant_course_titles(client, headers_a)
 
-    delete_response = client.delete(f"/api/v1/courses/{course_id}", headers=headers_b)
+    delete_response = isolation_client.delete(
+        "/api/v1/courses/{course_id}",
+        f"/api/v1/courses/{course_id}",
+        headers=headers_b,
+    )
     assert delete_response.status_code == 404
     assert "Tenant A Security" in _tenant_course_titles(client, headers_a)
 
     _assert_not_found(
-        client.post(
+        isolation_client.post(
+            "/api/v1/courses/{course_id}/sections",
             f"/api/v1/courses/{course_id}/sections",
             json={"title": "Tenant B Section", "position": 1},
             headers=headers_b,
         ),
     )
     _assert_not_found(
-        client.post(
+        isolation_client.post(
+            "/api/v1/courses/{course_id}/lessons",
             f"/api/v1/courses/{course_id}/lessons",
             json={"section_id": section_id, "title": "Tenant B Lesson", "position": 1},
             headers=headers_b,
         ),
     )
     _assert_not_found(
-        client.post(
+        isolation_client.post(
+            "/api/v1/courses/{course_id}/blocks",
             f"/api/v1/courses/{course_id}/blocks",
             json={
                 "lesson_id": lesson_id,
@@ -106,7 +118,8 @@ def test_tenant_b_cannot_attack_tenant_a_course_routes() -> None:
         ),
     )
     _assert_not_found(
-        client.post(
+        isolation_client.post(
+            "/api/v1/courses/{course_id}/media",
             f"/api/v1/courses/{course_id}/media",
             json={
                 "object_key": f"tenants/{tenant_b.tenant_id}/courses/{course_id}/image.png",
@@ -118,13 +131,20 @@ def test_tenant_b_cannot_attack_tenant_a_course_routes() -> None:
         ),
     )
     _assert_not_found(
-        client.put(
+        isolation_client.put(
+            "/api/v1/courses/{course_id}/sections/order",
             f"/api/v1/courses/{course_id}/sections/order",
             json={"ordered_ids": [section_id]},
             headers=headers_b,
         ),
     )
-    _assert_not_found(client.post(f"/api/v1/courses/{course_id}/publish", headers=headers_b))
+    _assert_not_found(
+        isolation_client.post(
+            "/api/v1/courses/{course_id}/publish",
+            f"/api/v1/courses/{course_id}/publish",
+            headers=headers_b,
+        ),
+    )
 
 
 class TenantAccount:

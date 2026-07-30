@@ -1081,10 +1081,10 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint / Phase | Status | Completed | Notes |
 |---|---|---:|---|
 | Sprint 0: Pre-flight Foundations | Remediation in progress | 14 / 16 | Core repo, backend/frontend scaffolds, Docker services, lint/type/test gates, logging, request context, health, envelope, typed errors, and ADR docs exist; compose migration path and fresh-clone verification remain open. |
-| Sprint 1: Tenancy & Auth | Remediation in progress | 12 / 17 | Tenant middleware, RLS, auth skeleton, Org Admin/Learner RBAC defaults, migration guard, and RLS benchmark exist; auth e2e, JWT host matching, cookie refresh-session contract, and real route attack coverage remain open. |
-| Sprint 2: Course Authoring | Backend foundation in progress | 8 / 11 | Course authoring backend, media metadata, route coverage declarations, and migration smoke exist; real route-level attack tests and functional admin frontend routes remain open. |
-| Sprint 3: Learning Experience | Backend foundation in progress | 8 / 11 | Learning backend and idempotent learner workflow foundations exist; real route-level attack tests, functional learner UI routes, and verified PDF download workflow remain open. |
-| Sprint 4: AI Tutor | Local/mock foundation in progress | 9 / 17 | Async worker runtime, mock embeddings, hybrid retrieval SQL, Redis Pub/Sub job streaming, LangSmith wrapper, and vector isolation coverage exist; provider-backed AI, real eval criteria, and functional tutor UI remain open. |
+| Sprint 1: Tenancy & Auth | Remediation in progress | 13 / 17 | Tenant middleware, RLS, auth skeleton, Org Admin/Learner RBAC defaults, migration guard, RLS benchmark, real route attack tests, and recorded-hit isolation coverage gate exist; auth e2e, JWT host matching, and cookie refresh-session contract remain open. |
+| Sprint 2: Course Authoring | Backend foundation in progress | 9 / 11 | Course authoring backend, media metadata, route coverage declarations, migration smoke, and real route-level attack tests exist; functional admin frontend routes remain open. |
+| Sprint 3: Learning Experience | Backend foundation in progress | 9 / 11 | Learning backend, idempotent learner workflow foundations, and real route-level attack tests exist; functional learner UI routes and verified PDF download workflow remain open. |
+| Sprint 4: AI Tutor | Local/mock foundation in progress | 9 / 17 | Async worker runtime, mock embeddings, hybrid retrieval SQL, Redis Pub/Sub job streaming, LangSmith wrapper, vector isolation coverage, and real tutor route attack tests exist; provider-backed AI, real eval criteria, and functional tutor UI remain open. |
 | Sprint 5: Billing, Branding, Analytics, and MVP Polish | Not started | 0 / 15 | Final MVP integration sprint. |
 | Phase 2: Months 4-6 | Not started | 0 / 11 | Post-MVP expansion. |
 | Phase 3: Months 7-9 | Not started | 0 / 9 | Post-MVP platform/compliance expansion. |
@@ -1149,7 +1149,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Isolation coverage gate | Add `@covers_isolation(method, path)` pytest decorator | Complete |
 | Isolation coverage gate | Add OpenAPI route inventory comparison script | Complete |
 | Isolation coverage gate | Wire route coverage script into CI | Complete |
-| Isolation attack tests | Replace decorator-only route tests with real cross-tenant route attacks | Pending |
+| Isolation attack tests | Replace decorator-only route tests with real cross-tenant route attacks | Complete |
 | Auth foundation | Add Argon2id password hashing utilities | Complete |
 | Auth foundation | Add user and auth-token models/migrations with tenant ownership | Complete |
 | Auth foundation | Add signup and login schemas/services/routes | Complete |
@@ -1178,7 +1178,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Implement signup, login, magic link, password reset.
 - [x] Implement Org Admin and Learner roles.
 - [x] Seed RBAC defaults.
-- [ ] Add real cross-tenant isolation suite and OpenAPI coverage gate.
+- [x] Add real cross-tenant isolation suite and OpenAPI coverage gate.
 - [ ] Add RLS-as-last-defence raw SQL test running in CI against `omnixtra_app`.
 - [x] Add runbook for adding tenant-owned tables.
 - [x] Benchmark RLS overhead on synthetic data.
@@ -1203,7 +1203,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Course audit | Record create/update/delete/publish audit events | Complete |
 | Course tests | Add model/schema/repository/service/route tests | Complete |
 | Course tests | Add isolation coverage declarations for all course-owned routes | Complete |
-| Course tests | Add real cross-tenant route attack tests for course APIs | Pending |
+| Course tests | Add real cross-tenant route attack tests for course APIs | Complete |
 | Media metadata | Add tenant-scoped media object metadata model and API hooks | Complete |
 | Admin frontend | Add functional admin course list foundation | Pending |
 | Admin frontend | Add functional course builder foundation | Pending |
@@ -1217,7 +1217,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Implement media upload metadata with tenant-scoped object keys.
 - [x] Add audit logs for create/update/delete/publish.
 - [x] Add cursor pagination for course lists.
-- [ ] Add real isolation tests for all course-owned routes.
+- [x] Add real isolation tests for all course-owned routes.
 - [ ] Add functional admin frontend course list and builder foundation.
 
 **Exit criteria:** an Org Admin can build and publish a five-lesson course with full audit trail.
@@ -1239,7 +1239,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Learning services | Add course completion and certificate service | Complete |
 | Learning routes | Add protected learning API routes under `/api/v1/learning` | Complete |
 | Learning tests | Add model/schema/service/route tests and isolation coverage declarations | Complete |
-| Learning tests | Add real cross-tenant route attack tests for learning APIs | Pending |
+| Learning tests | Add real cross-tenant route attack tests for learning APIs | Complete |
 | Learner frontend | Add functional learner course player foundation | Pending |
 | Learner frontend | Add functional quiz and completion UI foundation | Pending |
 
@@ -1253,7 +1253,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Add idempotency for enrolment, completion, and certificate issuance.
 - [ ] Add functional learner frontend course player.
 - [ ] Add functional quiz and completion UI.
-- [ ] Add real isolation tests for enrolments, progress, and certificates.
+- [x] Add real isolation tests for enrolments, progress, and certificates.
 
 **Exit criteria:** learner can enrol, resume, complete a course, pass quiz flow, and download certificate; idempotency is tested.
 

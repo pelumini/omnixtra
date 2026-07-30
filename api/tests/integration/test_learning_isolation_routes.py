@@ -8,6 +8,7 @@ from httpx import Response
 from app.core.security import create_access_token
 from app.main import create_app
 from app.tenancy.isolation import covers_isolation
+from tests.isolation_client import IsolationTestClient
 
 APP_DATABASE_URL_ENV = "OMNIXTRA_TEST_DATABASE_URL"
 TEST_PASSWORD = "correct horse battery staple"  # noqa: S105
@@ -25,6 +26,7 @@ def test_tenant_b_cannot_attack_tenant_a_learning_routes() -> None:
         pytest.skip(f"{APP_DATABASE_URL_ENV} is not set")
 
     client = TestClient(create_app())
+    isolation_client = IsolationTestClient(client)
     tenant_a = _signup(client, "learning-a")
     tenant_b = _signup(client, "learning-b")
     admin_headers_a = _headers(tenant_a.slug, tenant_a.access_token)
@@ -39,36 +41,45 @@ def test_tenant_b_cannot_attack_tenant_a_learning_routes() -> None:
     course_id, lesson_id, quiz_block_id = _published_course(client, admin_headers_a)
 
     _assert_not_found(
-        client.post(
+        isolation_client.post(
+            "/api/v1/learning/courses/{course_id}/enrolments",
             f"/api/v1/learning/courses/{course_id}/enrolments",
             headers={**learner_headers_b, "idempotency-key": f"enrol-{uuid4()}"},
         ),
     )
     _assert_not_found(
-        client.get(f"/api/v1/learning/courses/{course_id}/player", headers=learner_headers_b),
+        isolation_client.get(
+            "/api/v1/learning/courses/{course_id}/player",
+            f"/api/v1/learning/courses/{course_id}/player",
+            headers=learner_headers_b,
+        ),
     )
     _assert_not_found(
-        client.put(
+        isolation_client.put(
+            "/api/v1/learning/courses/{course_id}/lessons/{lesson_id}/progress",
             f"/api/v1/learning/courses/{course_id}/lessons/{lesson_id}/progress",
             json={"last_position": 10, "percent_complete": 50},
             headers=learner_headers_b,
         ),
     )
     _assert_not_found(
-        client.post(
+        isolation_client.post(
+            "/api/v1/learning/courses/{course_id}/quizzes/{block_id}/attempts",
             f"/api/v1/learning/courses/{course_id}/quizzes/{quiz_block_id}/attempts",
             json={"selected_option_id": "a"},
             headers=learner_headers_b,
         ),
     )
     _assert_not_found(
-        client.post(
+        isolation_client.post(
+            "/api/v1/learning/courses/{course_id}/completion",
             f"/api/v1/learning/courses/{course_id}/completion",
             headers={**learner_headers_b, "idempotency-key": f"complete-{uuid4()}"},
         ),
     )
     _assert_not_found(
-        client.post(
+        isolation_client.post(
+            "/api/v1/learning/courses/{course_id}/certificate",
             f"/api/v1/learning/courses/{course_id}/certificate",
             headers={**learner_headers_b, "idempotency-key": f"certificate-{uuid4()}"},
         ),
