@@ -1080,7 +1080,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint / Phase | Status | Completed | Notes |
 |---|---|---:|---|
 | Sprint 0: Pre-flight Foundations | Complete | 16 / 16 | Core repo, backend, frontend, Docker, CI, logging, observability, request context, health, envelope, typed errors, and ADR docs are scaffolded and locally verified. |
-| Sprint 1: Tenancy & Auth | In progress | 9 / 17 | Tenant model/resolver/context, DB roles, per-cursor RLS variable hook, RLS migration helper, first tenant-owned table, CI migration guard, and tenant-owned table runbook are implemented and tested. |
+| Sprint 1: Tenancy & Auth | In progress | 11 / 17 | Tenant model/resolver/context, DB roles, ORM tenant filters, tenant insert population, RLS foundations, CI migration guard, and tenant-owned table runbook are implemented and tested. |
 | Sprint 2: Course Authoring | Not started | 0 / 11 | Depends on tenancy/auth foundations. |
 | Sprint 3: Learning Experience | Not started | 0 / 11 | Depends on course authoring foundation. |
 | Sprint 4: AI Tutor | Not started | 0 / 17 | Depends on published lesson/course data and async worker foundation. |
@@ -1138,14 +1138,19 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | RLS migration helper | Add first tenant-owned table using the helper | Complete |
 | CI RLS check | Add script that detects tenant-owned migrations missing the helper | Complete |
 | RLS tests | Add static/helper tests for RLS helper and migration guard | Complete |
+| ORM tenant filter | Add grep-able tenant-filter bypass execution option | Complete |
+| ORM tenant filter | Inject tenant predicate for tenant-owned SELECT queries | Complete |
+| ORM tenant filter | Inject tenant predicate for tenant-owned UPDATE and DELETE statements | Complete |
+| ORM tenant inserts | Auto-populate `tenant_id` on new tenant-owned ORM objects | Complete |
+| ORM tenant tests | Add unit tests for SELECT/UPDATE/DELETE filtering and INSERT population | Complete |
 
 - [x] Implement tenant model and global tenant table.
 - [x] Create database roles: `omnixtra_app`, `omnixtra_migrations`, `omnixtra_superadmin`.
 - [x] Implement tenant resolver for subdomains and authenticated principal claims.
 - [x] Implement request-scoped tenant context with fail-closed accessor.
 - [x] Implement SQLAlchemy tenant-owned base model.
-- [ ] Implement ORM query filter for tenant-owned SELECT/UPDATE/DELETE.
-- [ ] Auto-populate `tenant_id` on tenant-owned INSERT.
+- [x] Implement ORM query filter for tenant-owned SELECT/UPDATE/DELETE.
+- [x] Auto-populate `tenant_id` on tenant-owned INSERT.
 - [x] Implement per-cursor RLS tenant variable set/clear.
 - [x] Implement RLS migration helper and first tenant-owned table.
 - [x] Add CI check for tenant-owned migrations missing RLS helper.
