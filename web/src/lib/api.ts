@@ -1,4 +1,8 @@
-import { coursePageEnvelopeSchema, healthEnvelopeSchema } from "@/lib/schemas";
+import {
+  coursePageEnvelopeSchema,
+  coursePlayerEnvelopeSchema,
+  healthEnvelopeSchema,
+} from "@/lib/schemas";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -14,4 +18,13 @@ export async function getCourses() {
   const body: unknown = await response.json();
 
   return coursePageEnvelopeSchema.parse(body);
+}
+
+export async function getCoursePlayer(courseId: string) {
+  const response = await fetch(`${apiUrl}/api/v1/learning/courses/${courseId}/player`, {
+    cache: "no-store",
+  });
+  const body: unknown = await response.json();
+
+  return coursePlayerEnvelopeSchema.parse(body);
 }

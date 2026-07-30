@@ -96,5 +96,33 @@ export const mediaAssetSchema = z.object({
   checksum_sha256: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
 });
 
+export const playerLessonSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string(),
+  position: z.number().int().nonnegative(),
+  percent_complete: z.number().int().min(0).max(100),
+});
+
+export const playerSectionSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string(),
+  position: z.number().int().nonnegative(),
+  lessons: z.array(playerLessonSchema),
+});
+
+export const coursePlayerSchema = z.object({
+  course_id: z.string().uuid(),
+  title: z.string(),
+  status: courseStatusSchema,
+  sections: z.array(playerSectionSchema),
+});
+
+export const coursePlayerEnvelopeSchema = z.object({
+  data: coursePlayerSchema,
+  error: z.null(),
+  meta: metaSchema,
+});
+
 export type Course = z.infer<typeof courseSchema>;
+export type CoursePlayer = z.infer<typeof coursePlayerSchema>;
 export type MediaAsset = z.infer<typeof mediaAssetSchema>;

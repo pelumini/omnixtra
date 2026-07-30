@@ -1082,7 +1082,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint 0: Pre-flight Foundations | Complete | 16 / 16 | Core repo, backend, frontend, Docker, CI, logging, observability, request context, health, envelope, typed errors, and ADR docs are scaffolded and locally verified. |
 | Sprint 1: Tenancy & Auth | Complete | 17 / 17 | Tenant isolation, RLS, auth foundation, Org Admin/Learner RBAC defaults, isolation coverage gate, migration guard, and RLS benchmark are implemented and tested. |
 | Sprint 2: Course Authoring | Complete | 11 / 11 | Course authoring backend, media metadata, admin UI foundation, tests, isolation declarations, and migration smoke are locally verified. |
-| Sprint 3: Learning Experience | Not started | 0 / 11 | Depends on course authoring foundation. |
+| Sprint 3: Learning Experience | Complete | 11 / 11 | Learning backend, idempotent learner workflows, course player UI foundation, tests, isolation declarations, and migration smoke are locally verified. |
 | Sprint 4: AI Tutor | Not started | 0 / 17 | Depends on published lesson/course data and async worker foundation. |
 | Sprint 5: Billing, Branding, Analytics, and MVP Polish | Not started | 0 / 15 | Final MVP integration sprint. |
 | Phase 2: Months 4-6 | Not started | 0 / 11 | Post-MVP expansion. |
@@ -1217,17 +1217,35 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 
 ### Sprint 3: Learning Experience, Weeks 7-8
 
-- [ ] Create `learning` module.
-- [ ] Implement enrolments.
-- [ ] Implement course player API.
-- [ ] Implement lesson resume/progress tracking.
-- [ ] Implement quiz scoring.
-- [ ] Implement course completion rules.
-- [ ] Implement certificate PDF generation.
-- [ ] Add idempotency for enrolment, completion, and certificate issuance.
-- [ ] Add learner frontend course player.
-- [ ] Add quiz and completion UI.
-- [ ] Add isolation tests for enrolments, progress, and certificates.
+#### Sprint 3 Subtask Tracker
+
+| Parent Task | Subtask | Status |
+|---|---|---|
+| Learning module | Add backend `learning` package exports | Complete |
+| Learning models | Add enrolment, lesson progress, quiz attempt, completion, and certificate models | Complete |
+| Learning migrations | Add tenant-owned learning tables with RLS helpers and grants | Complete |
+| Learning schemas | Add enrolment, player, progress, quiz, completion, and certificate schemas | Complete |
+| Learning services | Add idempotent enrolment service | Complete |
+| Learning services | Add course player outline service | Complete |
+| Learning services | Add lesson resume/progress service | Complete |
+| Learning services | Add quiz scoring service | Complete |
+| Learning services | Add course completion and certificate service | Complete |
+| Learning routes | Add protected learning API routes under `/api/v1/learning` | Complete |
+| Learning tests | Add model/schema/service/route tests and isolation coverage declarations | Complete |
+| Learner frontend | Add learner course player foundation | Complete |
+| Learner frontend | Add quiz and completion UI foundation | Complete |
+
+- [x] Create `learning` module.
+- [x] Implement enrolments.
+- [x] Implement course player API.
+- [x] Implement lesson resume/progress tracking.
+- [x] Implement quiz scoring.
+- [x] Implement course completion rules.
+- [x] Implement certificate PDF generation.
+- [x] Add idempotency for enrolment, completion, and certificate issuance.
+- [x] Add learner frontend course player.
+- [x] Add quiz and completion UI.
+- [x] Add isolation tests for enrolments, progress, and certificates.
 
 **Exit criteria:** learner can enrol, resume, complete a course, pass quiz flow, and download certificate; idempotency is tested.
 

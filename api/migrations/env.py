@@ -6,6 +6,7 @@ from sqlalchemy import engine_from_config, pool
 from app.auth import models as auth_models  # noqa: F401
 from app.core.config import get_settings
 from app.courses import models as course_models  # noqa: F401
+from app.learning import models as learning_models  # noqa: F401
 from app.shared.models import Base
 from app.tenancy import models as tenancy_models  # noqa: F401
 from app.tenancy import probe as tenancy_probe  # noqa: F401

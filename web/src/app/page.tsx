@@ -1,17 +1,20 @@
 import {
+  Award,
   BadgeCheck,
   BookOpen,
+  CheckCircle2,
   CircleDashed,
   FileText,
   Image,
   ListChecks,
   PlaySquare,
   Plus,
+  RotateCcw,
   Upload,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import type { Course } from "@/lib/schemas";
+import type { Course, CoursePlayer } from "@/lib/schemas";
 
 const courses: Course[] = [
   {
@@ -48,6 +51,46 @@ const blockTools = [
   { label: "Image", icon: Image },
   { label: "Quiz", icon: ListChecks },
 ];
+
+const player: CoursePlayer = {
+  course_id: "00000000-0000-0000-0000-000000000102",
+  title: "Customer Enablement",
+  status: "published",
+  sections: [
+    {
+      id: "00000000-0000-0000-0000-000000000201",
+      title: "Product Basics",
+      position: 0,
+      lessons: [
+        {
+          id: "00000000-0000-0000-0000-000000000301",
+          title: "Start here",
+          position: 0,
+          percent_complete: 100,
+        },
+        {
+          id: "00000000-0000-0000-0000-000000000302",
+          title: "Workspace tour",
+          position: 1,
+          percent_complete: 65,
+        },
+      ],
+    },
+    {
+      id: "00000000-0000-0000-0000-000000000202",
+      title: "Knowledge Check",
+      position: 1,
+      lessons: [
+        {
+          id: "00000000-0000-0000-0000-000000000303",
+          title: "Implementation quiz",
+          position: 0,
+          percent_complete: 0,
+        },
+      ],
+    },
+  ],
+};
 
 export default function Home() {
   const selectedCourse = courses[0];
@@ -178,6 +221,84 @@ export default function Home() {
               <p className="mt-2 break-all text-xs leading-5 text-gray-500">{key}</p>
             </article>
           ))}
+        </aside>
+      </section>
+
+      <section className="grid gap-4 border-t border-[var(--border)] pt-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <section className="border border-[var(--border)] bg-white">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] px-5 py-4">
+            <div>
+              <h2 className="text-lg font-semibold">{player.title}</h2>
+              <p className="mt-1 text-sm text-gray-600">Learner course player</p>
+            </div>
+            <Button className="gap-2 bg-white text-[var(--foreground)] ring-1 ring-[var(--border)] hover:bg-gray-100">
+              <RotateCcw aria-hidden="true" className="size-4" />
+              Resume
+            </Button>
+          </div>
+
+          <div className="grid gap-4 p-5">
+            {player.sections.map((section) => (
+              <article className="border border-[var(--border)]" key={section.id}>
+                <div className="border-b border-[var(--border)] bg-gray-50 px-4 py-3">
+                  <h3 className="text-sm font-semibold">{section.title}</h3>
+                </div>
+                <div className="divide-y divide-[var(--border)]">
+                  {section.lessons.map((lesson) => (
+                    <div className="grid gap-2 px-4 py-3" key={lesson.id}>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="min-w-0 truncate text-sm font-medium">{lesson.title}</p>
+                        <span className="text-xs text-gray-500">{lesson.percent_complete}%</span>
+                      </div>
+                      <div className="h-2 bg-gray-100">
+                        <div
+                          className="h-2 bg-[var(--primary)]"
+                          style={{ width: `${lesson.percent_complete}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <aside className="grid content-start gap-4">
+          <section className="border border-[var(--border)] bg-white">
+            <div className="border-b border-[var(--border)] px-4 py-3">
+              <h2 className="text-sm font-semibold">Quiz</h2>
+            </div>
+            <div className="grid gap-3 px-4 py-4">
+              {["Create a project", "Invite a learner", "Publish a marketplace listing"].map(
+                (answer) => (
+                  <Button
+                    className="h-11 justify-start bg-white text-gray-700 ring-1 ring-[var(--border)] hover:bg-gray-100"
+                    key={answer}
+                  >
+                    {answer}
+                  </Button>
+                ),
+              )}
+              <Button className="gap-2">
+                <CheckCircle2 aria-hidden="true" className="size-4" />
+                Submit
+              </Button>
+            </div>
+          </section>
+
+          <section className="border border-[var(--border)] bg-white">
+            <div className="border-b border-[var(--border)] px-4 py-3">
+              <h2 className="text-sm font-semibold">Completion</h2>
+            </div>
+            <div className="grid gap-3 px-4 py-4">
+              <p className="text-sm text-gray-600">One lesson and one quiz remain.</p>
+              <Button className="gap-2 bg-white text-[var(--foreground)] ring-1 ring-[var(--border)] hover:bg-gray-100">
+                <Award aria-hidden="true" className="size-4" />
+                Certificate
+              </Button>
+            </div>
+          </section>
         </aside>
       </section>
     </main>

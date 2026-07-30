@@ -18,9 +18,11 @@ def test_permission_dependency_accepts_authorized_role() -> None:
     token = create_access_token(subject=USER_ID, tenant_id=TENANT_ID, role="org_admin")
 
     try:
-        dependency(HTTPAuthorizationCredentials(scheme="Bearer", credentials=token))
+        principal = dependency(HTTPAuthorizationCredentials(scheme="Bearer", credentials=token))
 
         assert require_tenant_id() == str(TENANT_ID)
+        assert principal.user_id == USER_ID
+        assert principal.tenant_id == TENANT_ID
     finally:
         clear_tenant_id()
 

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { blockContentSchema, coursePageEnvelopeSchema, healthEnvelopeSchema, mediaAssetSchema } from "@/lib/schemas";
+import {
+  blockContentSchema,
+  coursePageEnvelopeSchema,
+  coursePlayerEnvelopeSchema,
+  healthEnvelopeSchema,
+  mediaAssetSchema,
+} from "@/lib/schemas";
 
 describe("healthEnvelopeSchema", () => {
   it("accepts the API health envelope", () => {
@@ -74,5 +80,36 @@ describe("mediaAssetSchema", () => {
         checksum_sha256: null,
       }).object_key,
     ).toContain(`/courses/${courseId}/`);
+  });
+});
+
+describe("coursePlayerEnvelopeSchema", () => {
+  it("accepts the backend course player envelope", () => {
+    expect(
+      coursePlayerEnvelopeSchema.parse({
+        data: {
+          course_id: "00000000-0000-0000-0000-000000000010",
+          title: "Security Basics",
+          status: "published",
+          sections: [
+            {
+              id: "00000000-0000-0000-0000-000000000011",
+              title: "Welcome",
+              position: 0,
+              lessons: [
+                {
+                  id: "00000000-0000-0000-0000-000000000012",
+                  title: "Start here",
+                  position: 0,
+                  percent_complete: 80,
+                },
+              ],
+            },
+          ],
+        },
+        error: null,
+        meta: { request_id: "req_test", timestamp: null },
+      }).data.sections[0]?.lessons[0]?.percent_complete,
+    ).toBe(80);
   });
 });
