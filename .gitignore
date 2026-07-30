@@ -15,6 +15,7 @@ node_modules/
 out/
 coverage/
 *.tsbuildinfo
+.next-dev*.log
 
 # Environment
 .env
