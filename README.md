@@ -6,7 +6,7 @@ The project source of truth is [AGENTS.md](./AGENTS.md). Sprint progress is trac
 
 ## Current Status
 
-Sprint 0-5 foundations are under remediation. The API has tenant/RLS foundations, auth skeletons, course and learning backends, a local/mock AI tutor runtime, a billing foundation, Docker migration wiring, and remote CI with real PostgreSQL/Redis integration tests. Auth hardening, provider-backed AI, functional frontend workflows, live Stripe wiring, branding, analytics, and MVP polish remain open. `AGENTS.md` is the detailed tracker and distinguishes implemented foundations from remaining production gaps.
+Sprint 0-2 are complete, and Sprint 3-5 foundations are under remediation. The API has tenant/RLS foundations, hardened auth sessions, course and learning backends, a local/mock AI tutor runtime, a billing foundation, Docker migration wiring, and remote CI with real PostgreSQL/Redis integration tests. Learner workflows, provider-backed AI, live Stripe wiring, branding, analytics, and MVP polish remain open. `AGENTS.md` is the detailed tracker and distinguishes implemented foundations from remaining production gaps.
 
 ## Local Development
 

@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  blockCreateRequestSchema,
   blockContentSchema,
+  courseCreateRequestSchema,
   coursePageEnvelopeSchema,
   coursePlayerEnvelopeSchema,
   healthEnvelopeSchema,
+  mediaAssetCreateRequestSchema,
   mediaAssetSchema,
   tutorJobEnvelopeSchema,
 } from "@/lib/schemas";
@@ -62,6 +65,45 @@ describe("blockContentSchema", () => {
         correct_option_id: "yes",
       }).type,
     ).toBe("quiz");
+  });
+});
+
+describe("courseCreateRequestSchema", () => {
+  it("validates backend course creation payloads", () => {
+    expect(
+      courseCreateRequestSchema.parse({
+        description: null,
+        slug: "security-basics",
+        title: "Security Basics",
+      }).slug,
+    ).toBe("security-basics");
+  });
+});
+
+describe("blockCreateRequestSchema", () => {
+  it("requires block_type to match content type", () => {
+    expect(() =>
+      blockCreateRequestSchema.parse({
+        block_type: "video",
+        content: { markdown: "Welcome", type: "text" },
+        lesson_id: "00000000-0000-0000-0000-000000000012",
+        position: 0,
+      }),
+    ).toThrow();
+  });
+});
+
+describe("mediaAssetCreateRequestSchema", () => {
+  it("validates tenant media metadata payloads", () => {
+    expect(
+      mediaAssetCreateRequestSchema.parse({
+        byte_size: 2048,
+        checksum_sha256: null,
+        content_type: "video/mp4",
+        file_name: "intro.mp4",
+        object_key: "tenants/current/courses/course-id/intro.mp4",
+      }).content_type,
+    ).toBe("video/mp4");
   });
 });
 

@@ -34,6 +34,43 @@ export const courseSchema = z.object({
   status: courseStatusSchema,
 });
 
+export const courseCreateRequestSchema = z.object({
+  title: z.string().min(3).max(200),
+  slug: z.string().regex(/^[a-z0-9][a-z0-9-]{1,118}[a-z0-9]$/),
+  description: z.string().max(2000).nullable(),
+});
+
+export const courseUpdateRequestSchema = z.object({
+  title: z.string().min(3).max(200).optional(),
+  description: z.string().max(2000).nullable().optional(),
+});
+
+export const sectionCreateRequestSchema = z.object({
+  title: z.string().min(1).max(200),
+  position: z.number().int().nonnegative(),
+});
+
+export const sectionSchema = z.object({
+  id: z.string().uuid(),
+  course_id: z.string().uuid(),
+  title: z.string(),
+  position: z.number().int().nonnegative(),
+});
+
+export const lessonCreateRequestSchema = z.object({
+  section_id: z.string().uuid(),
+  title: z.string().min(1).max(200),
+  position: z.number().int().nonnegative(),
+});
+
+export const lessonSchema = z.object({
+  id: z.string().uuid(),
+  course_id: z.string().uuid(),
+  section_id: z.string().uuid(),
+  title: z.string(),
+  position: z.number().int().nonnegative(),
+});
+
 export const coursePageSchema = z.object({
   items: z.array(courseSchema),
   next_cursor: z.string().nullable(),
@@ -41,6 +78,24 @@ export const coursePageSchema = z.object({
 
 export const coursePageEnvelopeSchema = z.object({
   data: coursePageSchema,
+  error: z.null(),
+  meta: metaSchema,
+});
+
+export const courseEnvelopeSchema = z.object({
+  data: courseSchema,
+  error: z.null(),
+  meta: metaSchema,
+});
+
+export const sectionEnvelopeSchema = z.object({
+  data: sectionSchema,
+  error: z.null(),
+  meta: metaSchema,
+});
+
+export const lessonEnvelopeSchema = z.object({
+  data: lessonSchema,
   error: z.null(),
   meta: metaSchema,
 });
@@ -86,6 +141,38 @@ export const blockContentSchema = z.union([
   quizBlockContentSchema,
 ]);
 
+export const blockCreateRequestSchema = z
+  .object({
+    lesson_id: z.string().uuid(),
+    block_type: z.enum(["text", "video", "image", "quiz"]),
+    content: blockContentSchema,
+    position: z.number().int().nonnegative(),
+  })
+  .refine((block) => block.block_type === block.content.type, "block_type must match content type");
+
+export const blockSchema = z.object({
+  id: z.string().uuid(),
+  course_id: z.string().uuid(),
+  lesson_id: z.string().uuid(),
+  block_type: z.enum(["text", "video", "image", "quiz"]),
+  content: z.record(z.unknown()),
+  position: z.number().int().nonnegative(),
+});
+
+export const blockEnvelopeSchema = z.object({
+  data: blockSchema,
+  error: z.null(),
+  meta: metaSchema,
+});
+
+export const mediaAssetCreateRequestSchema = z.object({
+  object_key: z.string().min(1).max(700),
+  file_name: z.string().min(1).max(255),
+  content_type: z.string().regex(/^(image|video)\/[a-z0-9.+-]+$/),
+  byte_size: z.number().int().positive(),
+  checksum_sha256: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
+});
+
 export const mediaAssetSchema = z.object({
   id: z.string().uuid(),
   course_id: z.string().uuid(),
@@ -94,6 +181,12 @@ export const mediaAssetSchema = z.object({
   content_type: z.string().regex(/^(image|video)\/[a-z0-9.+-]+$/),
   byte_size: z.number().int().positive(),
   checksum_sha256: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
+});
+
+export const mediaAssetEnvelopeSchema = z.object({
+  data: mediaAssetSchema,
+  error: z.null(),
+  meta: metaSchema,
 });
 
 export const playerLessonSchema = z.object({
@@ -136,7 +229,15 @@ export const tutorJobEnvelopeSchema = z.object({
   meta: metaSchema,
 });
 
+export type Block = z.infer<typeof blockSchema>;
 export type Course = z.infer<typeof courseSchema>;
+export type CourseCreateRequest = z.infer<typeof courseCreateRequestSchema>;
 export type CoursePlayer = z.infer<typeof coursePlayerSchema>;
+export type CourseUpdateRequest = z.infer<typeof courseUpdateRequestSchema>;
+export type Lesson = z.infer<typeof lessonSchema>;
+export type LessonCreateRequest = z.infer<typeof lessonCreateRequestSchema>;
 export type MediaAsset = z.infer<typeof mediaAssetSchema>;
+export type MediaAssetCreateRequest = z.infer<typeof mediaAssetCreateRequestSchema>;
+export type Section = z.infer<typeof sectionSchema>;
+export type SectionCreateRequest = z.infer<typeof sectionCreateRequestSchema>;
 export type TutorJob = z.infer<typeof tutorJobSchema>;
