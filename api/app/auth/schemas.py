@@ -40,6 +40,12 @@ class PasswordResetRequest(BaseModel):
     email: EmailStr
 
 
+class InviteUserRequest(BaseModel):
+    email: EmailStr
+    full_name: str = Field(min_length=2, max_length=200)
+    role: Literal["org_admin", "learner"] = "learner"
+
+
 class MagicLinkVerifyRequest(BaseModel):
     token: str = Field(min_length=32, max_length=256)
 

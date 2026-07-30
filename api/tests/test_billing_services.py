@@ -11,6 +11,7 @@ from app.billing.services import (
     CheckoutSessionCreate,
     StripeBillingProvider,
     change_subscription_plan,
+    ensure_admin_capacity,
     ensure_learner_capacity,
     ensure_storage_capacity,
     increment_learner_usage,
@@ -218,6 +219,17 @@ async def test_ensure_learner_capacity_rejects_full_plan() -> None:
 
 
 @pytest.mark.anyio
+async def test_ensure_admin_capacity_rejects_full_plan() -> None:
+    plan = _plan(included_learners=50, included_storage_gb=10)
+    plan.included_admin_seats = 1
+    subscription = _subscription(seats_used=0)
+    session = _AdminLimitSession(subscription=subscription, plan=plan, admin_count=1)
+
+    with pytest.raises(ValidationAppError, match="admin seat limit"):
+        await ensure_admin_capacity(session)
+
+
+@pytest.mark.anyio
 async def test_increment_learner_usage_updates_subscription_usage() -> None:
     plan = _plan(included_learners=2, included_storage_gb=10)
     subscription = _subscription(seats_used=0)
@@ -351,3 +363,24 @@ class _NoopBillingProvider:
         idempotency_key: str,
     ) -> None:
         _ = (subscription, target_plan, idempotency_key)
+
+
+class _AdminLimitSession:
+    def __init__(
+        self,
+        *,
+        subscription: TenantSubscription,
+        plan: BillingPlan,
+        admin_count: int,
+    ) -> None:
+        self.subscription = subscription
+        self.plan = plan
+        self.admin_count = admin_count
+        self.scalar_calls = 0
+
+    async def scalar(self, _statement: object) -> TenantSubscription | int:
+        self.scalar_calls += 1
+        return self.subscription if self.scalar_calls == 1 else self.admin_count
+
+    async def get(self, _model: object, _identifier: object) -> BillingPlan:
+        return self.plan

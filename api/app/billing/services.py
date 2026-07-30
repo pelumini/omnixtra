@@ -380,6 +380,31 @@ async def ensure_learner_capacity(session: AsyncSession) -> None:
         raise ValidationAppError(msg)
 
 
+async def ensure_admin_capacity(session: AsyncSession) -> None:
+    result = await _current_plan_and_subscription(session)
+    if result is None:
+        return
+    plan, _subscription = result
+    users = table(
+        "users",
+        column("role"),
+        column("status"),
+        column("deleted_at"),
+    )
+    admin_count = await session.scalar(
+        select(func.count())
+        .select_from(users)
+        .where(
+            users.c.role == "org_admin",
+            users.c.status.in_(["active", "invited"]),
+            users.c.deleted_at.is_(None),
+        ),
+    )
+    if int(admin_count or 0) >= plan.included_admin_seats:
+        msg = "admin seat limit exceeded for current plan"
+        raise ValidationAppError(msg)
+
+
 async def increment_learner_usage(session: AsyncSession) -> None:
     result = await _current_plan_and_subscription(session)
     if result is None:
@@ -632,6 +657,7 @@ __all__ = [
     "apply_stripe_subscription_event",
     "change_subscription_plan",
     "create_checkout_session",
+    "ensure_admin_capacity",
     "ensure_learner_capacity",
     "ensure_storage_capacity",
     "get_current_subscription",

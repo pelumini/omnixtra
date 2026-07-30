@@ -16,6 +16,8 @@ node_modules/
 .next/
 out/
 coverage/
+test-results/
+playwright-report/
 *.tsbuildinfo
 .next-dev*.log
 

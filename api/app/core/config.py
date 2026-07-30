@@ -43,6 +43,12 @@ class Settings(BaseSettings):
     )
     stripe_secret_key: str = Field(default="", validation_alias="STRIPE_SECRET_KEY")
     stripe_webhook_secret: str = Field(default="", validation_alias="STRIPE_WEBHOOK_SECRET")
+    resend_api_key: str = Field(default="", validation_alias="RESEND_API_KEY")
+    resend_from_email: str = Field(
+        default="OmniXtra <no-reply@omnixtra.local>",
+        validation_alias="RESEND_FROM_EMAIL",
+    )
+    web_app_url: str = Field(default="http://localhost:3000", validation_alias="WEB_APP_URL")
 
 
 @lru_cache

@@ -3,12 +3,15 @@ import { describe, expect, it } from "vitest";
 import {
   blockCreateRequestSchema,
   blockContentSchema,
+  billingPlansEnvelopeSchema,
+  courseCompletionAnalyticsEnvelopeSchema,
   courseCreateRequestSchema,
   courseCompletionEnvelopeSchema,
   coursePageEnvelopeSchema,
   coursePlayerEnvelopeSchema,
   healthEnvelopeSchema,
   lessonProgressRequestSchema,
+  learnerProgressReportEnvelopeSchema,
   mediaAssetCreateRequestSchema,
   mediaAssetSchema,
   quizAttemptRequestSchema,
@@ -48,6 +51,71 @@ describe("tenantBrandingEnvelopeSchema", () => {
         meta: { request_id: "req_test", timestamp: null },
       }).data.primary_color,
     ).toBe("#224466");
+  });
+});
+
+describe("billingPlansEnvelopeSchema", () => {
+  it("accepts billing plan catalog responses", () => {
+    expect(
+      billingPlansEnvelopeSchema.parse({
+        data: [
+          {
+            currency: "usd",
+            id: "00000000-0000-0000-0000-000000000001",
+            included_admin_seats: 3,
+            included_learners: 50,
+            included_storage_gb: 10,
+            monthly_price_cents: 4900,
+            name: "Starter",
+            slug: "starter",
+            trial_days: 14,
+          },
+        ],
+        error: null,
+        meta: { request_id: "req_test", timestamp: null },
+      }).data[0]?.slug,
+    ).toBe("starter");
+  });
+});
+
+describe("admin reporting schemas", () => {
+  it("accepts completion analytics and learner progress responses", () => {
+    expect(
+      courseCompletionAnalyticsEnvelopeSchema.parse({
+        data: [
+          {
+            completed_count: 7,
+            completion_percentage: 70,
+            course_id: "00000000-0000-0000-0000-000000000010",
+            course_title: "Security Basics",
+            enrolled_count: 10,
+          },
+        ],
+        error: null,
+        meta: { request_id: "req_test", timestamp: null },
+      }).data[0]?.completion_percentage,
+    ).toBe(70);
+
+    expect(
+      learnerProgressReportEnvelopeSchema.parse({
+        data: [
+          {
+            average_progress_percent: 80,
+            completed_at: null,
+            course_id: "00000000-0000-0000-0000-000000000010",
+            course_title: "Security Basics",
+            enrolment_status: "active",
+            learner_email: "learner@example.com",
+            learner_id: "00000000-0000-0000-0000-000000000011",
+            learner_name: "Learner User",
+            lessons_completed: 4,
+            lessons_total: 5,
+          },
+        ],
+        error: null,
+        meta: { request_id: "req_test", timestamp: null },
+      }).data[0]?.average_progress_percent,
+    ).toBe(80);
   });
 });
 

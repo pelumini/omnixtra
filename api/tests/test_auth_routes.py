@@ -21,6 +21,7 @@ def test_auth_routes_are_registered_under_api_v1() -> None:
     assert "/api/v1/auth/magic-link/verify" in paths
     assert "/api/v1/auth/password-reset" in paths
     assert "/api/v1/auth/password-reset/complete" in paths
+    assert "/api/v1/auth/invitations" in paths
     assert "/api/v1/auth/refresh" in paths
     assert "/api/v1/auth/logout" in paths
 

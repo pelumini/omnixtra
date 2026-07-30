@@ -1,7 +1,9 @@
 import {
   blockCreateRequestSchema,
   blockEnvelopeSchema,
+  billingPlansEnvelopeSchema,
   certificateEnvelopeSchema,
+  courseCompletionAnalyticsEnvelopeSchema,
   courseCompletionEnvelopeSchema,
   courseCreateRequestSchema,
   courseEnvelopeSchema,
@@ -14,6 +16,7 @@ import {
   lessonEnvelopeSchema,
   lessonProgressEnvelopeSchema,
   lessonProgressRequestSchema,
+  learnerProgressReportEnvelopeSchema,
   mediaAssetCreateRequestSchema,
   mediaAssetEnvelopeSchema,
   quizAttemptEnvelopeSchema,
@@ -56,6 +59,46 @@ export async function getTenantBranding(context: RequestContext = {}) {
   throwIfApiError(response, body);
 
   return tenantBrandingEnvelopeSchema.parse(body);
+}
+
+export async function getBillingPlans(context: RequestContext = {}) {
+  const response = await fetch(`${apiUrl}/api/v1/billing/plans`, {
+    cache: "no-store",
+    credentials: "include",
+    headers: requestHeaders(context),
+  });
+  const body: unknown = await response.json();
+  throwIfApiError(response, body);
+
+  return billingPlansEnvelopeSchema.parse(body);
+}
+
+export async function getCompletionAnalytics(context: RequestContext = {}) {
+  const response = await fetch(`${apiUrl}/api/v1/admin/analytics/completions`, {
+    cache: "no-store",
+    credentials: "include",
+    headers: requestHeaders(context),
+  });
+  const body: unknown = await response.json();
+  throwIfApiError(response, body);
+
+  return courseCompletionAnalyticsEnvelopeSchema.parse(body);
+}
+
+export async function getLearnerProgressReport(context: RequestContext = {}) {
+  const response = await fetch(`${apiUrl}/api/v1/admin/reports/learner-progress`, {
+    cache: "no-store",
+    credentials: "include",
+    headers: requestHeaders(context),
+  });
+  const body: unknown = await response.json();
+  throwIfApiError(response, body);
+
+  return learnerProgressReportEnvelopeSchema.parse(body);
+}
+
+export function learnerProgressCsvUrl() {
+  return `${apiUrl}/api/v1/admin/reports/learner-progress.csv`;
 }
 
 export async function getCourses(context: RequestContext = {}) {

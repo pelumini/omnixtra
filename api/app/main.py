@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from app.admin.routes import router as admin_router
 from app.ai.routes import router as ai_router
 from app.api.router import api_router
 from app.auth.routes import router as auth_router
@@ -26,6 +27,7 @@ def create_app() -> FastAPI:
     application.add_middleware(RequestContextMiddleware)
     register_exception_handlers(application)
     application.include_router(auth_router, prefix="/api/v1")
+    application.include_router(admin_router, prefix="/api/v1")
     application.include_router(courses_router, prefix="/api/v1")
     application.include_router(learning_router, prefix="/api/v1")
     application.include_router(ai_router, prefix="/api/v1")

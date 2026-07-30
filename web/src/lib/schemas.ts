@@ -27,6 +27,57 @@ export const tenantBrandingEnvelopeSchema = z.object({
   meta: metaSchema,
 });
 
+export const billingPlanSchema = z.object({
+  id: z.string().uuid(),
+  slug: z.string(),
+  name: z.string(),
+  monthly_price_cents: z.number().int().nonnegative(),
+  currency: z.string(),
+  included_admin_seats: z.number().int().nonnegative(),
+  included_learners: z.number().int().nonnegative(),
+  included_storage_gb: z.number().int().nonnegative(),
+  trial_days: z.number().int().nonnegative(),
+});
+
+export const billingPlansEnvelopeSchema = z.object({
+  data: z.array(billingPlanSchema),
+  error: z.null(),
+  meta: metaSchema,
+});
+
+export const courseCompletionAnalyticsSchema = z.object({
+  course_id: z.string().uuid(),
+  course_title: z.string(),
+  enrolled_count: z.number().int().nonnegative(),
+  completed_count: z.number().int().nonnegative(),
+  completion_percentage: z.number().int().min(0).max(100),
+});
+
+export const courseCompletionAnalyticsEnvelopeSchema = z.object({
+  data: z.array(courseCompletionAnalyticsSchema),
+  error: z.null(),
+  meta: metaSchema,
+});
+
+export const learnerProgressReportRowSchema = z.object({
+  learner_id: z.string().uuid(),
+  learner_name: z.string(),
+  learner_email: z.string().email(),
+  course_id: z.string().uuid(),
+  course_title: z.string(),
+  enrolment_status: z.string(),
+  lessons_total: z.number().int().nonnegative(),
+  lessons_completed: z.number().int().nonnegative(),
+  average_progress_percent: z.number().int().min(0).max(100),
+  completed_at: z.string().datetime().nullable(),
+});
+
+export const learnerProgressReportEnvelopeSchema = z.object({
+  data: z.array(learnerProgressReportRowSchema),
+  error: z.null(),
+  meta: metaSchema,
+});
+
 export const errorDetailSchema = z.object({
   field: z.string(),
   constraint: z.string(),
@@ -334,7 +385,9 @@ export const tutorEventSchema = z.object({
 });
 
 export type Block = z.infer<typeof blockSchema>;
+export type BillingPlan = z.infer<typeof billingPlanSchema>;
 export type Course = z.infer<typeof courseSchema>;
+export type CourseCompletionAnalytics = z.infer<typeof courseCompletionAnalyticsSchema>;
 export type CourseCompletion = z.infer<typeof courseCompletionSchema>;
 export type CourseCreateRequest = z.infer<typeof courseCreateRequestSchema>;
 export type CoursePlayer = z.infer<typeof coursePlayerSchema>;
@@ -344,6 +397,7 @@ export type Lesson = z.infer<typeof lessonSchema>;
 export type LessonCreateRequest = z.infer<typeof lessonCreateRequestSchema>;
 export type LessonProgress = z.infer<typeof lessonProgressSchema>;
 export type LessonProgressRequest = z.infer<typeof lessonProgressRequestSchema>;
+export type LearnerProgressReportRow = z.infer<typeof learnerProgressReportRowSchema>;
 export type MediaAsset = z.infer<typeof mediaAssetSchema>;
 export type MediaAssetCreateRequest = z.infer<typeof mediaAssetCreateRequestSchema>;
 export type Certificate = z.infer<typeof certificateSchema>;

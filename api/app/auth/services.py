@@ -7,13 +7,14 @@ from uuid import UUID, uuid4
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.models import AuthToken, AuthTokenPurpose, RefreshSession, User, UserStatus
+from app.auth.models import AuthToken, AuthTokenPurpose, RefreshSession, User, UserRole, UserStatus
 from app.auth.rbac import DEFAULT_SIGNUP_ROLE
-from app.auth.schemas import AuthenticatedUser, AuthResponse, SignupRequest
+from app.auth.schemas import AuthenticatedUser, AuthResponse, InviteUserRequest, SignupRequest
+from app.billing.services import ensure_admin_capacity
 from app.core.context import clear_tenant_id, set_tenant_id
 from app.core.exceptions import AuthenticationError, ConflictError, ValidationAppError
 from app.core.security import create_access_token, hash_password, verify_password
-from app.tenancy.models import Tenant, TenantStatus
+from app.tenancy.models import TenancyAuditEvent, Tenant, TenantStatus
 from app.tenancy.orm import TENANT_FILTER_BYPASS_OPTION
 
 
@@ -131,6 +132,49 @@ async def issue_auth_token(
     session.add(token)
     await session.commit()
     return IssuedAuthToken(raw_token=raw_token, token_hash=token_hash)
+
+
+async def invite_user(
+    session: AsyncSession,
+    request: InviteUserRequest,
+    *,
+    actor_id: UUID | None = None,
+) -> IssuedAuthToken:
+    normalized_email = _normalize_email(request.email)
+    existing_user = await session.scalar(select(User).where(User.email == normalized_email))
+    if existing_user is not None:
+        msg = "user email is already invited"
+        raise ConflictError(msg)
+    if request.role == UserRole.org_admin.value:
+        await ensure_admin_capacity(session)
+    user = User(
+        email=normalized_email,
+        full_name=request.full_name,
+        password_hash=None,
+        role=request.role,
+        status=UserStatus.invited.value,
+    )
+    session.add(user)
+    await session.flush()
+    raw_token = token_urlsafe(32)
+    token = AuthToken(
+        user_id=user.id,
+        email=normalized_email,
+        token_hash=hash_auth_token(raw_token),
+        purpose=AuthTokenPurpose.magic_link.value,
+        expires_at=datetime.now(UTC) + timedelta(minutes=15),
+    )
+    session.add(token)
+    session.add(
+        TenancyAuditEvent(
+            actor_id=actor_id,
+            action="tenant.user.invited",
+            summary=f"Invited {request.role} user",
+            event_data={"email": normalized_email, "role": request.role},
+        ),
+    )
+    await session.commit()
+    return IssuedAuthToken(raw_token=raw_token, token_hash=token.token_hash)
 
 
 async def verify_magic_link(

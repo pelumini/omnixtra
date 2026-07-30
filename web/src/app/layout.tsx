@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import Link from "next/link";
 import type { CSSProperties } from "react";
 import type { ReactNode } from "react";
 
@@ -44,6 +45,20 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             <span className="text-sm font-semibold text-[var(--foreground)]">
               {branding.tenant_name}
             </span>
+            <nav className="ml-auto flex items-center gap-3 text-sm text-gray-600">
+              <Link className="hover:text-[var(--primary)]" href="/admin">
+                Dashboard
+              </Link>
+              <Link className="hover:text-[var(--primary)]" href="/admin/courses">
+                Courses
+              </Link>
+              <Link className="hover:text-[var(--primary)]" href="/onboarding">
+                Onboarding
+              </Link>
+              <Link className="hover:text-[var(--primary)]" href="/pricing">
+                Pricing
+              </Link>
+            </nav>
           </div>
         </header>
         {children}

@@ -6,10 +6,16 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE
+from app.auth.dependencies import (
+    ACCESS_TOKEN_COOKIE,
+    REFRESH_TOKEN_COOKIE,
+    AuthPrincipal,
+    require_permission,
+)
 from app.auth.models import AuthTokenPurpose
 from app.auth.schemas import (
     AuthResponse,
+    InviteUserRequest,
     LoginRequest,
     MagicLinkRequest,
     MagicLinkVerifyRequest,
@@ -21,6 +27,7 @@ from app.auth.schemas import (
 from app.auth.services import (
     AuthSession,
     complete_password_reset,
+    invite_user,
     issue_auth_token,
     login_with_session,
     logout_refresh_session,
@@ -29,12 +36,15 @@ from app.auth.services import (
     verify_magic_link,
 )
 from app.core.database import get_session
+from app.core.email import EmailProvider, EmailTemplate, auth_token_email, get_email_provider
 from app.core.exceptions import AuthenticationError, RateLimitError
 from app.shared.responses import Envelope, Meta
 from app.tenancy.context import require_tenant_id
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
+EmailProviderDep = Annotated[EmailProvider, Depends(get_email_provider)]
+UserManagerDep = Annotated[AuthPrincipal, Depends(require_permission("users:manage"))]
 
 
 @dataclass
@@ -83,14 +93,22 @@ async def login_route(
 async def magic_link_route(
     request: MagicLinkRequest,
     session: SessionDep,
+    email_provider: EmailProviderDep,
     http_request: Request,
 ) -> Envelope[TokenRequestAccepted]:
     _enforce_rate_limit("magic-link", http_request, request.email)
-    await issue_auth_token(
+    token = await issue_auth_token(
         session,
         UUID(require_tenant_id()),
         request.email,
         AuthTokenPurpose.magic_link,
+    )
+    await email_provider.send(
+        auth_token_email(
+            template=EmailTemplate.magic_link,
+            to_email=request.email,
+            token=token.raw_token,
+        ),
     )
     return Envelope(data=TokenRequestAccepted(accepted=True), error=None, meta=Meta.current())
 
@@ -110,14 +128,22 @@ async def magic_link_verify_route(
 async def password_reset_route(
     request: PasswordResetRequest,
     session: SessionDep,
+    email_provider: EmailProviderDep,
     http_request: Request,
 ) -> Envelope[TokenRequestAccepted]:
     _enforce_rate_limit("password-reset", http_request, request.email)
-    await issue_auth_token(
+    token = await issue_auth_token(
         session,
         UUID(require_tenant_id()),
         request.email,
         AuthTokenPurpose.password_reset,
+    )
+    await email_provider.send(
+        auth_token_email(
+            template=EmailTemplate.password_reset,
+            to_email=request.email,
+            token=token.raw_token,
+        ),
     )
     return Envelope(data=TokenRequestAccepted(accepted=True), error=None, meta=Meta.current())
 
@@ -136,6 +162,24 @@ async def password_reset_complete_route(
     )
     _set_auth_cookies(response, auth_session)
     return Envelope(data=auth_session.response, error=None, meta=Meta.current())
+
+
+@router.post("/invitations", tags=["tenant-owned"])
+async def invite_user_route(
+    request: InviteUserRequest,
+    session: SessionDep,
+    email_provider: EmailProviderDep,
+    principal: UserManagerDep,
+) -> Envelope[TokenRequestAccepted]:
+    token = await invite_user(session, request, actor_id=principal.user_id)
+    await email_provider.send(
+        auth_token_email(
+            template=EmailTemplate.magic_link,
+            to_email=request.email,
+            token=token.raw_token,
+        ),
+    )
+    return Envelope(data=TokenRequestAccepted(accepted=True), error=None, meta=Meta.current())
 
 
 @router.post("/refresh")

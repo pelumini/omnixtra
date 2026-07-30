@@ -4,7 +4,7 @@
 **Source of Truth**: `OmniXtra_Project_Charter_v1.2.docx` + `ADR-002_Multi-Tenant_Isolation.docx`  
 **Charter Version**: 1.2, pre-kickoff draft  
 **ADR Status**: ADR-002 proposed, awaiting sign-off  
-**Status**: Sprints 0-4 complete; Sprint 5 billing and branding hardening in progress
+**Status**: Sprints 0-5 complete; MVP implementation track complete
 **Scope**: Full-stack LMS, FastAPI backend, Next.js frontend, AI tutor, multi-tenant SaaS
 
 ---
@@ -1085,7 +1085,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint 2: Course Authoring | Complete | 11 / 11 | Course authoring backend, media metadata, route coverage declarations, migration smoke, real route-level attack tests, admin course list, and course builder foundation are in place. |
 | Sprint 3: Learning Experience | Complete | 11 / 11 | Learning backend, idempotent learner workflows, real route-level attack tests, learner course player, quiz/completion UI, and certificate PDF download workflow are in place. |
 | Sprint 4: AI Tutor | Complete | 17 / 17 | Async worker runtime, provider-backed AI clients, hybrid retrieval SQL, Redis Pub/Sub job streaming, LangSmith wrapper, vector isolation coverage, real tutor route attack tests, eval/cache metrics, and functional tutor UI are in place. |
-| Sprint 5: Billing, Branding, Analytics, and MVP Polish | Billing and branding hardening in progress | 6 / 15 | Billing module, data-driven MVP plan catalog, live Stripe checkout provider, signed Stripe webhook verification/event mapping, plan upgrade/downgrade, learner/storage plan-limit gates, tenant branding API/settings, branded web shell, and billing/branding isolation coverage exist; admin-seat limits, analytics, email, onboarding, and Playwright polish remain open. |
+| Sprint 5: Billing, Branding, Analytics, and MVP Polish | Complete | 15 / 15 | Billing module, live Stripe checkout/webhooks/plan changes, data-driven plan limits including admin seats, tenant branding, admin analytics, learner progress reports, CSV export, Resend transactional email hooks, onboarding/pricing UI, observability dashboard runbook, and Sprint 5 Playwright smoke specs are in place. |
 | Phase 2: Months 4-6 | Not started | 0 / 11 | Post-MVP expansion. |
 | Phase 3: Months 7-9 | Not started | 0 / 9 | Post-MVP platform/compliance expansion. |
 
@@ -1332,25 +1332,34 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Billing provider | Verify Stripe webhook signatures and event mapping | Complete |
 | Billing provider | Add plan upgrade/downgrade subscription change flow | Complete |
 | Plan limits | Enforce learner and storage limits in domain services | Complete |
-| Plan limits | Enforce admin-seat limits when tenant user management/invites are introduced | Pending |
+| Plan limits | Enforce admin-seat limits on Org Admin invitations | Complete |
 | Tenant branding | Add current tenant branding API with audit logging | Complete |
 | Tenant branding | Apply tenant name, logo, primary colour, and locale to web shell | Complete |
+| Admin users | Add tenant-scoped learner/admin invitation endpoint with audit logging | Complete |
+| Admin analytics | Add per-course completion analytics API and dashboard | Complete |
+| Admin reports | Add per-learner progress report API and dashboard table | Complete |
+| Admin reports | Add learner progress CSV export | Complete |
+| Notifications | Add Resend transactional email provider and auth token emails | Complete |
+| Onboarding | Add self-serve onboarding wizard | Complete |
+| Pricing | Add pricing page backed by the plan catalog with fallback hypotheses | Complete |
+| Observability | Add Sentry/OTel dashboard runbook | Complete |
+| Playwright | Add and run Sprint 5 critical-path smoke specs | Complete |
 
 - [x] Create `billing` module.
 - [x] Implement Stripe checkout.
 - [x] Implement subscription webhook handling.
 - [x] Implement plan upgrade/downgrade.
-- [ ] Implement per-seat plan limits.
+- [x] Implement per-seat plan limits.
 - [x] Implement tenant branding settings.
 - [x] Apply branding to web app.
-- [ ] Implement completion analytics.
-- [ ] Implement per-learner progress report.
-- [ ] Implement CSV export.
-- [ ] Implement transactional email through Resend.
-- [ ] Implement onboarding wizard.
-- [ ] Implement marketing/pricing page only as needed for self-serve checkout.
-- [ ] Finalize Sentry/OTel dashboards.
-- [ ] Run critical-path Playwright tests.
+- [x] Implement completion analytics.
+- [x] Implement per-learner progress report.
+- [x] Implement CSV export.
+- [x] Implement transactional email through Resend.
+- [x] Implement onboarding wizard.
+- [x] Implement marketing/pricing page only as needed for self-serve checkout.
+- [x] Finalize Sentry/OTel dashboards.
+- [x] Run critical-path Playwright tests.
 
 **Exit criteria:** first design partner can sign up, pay, brand tenant, create course, invite learner, complete course, use tutor, and view progress.
 
