@@ -1,4 +1,3 @@
-from collections.abc import AsyncIterator
 from typing import Annotated
 from uuid import UUID
 
@@ -53,17 +52,6 @@ async def get_conversation_route(
         conversation_id=conversation_id,
     )
     return Envelope(data=response, error=None, meta=Meta.current())
-
-
-@router.get("/courses/{course_id}/tutor/events")
-async def tutor_events_route(
-    course_id: UUID,
-    _principal: TutorPrincipal,
-) -> StreamingResponse:
-    async def stream() -> AsyncIterator[bytes]:
-        yield f'event: ready\ndata: {{"course_id":"{course_id}"}}\n\n'.encode()
-
-    return StreamingResponse(stream(), media_type="text/event-stream")
 
 
 @router.get("/courses/{course_id}/tutor/jobs/{job_id}/events")

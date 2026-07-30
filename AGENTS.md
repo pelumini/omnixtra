@@ -4,7 +4,7 @@
 **Source of Truth**: `OmniXtra_Project_Charter_v1.2.docx` + `ADR-002_Multi-Tenant_Isolation.docx`  
 **Charter Version**: 1.2, pre-kickoff draft  
 **ADR Status**: ADR-002 proposed, awaiting sign-off  
-**Status**: Pre-Sprint 0  
+**Status**: Sprint 0-4 backend foundations implemented; MVP hardening in progress  
 **Scope**: Full-stack LMS, FastAPI backend, Next.js frontend, AI tutor, multi-tenant SaaS
 
 ---
@@ -564,7 +564,7 @@ async def test_tenant_b_cannot_read_tenant_a_course(...):
 
 Use one `@covers_isolation(method, path)` entry per protected route/verb. The decorator path must match the generated OpenAPI path template exactly. Naming conventions alone are not sufficient for CI coverage.
 
-### 1.10 Open Sign-off Items Before Sprint 1
+### 1.10 Outstanding Architecture Sign-off Items Before MVP Release
 
 The charter and ADR-002 are still draft/proposed documents. Do not treat the following items as casually settled during Sprint 1 implementation:
 
@@ -1080,10 +1080,10 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint / Phase | Status | Completed | Notes |
 |---|---|---:|---|
 | Sprint 0: Pre-flight Foundations | Complete | 16 / 16 | Core repo, backend, frontend, Docker, CI, logging, observability, request context, health, envelope, typed errors, and ADR docs are scaffolded and locally verified. |
-| Sprint 1: Tenancy & Auth | Complete | 17 / 17 | Tenant isolation, RLS, auth foundation, Org Admin/Learner RBAC defaults, isolation coverage gate, migration guard, and RLS benchmark are implemented and tested. |
-| Sprint 2: Course Authoring | Complete | 11 / 11 | Course authoring backend, media metadata, admin UI foundation, tests, isolation declarations, and migration smoke are locally verified. |
-| Sprint 3: Learning Experience | Complete | 11 / 11 | Learning backend, idempotent learner workflows, course player UI foundation, tests, isolation declarations, and migration smoke are locally verified. |
-| Sprint 4: AI Tutor | Complete | 17 / 17 | AI tutor worker execution, hybrid retrieval, LangGraph orchestration, Redis Pub/Sub streaming, LangSmith tracing, eval/cache metrics, and vector isolation coverage are locally verified. |
+| Sprint 1: Tenancy & Auth | Hardening in progress | 15 / 17 | Tenant middleware, RLS, auth skeleton, Org Admin/Learner RBAC defaults, coverage gate, migration guard, and RLS benchmark are implemented; cookie refresh-session contract and full attack-test coverage remain open. |
+| Sprint 2: Course Authoring | Backend foundation complete | 9 / 11 | Course authoring backend, media metadata, route coverage declarations, and migration smoke are locally verified; real route-level attack tests and functional frontend routes remain open. |
+| Sprint 3: Learning Experience | Backend foundation complete | 9 / 11 | Learning backend and idempotent learner workflows are locally verified; real route-level attack tests and functional learner UI routes remain open. |
+| Sprint 4: AI Tutor | Local/mock foundation complete | 14 / 17 | Async worker runtime, mock embeddings, hybrid retrieval SQL, LangGraph orchestration, Redis Pub/Sub job streaming, LangSmith wrapper, eval/cache metrics, and vector isolation coverage are locally verified; real provider-backed AI remains open. |
 | Sprint 5: Billing, Branding, Analytics, and MVP Polish | Not started | 0 / 15 | Final MVP integration sprint. |
 | Phase 2: Months 4-6 | Not started | 0 / 11 | Post-MVP expansion. |
 | Phase 3: Months 7-9 | Not started | 0 / 9 | Post-MVP platform/compliance expansion. |
@@ -1148,10 +1148,15 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Isolation coverage gate | Add `@covers_isolation(method, path)` pytest decorator | Complete |
 | Isolation coverage gate | Add OpenAPI route inventory comparison script | Complete |
 | Isolation coverage gate | Wire route coverage script into CI | Complete |
+| Isolation attack tests | Replace decorator-only route tests with real cross-tenant route attacks | Pending |
 | Auth foundation | Add Argon2id password hashing utilities | Complete |
 | Auth foundation | Add user and auth-token models/migrations with tenant ownership | Complete |
 | Auth foundation | Add signup and login schemas/services/routes | Complete |
 | Auth foundation | Add magic-link and password-reset request schemas/services/routes | Complete |
+| Auth hardening | Store JWT access and refresh tokens in httpOnly Secure SameSite cookies | Pending |
+| Auth hardening | Add refresh-token rotation, replay detection, and logout invalidation | Pending |
+| Auth hardening | Add magic-link verification and password-reset completion endpoints | Pending |
+| Auth hardening | Add login/signup/password-reset rate limiting | Pending |
 | RBAC foundation | Add Org Admin and Learner role enum/defaults | Complete |
 | Auth tests | Add tests for password hashing, schemas, roles, and auth token flow | Complete |
 | RLS benchmark | Add synthetic dataset benchmark script | Complete |
@@ -1197,6 +1202,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Course audit | Record create/update/delete/publish audit events | Complete |
 | Course tests | Add model/schema/repository/service/route tests | Complete |
 | Course tests | Add isolation coverage declarations for all course-owned routes | Complete |
+| Course tests | Add real cross-tenant route attack tests for course APIs | Pending |
 | Media metadata | Add tenant-scoped media object metadata model and API hooks | Complete |
 | Admin frontend | Add admin course list foundation | Complete |
 | Admin frontend | Add course builder foundation | Complete |
@@ -1232,6 +1238,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Learning services | Add course completion and certificate service | Complete |
 | Learning routes | Add protected learning API routes under `/api/v1/learning` | Complete |
 | Learning tests | Add model/schema/service/route tests and isolation coverage declarations | Complete |
+| Learning tests | Add real cross-tenant route attack tests for learning APIs | Pending |
 | Learner frontend | Add learner course player foundation | Complete |
 | Learner frontend | Add quiz and completion UI foundation | Complete |
 
@@ -1266,6 +1273,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | AI graph | Add tutor graph orchestration skeleton | Complete |
 | AI graph | Wire actual LangGraph tutor execution | Complete |
 | AI providers | Add OpenAI and Anthropic provider abstraction | Complete |
+| AI providers | Implement provider-backed LLM and embedding calls with mocked tests | Pending |
 | AI streaming | Add tenant-scoped SSE event route foundation | Complete |
 | AI streaming | Wire Redis Pub/Sub fanout for tutor jobs | Complete |
 | AI conversations | Add conversation history service | Complete |
@@ -1274,7 +1282,8 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | AI guardrails | Add scope refusal and quiz-answer guardrail | Complete |
 | AI observability | Add trace metadata and eval dataset scaffold | Complete |
 | AI observability | Wire LangSmith tracing for tutor graph runs | Complete |
-| Tutor frontend | Add tutor UI panel in learner course player | Complete |
+| Tutor frontend | Add static tutor UI panel in learner course player | Complete |
+| Tutor frontend | Add functional tutor route/component wired to job SSE | Pending |
 | AI tests | Add route isolation declarations and retrieval scope tests | Complete |
 | AI tests | Add live cross-tenant vector retrieval integration tests | Complete |
 | AI tests | Add prompt-injection regression tests | Complete |
@@ -1287,6 +1296,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Implement hybrid retrieval.
 - [x] Implement LangGraph tutor graph.
 - [x] Implement provider abstraction for OpenAI and Anthropic.
+- [ ] Implement provider-backed LLM and embedding calls.
 - [x] Implement SSE streaming via Redis Pub/Sub.
 - [x] Implement conversation history.
 - [x] Implement semantic cache.
@@ -1294,6 +1304,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Implement scope refusal and quiz-answer guardrail.
 - [x] Add LangSmith tracing and eval dataset.
 - [x] Add tutor UI panel in learner course player.
+- [ ] Wire tutor UI to API job creation and Redis-backed SSE events.
 - [x] Add cross-tenant vector retrieval tests.
 - [x] Add prompt-injection regression tests.
 
@@ -1368,7 +1379,7 @@ npm run typecheck
 npx playwright test
 ```
 
-### Backend Test Suites to Create
+### Required Backend Test Suites
 
 | File / Suite | Coverage |
 |---|---|
@@ -1385,7 +1396,7 @@ npx playwright test
 | `tests/audit/` | Transactional audit entries and append-only constraints |
 | `tests/rate_limit/` | Token bucket behavior and tenant isolation |
 
-### Frontend Test Suites to Create
+### Required Frontend Test Suites
 
 | File / Suite | Coverage |
 |---|---|

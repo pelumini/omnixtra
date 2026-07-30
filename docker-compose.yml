@@ -52,7 +52,7 @@ services:
   worker:
     build:
       context: ./api
-    command: [".venv/bin/python", "-m", "app.workers.main"]
+    command: [".venv/bin/dramatiq", "app.workers.main"]
     env_file:
       - .env.example
     depends_on:

@@ -6,7 +6,7 @@ The project source of truth is [AGENTS.md](./AGENTS.md). Sprint progress is trac
 
 ## Current Status
 
-Pre-Sprint 0 implementation has started. The repository contains the initial `api/` and `web/` application folders, plus planning documents from the charter and ADR.
+Sprint 0-4 backend foundations are implemented, with MVP hardening in progress. The API has tenant/RLS foundations, auth skeletons, course and learning backends, and a local/mock AI tutor runtime. The frontend currently contains static foundations rather than full workflow routes. `AGENTS.md` is the detailed tracker and now distinguishes implemented foundations from remaining production gaps.
 
 ## Local Development
 

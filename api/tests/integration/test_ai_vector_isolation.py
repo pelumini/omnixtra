@@ -46,24 +46,28 @@ def test_pgvector_retrieval_through_app_role_excludes_cross_tenant_chunks() -> N
             cursor.execute(
                 """
                 INSERT INTO users (
-                    id, tenant_id, email, name, role, password_hash, created_at, updated_at
+                    id, tenant_id, email, full_name, role, status, password_hash,
+                    created_at, updated_at
                 )
-                VALUES (%s, %s, 'learner@example.com', 'Learner', 'learner', 'hash', now(), now())
+                VALUES (
+                    %s, %s, 'learner@example.com', 'Learner', 'learner', 'active',
+                    'hash', now(), now()
+                )
                 """,
                 (user_a_id, tenant_a_id),
             )
             cursor.execute(
                 """
                 INSERT INTO courses (
-                    id, tenant_id, title, slug, status, created_by_id, created_at, updated_at
+                    id, tenant_id, title, slug, status, created_at, updated_at
                 )
-                VALUES (%s, %s, 'Course A', 'course-a', 'published', %s, now(), now())
+                VALUES (%s, %s, 'Course A', 'course-a', 'published', now(), now())
                 """,
-                (course_a_id, tenant_a_id, user_a_id),
+                (course_a_id, tenant_a_id),
             )
             cursor.execute(
                 """
-                INSERT INTO sections (
+                INSERT INTO course_sections (
                     id, tenant_id, course_id, title, position, created_at, updated_at
                 )
                 VALUES (%s, %s, %s, 'Section A', 1, now(), now())
@@ -73,10 +77,9 @@ def test_pgvector_retrieval_through_app_role_excludes_cross_tenant_chunks() -> N
             cursor.execute(
                 """
                 INSERT INTO lessons (
-                    id, tenant_id, course_id, section_id, title, position, lesson_type, version,
-                    created_at, updated_at
+                    id, tenant_id, course_id, section_id, title, position, created_at, updated_at
                 )
-                VALUES (%s, %s, %s, %s, 'Lesson A', 1, 'text', 1, now(), now())
+                VALUES (%s, %s, %s, %s, 'Lesson A', 1, now(), now())
                 """,
                 (lesson_a_id, tenant_a_id, course_a_id, section_a_id),
             )

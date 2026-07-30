@@ -19,6 +19,7 @@ def create_app() -> FastAPI:
     configure_observability(settings)
 
     application = FastAPI(title=settings.app_name)
+    application.state.settings = settings
     application.add_middleware(RequestContextMiddleware)
     register_exception_handlers(application)
     application.include_router(auth_router, prefix="/api/v1")
