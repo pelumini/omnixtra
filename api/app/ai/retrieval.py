@@ -14,6 +14,7 @@ class RetrievedChunk:
     chunk_index: int
     chunk_text: str
     score: float
+    embedding_provider: str
 
 
 HYBRID_RETRIEVAL_SQL = """
@@ -25,10 +26,12 @@ WITH vector_matches AS (
         lesson_version,
         chunk_index,
         chunk_text,
+        embedding_provider,
         1.0 - (embedding <=> CAST(:query_embedding AS vector)) AS score
     FROM lesson_embeddings
     WHERE tenant_id = :tenant_id
       AND course_id = :course_id
+      AND embedding_provider = :embedding_provider
       AND deleted_at IS NULL
     ORDER BY embedding <=> CAST(:query_embedding AS vector)
     LIMIT :vector_limit
@@ -41,6 +44,7 @@ text_matches AS (
         lesson_version,
         chunk_index,
         chunk_text,
+        embedding_provider,
         ts_rank_cd(
             to_tsvector('english', chunk_text),
             plainto_tsquery('english', :query_text)
@@ -48,6 +52,7 @@ text_matches AS (
     FROM lesson_embeddings
     WHERE tenant_id = :tenant_id
       AND course_id = :course_id
+      AND embedding_provider = :embedding_provider
       AND deleted_at IS NULL
       AND to_tsvector('english', chunk_text) @@ plainto_tsquery('english', :query_text)
     LIMIT :text_limit
@@ -59,6 +64,7 @@ SELECT DISTINCT ON (id)
     lesson_version,
     chunk_index,
     chunk_text,
+    embedding_provider,
     score
 FROM (
     SELECT * FROM vector_matches
@@ -70,18 +76,28 @@ LIMIT :limit
 """
 
 
-def deterministic_embedding_text(question: str, *, dimensions: int = 1536) -> str:
-    seed = sum(ord(character) for character in question.strip().lower())
-    values = [((seed + index) % 97) / 97 for index in range(dimensions)]
+def deterministic_embedding_values(text_value: str, *, dimensions: int = 1536) -> list[float]:
+    seed = sum(ord(character) for character in text_value.strip().lower())
+    return [((seed + index) % 97) / 97 for index in range(dimensions)]
+
+
+def embedding_literal(values: list[float]) -> str:
     return "[" + ",".join(f"{value:.6f}" for value in values) + "]"
 
 
-async def hybrid_retrieve_chunks(
+def deterministic_embedding_text(question: str, *, dimensions: int = 1536) -> str:
+    values = deterministic_embedding_values(question, dimensions=dimensions)
+    return embedding_literal(values)
+
+
+async def hybrid_retrieve_chunks(  # noqa: PLR0913
     session: AsyncSession,
     *,
     tenant_id: UUID,
     course_id: UUID,
     question: str,
+    query_embedding: list[float],
+    embedding_provider: str,
     limit: int = 5,
 ) -> list[RetrievedChunk]:
     result = await session.execute(
@@ -89,7 +105,8 @@ async def hybrid_retrieve_chunks(
         {
             "tenant_id": tenant_id,
             "course_id": course_id,
-            "query_embedding": deterministic_embedding_text(question),
+            "query_embedding": embedding_literal(query_embedding),
+            "embedding_provider": embedding_provider,
             "query_text": question,
             "vector_limit": max(limit * 4, 20),
             "text_limit": max(limit * 4, 20),
@@ -106,6 +123,7 @@ async def hybrid_retrieve_chunks(
             chunk_index=row["chunk_index"],
             chunk_text=row["chunk_text"],
             score=float(row["score"]),
+            embedding_provider=row["embedding_provider"],
         )
         for row in rows
     ]
@@ -115,5 +133,7 @@ __all__ = [
     "HYBRID_RETRIEVAL_SQL",
     "RetrievedChunk",
     "deterministic_embedding_text",
+    "deterministic_embedding_values",
+    "embedding_literal",
     "hybrid_retrieve_chunks",
 ]

@@ -36,6 +36,11 @@ class Settings(BaseSettings):
         default="text-embedding-3-small",
         validation_alias="OPENAI_EMBEDDING_MODEL",
     )
+    ai_provider: str = Field(default="auto", validation_alias="AI_PROVIDER")
+    ai_provider_timeout_seconds: float = Field(
+        default=30.0,
+        validation_alias="AI_PROVIDER_TIMEOUT_SECONDS",
+    )
     anthropic_api_key: str = Field(default="", validation_alias="ANTHROPIC_API_KEY")
     anthropic_model: str = Field(
         default="claude-3-5-haiku-latest",

@@ -1,0 +1,10 @@
+{
+  "advisory": false,
+  "errors": [],
+  "failed": 0,
+  "generated_at": "2026-07-31T05:38:00.173803+00:00",
+  "pass_rate": 1.0,
+  "passed": 20,
+  "provider": "openai",
+  "total": 20
+}

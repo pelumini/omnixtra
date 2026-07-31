@@ -38,6 +38,11 @@ class LessonEmbedding(TenantOwnedMixin, TimestampMixin, Base):
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
     chunk_text: Mapped[str] = mapped_column(Text, nullable=False)
     embedding: Mapped[list[float]] = mapped_column(Vector(), nullable=False)
+    embedding_provider: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        default="local-deterministic",
+    )
 
 
 class TutorConversation(TenantOwnedMixin, TimestampMixin, Base):

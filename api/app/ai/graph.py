@@ -5,6 +5,12 @@ from uuid import UUID
 from langgraph.graph import END, START, StateGraph
 
 from app.ai.guardrails import should_refuse_question
+from app.ai.provider_selection import (
+    ADVISORY_PROVIDER_NAME,
+    is_advisory_provider,
+    select_tutor_provider,
+)
+from app.ai.providers import TutorProvider
 
 
 @dataclass(frozen=True)
@@ -12,6 +18,8 @@ class TutorGraphResult:
     answer: str
     citations: list[dict[str, object]]
     refused: bool
+    provider: str
+    advisory: bool
 
 
 class TutorGraphState(TypedDict):
@@ -22,41 +30,17 @@ class TutorGraphState(TypedDict):
     citations: list[dict[str, object]]
     answer: str
     refused: bool
+    provider: TutorProvider
+    provider_name: str
+    advisory: bool
 
 
 class TutorGraphApp(Protocol):
-    def invoke(
+    async def ainvoke(
         self,
         input: TutorGraphState,  # noqa: A002
         config: dict[str, dict[str, str]],
     ) -> TutorGraphState: ...
-
-
-def run_tutor_graph_skeleton(
-    *,
-    tenant_id: UUID,
-    course_id: UUID,
-    question: str,
-    retrieved_context: list[str],
-    citations: list[dict[str, object]],
-) -> TutorGraphResult:
-    refusal = should_refuse_question(question)
-    if refusal is not None:
-        return TutorGraphResult(answer=refusal, citations=[], refused=True)
-    if not retrieved_context:
-        return TutorGraphResult(
-            answer="I could not find that in this course.",
-            citations=[],
-            refused=True,
-        )
-    return TutorGraphResult(
-        answer=(
-            f"AI-generated guidance for tenant {tenant_id}, course {course_id}: "
-            f"{retrieved_context[0]}"
-        ),
-        citations=citations,
-        refused=False,
-    )
 
 
 def build_tutor_graph() -> TutorGraphApp:
@@ -69,16 +53,18 @@ def build_tutor_graph() -> TutorGraphApp:
     return cast("TutorGraphApp", workflow.compile())
 
 
-def run_tutor_graph(
+async def run_tutor_graph(  # noqa: PLR0913
     *,
     tenant_id: UUID,
     course_id: UUID,
     question: str,
     retrieved_context: list[str],
     citations: list[dict[str, object]],
+    provider: TutorProvider | None = None,
 ) -> TutorGraphResult:
+    selected_provider = provider or select_tutor_provider()
     app = build_tutor_graph()
-    state = app.invoke(
+    state = await app.ainvoke(
         {
             "tenant_id": tenant_id,
             "course_id": course_id,
@@ -87,6 +73,9 @@ def run_tutor_graph(
             "citations": citations,
             "answer": "",
             "refused": False,
+            "provider": selected_provider,
+            "provider_name": selected_provider.name,
+            "advisory": is_advisory_provider(selected_provider),
         },
         config={"configurable": {"thread_id": f"{tenant_id}:{course_id}"}},
     )
@@ -94,6 +83,8 @@ def run_tutor_graph(
         answer=state["answer"],
         citations=state["citations"],
         refused=state["refused"],
+        provider=state["provider_name"],
+        advisory=state["advisory"],
     )
 
 
@@ -108,17 +99,24 @@ def _validate_scope(state: TutorGraphState) -> TutorGraphState:
         "answer": refusal,
         "citations": [],
         "refused": True,
+        "provider_name": ADVISORY_PROVIDER_NAME,
+        "advisory": True,
     }
 
 
-def _answer(state: TutorGraphState) -> TutorGraphState:
+async def _answer(state: TutorGraphState) -> TutorGraphState:
     if state["refused"]:
         return state
-    answer = f"AI-generated guidance based on this course: {state['retrieved_context'][0]}"
+    answer = await state["provider"].answer(
+        question=state["question"],
+        context=state["retrieved_context"],
+    )
     return {
         **state,
         "answer": answer,
         "refused": False,
+        "provider_name": state["provider"].name,
+        "advisory": is_advisory_provider(state["provider"]),
     }
 
 
@@ -126,5 +124,4 @@ __all__ = [
     "TutorGraphResult",
     "build_tutor_graph",
     "run_tutor_graph",
-    "run_tutor_graph_skeleton",
 ]

@@ -30,6 +30,30 @@ async def test_openai_provider_returns_chat_completion_content() -> None:
 
 
 @pytest.mark.anyio
+async def test_provider_retries_transient_rate_limit() -> None:
+    statuses = [429, 200]
+
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        status = statuses.pop(0)
+        if status == 429:
+            return httpx.Response(429, headers={"retry-after": "0"}, json={"error": "limited"})
+        return httpx.Response(
+            200,
+            json={"choices": [{"message": {"content": "Retried answer"}}]},
+        )
+
+    provider = OpenAIProvider(
+        ProviderConfig(api_key="test-key", model="test-model"),
+        client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+    )
+
+    answer = await provider.answer(question="What is onboarding?", context=["Onboarding context"])
+
+    assert answer == "Retried answer"
+    assert statuses == []
+
+
+@pytest.mark.anyio
 async def test_openai_embedding_provider_returns_float_vector() -> None:
     async def handler(_request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"data": [{"embedding": [0.1, 0.2, 0.3]}]})

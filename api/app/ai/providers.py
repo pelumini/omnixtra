@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Protocol
@@ -6,6 +7,9 @@ import httpx
 
 from app.core.config import get_settings
 from app.core.exceptions import ValidationAppError
+
+MAX_PROVIDER_ATTEMPTS = 3
+TRANSIENT_PROVIDER_STATUSES = {429, 500, 502, 503, 504}
 
 
 class TutorProvider(Protocol):
@@ -182,17 +186,42 @@ async def _post_json(
     client: httpx.AsyncClient | None,
 ) -> dict[str, Any]:
     request_headers = {"Content-Type": "application/json", **headers}
-    if client is not None:
-        response = await client.post(url, json=payload, headers=request_headers)
-    else:
-        async with httpx.AsyncClient(timeout=timeout_seconds) as transient_client:
-            response = await transient_client.post(url, json=payload, headers=request_headers)
-    response.raise_for_status()
+    response: httpx.Response | None = None
+    for attempt in range(MAX_PROVIDER_ATTEMPTS):
+        if client is not None:
+            response = await client.post(url, json=payload, headers=request_headers)
+        else:
+            async with httpx.AsyncClient(timeout=timeout_seconds) as transient_client:
+                response = await transient_client.post(url, json=payload, headers=request_headers)
+        if (
+            response.status_code not in TRANSIENT_PROVIDER_STATUSES
+            or attempt == MAX_PROVIDER_ATTEMPTS - 1
+        ):
+            break
+        await asyncio.sleep(_retry_delay_seconds(response, attempt=attempt))
+    if response is None:
+        msg = "AI provider request did not return a response"
+        raise ValidationAppError(msg)
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        msg = f"AI provider request failed with status {response.status_code}"
+        raise ValidationAppError(msg) from exc
     data = response.json()
     if not isinstance(data, dict):
         msg = "AI provider response must be a JSON object"
         raise ValidationAppError(msg)
     return data
+
+
+def _retry_delay_seconds(response: httpx.Response, *, attempt: int) -> float:
+    retry_after = response.headers.get("retry-after")
+    if retry_after is not None:
+        try:
+            return min(float(retry_after), 10.0)
+        except ValueError:
+            return 1.0
+    return float(attempt + 1)
 
 
 def _require_api_key(api_key: str, provider_name: str) -> None:
