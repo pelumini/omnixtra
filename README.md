@@ -6,7 +6,7 @@ The project source of truth is [AGENTS.md](./AGENTS.md). Sprint progress is trac
 
 ## Current Status
 
-Sprint 0-5 are complete. Sprint 5 audit remediation removed the unsigned billing webhook, added signed Stripe webhook failure coverage, neutralized CSV formula cells, and passed Docker-backed integration verification. The next track is the MVP readiness checklist in `AGENTS.md`.
+Sprint 0-5 and MVP readiness remediation are complete. The first release-candidate checkpoint is tagged as `v0.1.0-rc.1`; readiness evidence is recorded in `docs/runbooks/mvp-readiness-verification-2026-07-31.md`.
 
 ## Local Development
 
