@@ -6,7 +6,7 @@ The project source of truth is [AGENTS.md](./AGENTS.md). Sprint progress is trac
 
 ## Current Status
 
-Sprint 0-4 are complete, and Sprint 5 foundations are under remediation. The API has tenant/RLS foundations, hardened auth sessions, course and learning backends, a provider-ready AI tutor runtime, a billing foundation, Docker migration wiring, and remote CI with real PostgreSQL/Redis integration tests. Live Stripe wiring, branding, analytics, and MVP polish remain open. `AGENTS.md` is the detailed tracker and distinguishes implemented foundations from remaining production gaps.
+Sprint 0-5 are complete. Sprint 5 audit remediation removed the unsigned billing webhook, added signed Stripe webhook failure coverage, neutralized CSV formula cells, and passed Docker-backed integration verification. The next track is the MVP readiness checklist in `AGENTS.md`.
 
 ## Local Development
 

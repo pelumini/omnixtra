@@ -4,7 +4,7 @@
 **Source of Truth**: `OmniXtra_Project_Charter_v1.2.docx` + `ADR-002_Multi-Tenant_Isolation.docx`  
 **Charter Version**: 1.2, pre-kickoff draft  
 **ADR Status**: ADR-002 proposed, awaiting sign-off  
-**Status**: Sprints 0-5 complete; MVP implementation track complete
+**Status**: Sprints 0-5 complete; MVP readiness verification track ready
 **Scope**: Full-stack LMS, FastAPI backend, Next.js frontend, AI tutor, multi-tenant SaaS
 
 ---
@@ -1084,8 +1084,8 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint 1: Tenancy & Auth | Complete | 17 / 17 | Tenant middleware, RLS, auth flows, Org Admin/Learner RBAC defaults, migration guard, RLS benchmark, real route attack tests, recorded-hit isolation coverage gate, cookie auth, refresh-token rotation, replay detection, logout invalidation, verification endpoints, and auth rate limiting are in place. |
 | Sprint 2: Course Authoring | Complete | 11 / 11 | Course authoring backend, media metadata, route coverage declarations, migration smoke, real route-level attack tests, admin course list, and course builder foundation are in place. |
 | Sprint 3: Learning Experience | Complete | 11 / 11 | Learning backend, idempotent learner workflows, real route-level attack tests, learner course player, quiz/completion UI, and certificate PDF download workflow are in place. |
-| Sprint 4: AI Tutor | Complete | 17 / 17 | Async worker runtime, provider-backed AI clients, hybrid retrieval SQL, Redis Pub/Sub job streaming, LangSmith wrapper, vector isolation coverage, real tutor route attack tests, eval/cache metrics, and functional tutor UI are in place. |
-| Sprint 5: Billing, Branding, Analytics, and MVP Polish | Complete | 15 / 15 | Billing module, live Stripe checkout/webhooks/plan changes, data-driven plan limits including admin seats, tenant branding, admin analytics, learner progress reports, CSV export, Resend transactional email hooks, onboarding/pricing UI, observability dashboard runbook, and Sprint 5 Playwright smoke specs are in place. |
+| Sprint 4: AI Tutor | Complete | 17 / 17 | Provider-backed tutor jobs, provider-failure handling, embedding-provider provenance, hybrid retrieval SQL, Redis Pub/Sub job streaming, LangSmith wrapper, vector isolation coverage, route attack tests, actor-path cache reuse coverage, tutor UI, and recorded OpenAI 20-question eval evidence are in place. |
+| Sprint 5: Billing, Branding, Analytics, and MVP Polish | Complete | 15 / 15 | Sprint 5 audit remediation is complete: unsigned billing webhook removed, signed Stripe webhook negative tests and signed-path coverage added, CSV cells neutralized, Sprint 5 smoke specs pass, and Docker-backed integration suite passes against PostgreSQL 16 + pgvector with RLS. |
 | Phase 2: Months 4-6 | Not started | 0 / 11 | Post-MVP expansion. |
 | Phase 3: Months 7-9 | Not started | 0 / 9 | Post-MVP platform/compliance expansion. |
 
@@ -1270,21 +1270,28 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | AI storage | Add embeddings, conversations, messages, and tutor jobs models | Complete |
 | AI migrations | Add tenant-owned AI tables with RLS helpers, pgvector, HNSW, and compound indexes | Complete |
 | AI jobs | Add async tutor job enqueue foundation | Complete |
-| AI jobs | Add Dramatiq mock embedding and tutor execution workers | Complete |
+| AI jobs | Add Dramatiq embedding and tutor execution workers | Complete |
+| AI jobs | Mark tutor jobs failed and publish failed SSE events on provider errors | Complete |
 | AI retrieval | Add tenant/course-scoped retrieval repository foundation | Complete |
 | AI retrieval | Add true hybrid vector plus Postgres full-text retrieval | Complete |
 | AI graph | Add tutor graph orchestration skeleton | Complete |
-| AI graph | Wire local/mock LangGraph tutor execution | Complete |
+| AI graph | Wire provider-backed LangGraph tutor execution | Complete |
 | AI providers | Add OpenAI and Anthropic provider abstraction | Complete |
 | AI providers | Implement provider-backed LLM and embedding calls with mocked tests | Complete |
+| AI providers | Select provider at tutor job runtime with explicit advisory fallback | Complete |
+| AI providers | Persist and stream tutor provider/advisory metadata | Complete |
+| AI storage | Add embedding-provider provenance and retrieval filter | Complete |
+| AI jobs | Add maintenance actor for provider-change re-embedding | Complete |
 | AI streaming | Add tenant-scoped SSE event route foundation | Complete |
 | AI streaming | Wire Redis Pub/Sub fanout for tutor jobs | Complete |
 | AI conversations | Add conversation history service | Complete |
 | AI cache | Add tenant/course semantic cache foundation | Complete |
+| AI cache | Verify repeated tutor question reuses semantic cache without provider call | Complete |
 | AI citations | Add citation extraction from retrieved chunks | Complete |
 | AI guardrails | Add scope refusal and quiz-answer guardrail | Complete |
 | AI observability | Add trace metadata and eval dataset scaffold | Complete |
 | AI observability | Wire LangSmith tracing for tutor graph runs | Complete |
+| AI observability | Run recorded 20-question tutor eval against a real provider | Complete |
 | Tutor frontend | Add functional tutor UI panel in learner course player | Complete |
 | Tutor frontend | Add functional tutor route/component wired to job SSE | Complete |
 | AI tests | Add route isolation declarations and retrieval scope tests | Complete |
@@ -1295,9 +1302,9 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Implement lesson chunking by lesson version.
 - [x] Add embeddings table with pgvector and tenant/course scope.
 - [x] Add HNSW index and compound tenant/course indexes.
-- [x] Implement mock embedding worker.
+- [x] Implement embedding worker.
 - [x] Implement hybrid retrieval.
-- [x] Implement local/mock LangGraph tutor graph.
+- [x] Implement provider-backed LangGraph tutor graph.
 - [x] Implement provider abstraction for OpenAI and Anthropic.
 - [x] Implement provider-backed LLM and embedding calls.
 - [x] Implement SSE streaming via Redis Pub/Sub.
@@ -1305,13 +1312,14 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Implement semantic cache.
 - [x] Implement citation extraction.
 - [x] Implement scope refusal and quiz-answer guardrail.
-- [x] Add verified 20-question tutor eval pass and repeat-query cache-rate measurement.
+- [x] Run verified 20-question tutor eval against a real provider.
+- [x] Add repeat-query cache-rate measurement.
 - [x] Add functional tutor UI panel in learner course player.
 - [x] Wire tutor UI to API job creation and Redis-backed SSE events.
 - [x] Add cross-tenant vector retrieval tests.
 - [x] Add prompt-injection regression tests.
 
-**Exit criteria:** tutor answers with citations on a 20-question eval set; repeat-query cache hit rate exceeds 40%; no AI work blocks HTTP handlers.
+**Exit criteria:** tutor answers with citations on a 20-question eval set; repeat-query cache hit rate exceeds 40%; no AI work blocks HTTP handlers. The recorded OpenAI eval at `docs/runbooks/ai-tutor-eval-latest.json` passed 20 / 20 with `advisory=false`, `errors=[]`, and `pass_rate=1.0`; this evidence is a local key-backed run and is not reproducible from a fresh clone without a real provider key. Repeat-query cache behavior is covered by `test_tutor_actor_reuses_semantic_cache_without_provider_call`, which proves a second identical tutor job uses the semantic cache and skips the provider call.
 
 ### Sprint 5: Billing, Branding, Analytics, and MVP Polish, Weeks 11-12
 
@@ -1330,6 +1338,8 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Billing tests | Add model response, route registration, and isolation coverage tests | Complete |
 | Billing provider | Implement signed Stripe checkout session creation | Complete |
 | Billing provider | Verify Stripe webhook signatures and event mapping | Complete |
+| Billing provider | Remove unsigned subscription webhook duplicate | Complete |
+| Billing provider | Add negative Stripe signature verification tests | Complete |
 | Billing provider | Add plan upgrade/downgrade subscription change flow | Complete |
 | Plan limits | Enforce learner and storage limits in domain services | Complete |
 | Plan limits | Enforce admin-seat limits on Org Admin invitations | Complete |
@@ -1339,6 +1349,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Admin analytics | Add per-course completion analytics API and dashboard | Complete |
 | Admin reports | Add per-learner progress report API and dashboard table | Complete |
 | Admin reports | Add learner progress CSV export | Complete |
+| Admin reports | Neutralize formula-leading CSV cells | Complete |
 | Notifications | Add Resend transactional email provider and auth token emails | Complete |
 | Onboarding | Add self-serve onboarding wizard | Complete |
 | Pricing | Add pricing page backed by the plan catalog with fallback hypotheses | Complete |
@@ -1361,7 +1372,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Finalize Sentry/OTel dashboards.
 - [x] Run critical-path Playwright tests.
 
-**Exit criteria:** first design partner can sign up, pay, brand tenant, create course, invite learner, complete course, use tutor, and view progress.
+**Exit criteria:** first design partner can sign up, pay, brand tenant, create course, invite learner, complete course, use tutor, and view progress. Sprint 5 audit identified and remediated the unsigned billing webhook P0 by deleting `POST /api/v1/billing/webhooks/stripe/subscription`; signed webhook failure tests, signed-path coverage, and CSV formula neutralization are in place. Verification passed with Ruff, mypy strict, backend non-integration tests, Docker-backed integration tests against PostgreSQL 16 + pgvector with RLS, frontend lint/type/unit tests, and Sprint 5 Playwright smoke specs. Isolation coverage only enforces `tenant-owned`-tagged routes, so any route that sets tenant context from request data must be protected by a signature check or be tenant-owned and permission-gated.
 
 ### Phase 2: Months 4-6
 
@@ -1505,6 +1516,7 @@ npx playwright test
 | D-023 | Residency | US MVP, EU Phase 2 | Avoid premature multi-region cost while preserving path |
 | D-024 | MVP auth token transport | Bearer JWT returned in response body until auth hardening | Accepted only for current MVP skeleton; httpOnly Secure SameSite cookie access/refresh sessions must be revisited before Phase 2. |
 | D-025 | RLS tenant variable scope | Transaction-local `set_config(..., true)` before each cursor execution | Self-resets on transaction end and reduces pooled-connection tenant bleed risk. |
+| D-026 | AI provider runtime | Worker-selected provider with advisory fallback and embedding provenance | Keeps HTTP handlers non-blocking, makes degraded mode explicit, and prevents retrieval from comparing query vectors against embeddings from a different provider. |
 
 ---
 
