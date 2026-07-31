@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *.pyo
 .pytest_cache/
+api/.tmp/
 .isolation_hits.json
 api/tests/.isolation_hits.json
 .mypy_cache/

@@ -41,6 +41,26 @@ class Settings(BaseSettings):
         default=30.0,
         validation_alias="AI_PROVIDER_TIMEOUT_SECONDS",
     )
+    ai_tutor_requests_per_minute: int = Field(
+        default=20,
+        validation_alias="AI_TUTOR_REQUESTS_PER_MINUTE",
+    )
+    ai_monthly_token_budget: int = Field(
+        default=100_000,
+        validation_alias="AI_MONTHLY_TOKEN_BUDGET",
+    )
+    ai_monthly_token_warning_percent: int = Field(
+        default=80,
+        validation_alias="AI_MONTHLY_TOKEN_WARNING_PERCENT",
+    )
+    ai_tutor_estimated_tokens_per_request: int = Field(
+        default=1_500,
+        validation_alias="AI_TUTOR_ESTIMATED_TOKENS_PER_REQUEST",
+    )
+    ai_tutor_feature_token_limit: int = Field(
+        default=4_000,
+        validation_alias="AI_TUTOR_FEATURE_TOKEN_LIMIT",
+    )
     anthropic_api_key: str = Field(default="", validation_alias="ANTHROPIC_API_KEY")
     anthropic_model: str = Field(
         default="claude-3-5-haiku-latest",

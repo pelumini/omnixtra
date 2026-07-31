@@ -25,10 +25,11 @@ IdempotencyKey = Annotated[str, Header(min_length=8, max_length=120, alias="Idem
 
 
 @router.post("/courses/{course_id}/tutor/jobs")
-async def create_tutor_job_route(
+async def create_tutor_job_route(  # noqa: PLR0913, PLR0917
     course_id: UUID,
     request: TutorQuestionRequest,
     session: SessionDep,
+    redis_client: RedisDep,
     principal: TutorPrincipal,
     idempotency_key: IdempotencyKey,
 ) -> Envelope[TutorJobResponse]:
@@ -38,6 +39,7 @@ async def create_tutor_job_route(
         course_id=course_id,
         request=request,
         idempotency_key=idempotency_key,
+        redis_client=redis_client,
     )
     return Envelope(data=response, error=None, meta=Meta.current())
 
