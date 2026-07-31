@@ -54,4 +54,4 @@ None identified for an MVP release-candidate checkpoint.
 
 ## Recommendation
 
-Use `v0.1.0-rc.1` as the stable checkpoint for deployment planning. The next track should be deployment preparation, not more MVP feature work.
+Use `v0.1.0-rc.1` as the stable checkpoint for deployment planning. The next track should be deployment preparation, not more MVP feature work. Track deployment work in `docs/runbooks/deployment-preparation-checklist.md`.

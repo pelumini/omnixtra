@@ -6,7 +6,7 @@ The project source of truth is [AGENTS.md](./AGENTS.md). Sprint progress is trac
 
 ## Current Status
 
-Sprint 0-5 and MVP readiness remediation are complete. The first release-candidate checkpoint is tagged as `v0.1.0-rc.1`; readiness evidence is recorded in `docs/runbooks/mvp-readiness-verification-2026-07-31.md`.
+Sprint 0-5 and MVP readiness remediation are complete. The first release-candidate checkpoint is tagged as `v0.1.0-rc.1`; readiness evidence is recorded in `docs/runbooks/mvp-readiness-verification-2026-07-31.md`. Deployment preparation is tracked in `docs/runbooks/deployment-preparation-checklist.md`.
 
 ## Local Development
 
