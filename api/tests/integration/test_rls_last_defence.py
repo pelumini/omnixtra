@@ -16,6 +16,8 @@ def test_raw_sql_with_app_role_cannot_read_cross_tenant_rows() -> None:
     tenant_a_id = uuid4()
     tenant_b_id = uuid4()
     tenant_a_probe_id = uuid4()
+    tenant_a_slug = f"tenant-a-{tenant_a_id.hex}"
+    tenant_b_slug = f"tenant-b-{tenant_b_id.hex}"
 
     with psycopg.connect(database_url) as connection:
         with connection.cursor() as cursor:
@@ -25,10 +27,10 @@ def test_raw_sql_with_app_role_cannot_read_cross_tenant_rows() -> None:
                     id, slug, name, status, primary_color, locale, time_zone, created_at, updated_at
                 )
                 VALUES
-                    (%s, 'tenant-a', 'Tenant A', 'active', '#116149', 'en', 'UTC', now(), now()),
-                    (%s, 'tenant-b', 'Tenant B', 'active', '#116149', 'en', 'UTC', now(), now())
+                    (%s, %s, 'Tenant A', 'active', '#116149', 'en', 'UTC', now(), now()),
+                    (%s, %s, 'Tenant B', 'active', '#116149', 'en', 'UTC', now(), now())
                 """,
-                (tenant_a_id, tenant_b_id),
+                (tenant_a_id, tenant_a_slug, tenant_b_id, tenant_b_slug),
             )
             cursor.execute(
                 "SELECT set_config('app.current_tenant_id', %s, true)",
