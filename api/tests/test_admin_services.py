@@ -1,4 +1,6 @@
+import csv
 from datetime import UTC, datetime
+from io import StringIO
 from uuid import UUID
 
 from app.admin.schemas import CourseCompletionAnalyticsResponse, LearnerProgressReportRow
@@ -42,3 +44,28 @@ def test_learner_progress_csv_contains_report_rows() -> None:
     assert "learner_id,learner_name,learner_email,course_id" in csv_body
     assert "ada@example.com" in csv_body
     assert "Security Basics" in csv_body
+
+
+def test_learner_progress_csv_neutralizes_formula_cells() -> None:
+    csv_body = learner_progress_csv(
+        [
+            LearnerProgressReportRow(
+                learner_id=LEARNER_ID,
+                learner_name='=HYPERLINK("http://evil","x")',
+                learner_email="+evil@example.com",
+                course_id=COURSE_ID,
+                course_title="@SUM(1+1)",
+                enrolment_status="\tcompleted",
+                lessons_total=4,
+                lessons_completed=4,
+                average_progress_percent=100,
+                completed_at=None,
+            ),
+        ],
+    )
+
+    row = next(csv.DictReader(StringIO(csv_body)))
+    assert row["learner_name"] == '\'=HYPERLINK("http://evil","x")'
+    assert row["learner_email"] == "'+evil@example.com"
+    assert row["course_title"] == "'@SUM(1+1)"
+    assert row["enrolment_status"] == "'\tcompleted"

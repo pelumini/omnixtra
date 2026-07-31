@@ -9,7 +9,6 @@ from app.billing.schemas import (
     CheckoutSessionRequest,
     CheckoutSessionResponse,
     PlanChangeRequest,
-    StripeSubscriptionEvent,
     SubscriptionResponse,
     WebhookAcceptedResponse,
 )
@@ -18,7 +17,6 @@ from app.billing.services import (
     LocalBillingProvider,
     StripeBillingProvider,
     apply_signed_stripe_webhook,
-    apply_stripe_subscription_event,
     change_subscription_plan,
     create_checkout_session,
     get_current_subscription,
@@ -97,15 +95,6 @@ async def change_subscription_plan_route(
         idempotency_key=idempotency_key,
     )
     return Envelope(data=response, error=None, meta=Meta.current())
-
-
-@webhook_router.post("/stripe/subscription")
-async def stripe_subscription_webhook_route(
-    request: StripeSubscriptionEvent,
-    session: SessionDep,
-) -> Envelope[WebhookAcceptedResponse]:
-    await apply_stripe_subscription_event(session, request)
-    return Envelope(data=WebhookAcceptedResponse(accepted=True), error=None, meta=Meta.current())
 
 
 @webhook_router.post("/stripe")

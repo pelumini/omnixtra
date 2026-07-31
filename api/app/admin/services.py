@@ -122,8 +122,16 @@ def learner_progress_csv(rows: list[LearnerProgressReportRow]) -> str:
     writer.writeheader()
     for row in rows:
         data = row.model_dump(mode="json")
-        writer.writerow(data)
+        writer.writerow({key: _csv_safe_cell(value) for key, value in data.items()})
     return output.getvalue()
+
+
+def _csv_safe_cell(value: object) -> object:
+    if not isinstance(value, str):
+        return value
+    if value.startswith(("=", "+", "-", "@", "\t", "\r")):
+        return f"'{value}"
+    return value
 
 
 def _percentage(value: int, total: int) -> int:

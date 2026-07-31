@@ -1,10 +1,16 @@
+import hashlib
+import hmac
+import json
 import os
+import time
 from dataclasses import dataclass
 from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from httpx import Response
 
+from app.core.config import get_settings
 from app.main import create_app
 from app.tenancy.isolation import covers_isolation
 from tests.isolation_client import IsolationTestClient
@@ -18,26 +24,23 @@ TEST_PASSWORD = "correct horse battery staple"  # noqa: S105
 @covers_isolation("GET", "/api/v1/billing/subscription")
 @covers_isolation("PATCH", "/api/v1/billing/subscription/plan")
 @covers_isolation("POST", "/api/v1/billing/checkout-sessions")
-def test_tenant_b_does_not_see_tenant_a_subscription() -> None:
+def test_tenant_b_does_not_see_tenant_a_subscription(monkeypatch: pytest.MonkeyPatch) -> None:
     if not os.getenv(APP_DATABASE_URL_ENV):
         pytest.skip(f"{APP_DATABASE_URL_ENV} is not set")
 
+    get_settings.cache_clear()
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
     client = TestClient(create_app())
     isolation_client = IsolationTestClient(client)
     run_id = uuid4().hex[:12]
     tenant_a = _signup(client, f"billing-a-{run_id}")
     tenant_b = _signup(client, f"billing-b-{run_id}")
 
-    webhook_response = client.post(
-        "/api/v1/billing/webhooks/stripe/subscription",
-        json={
-            "tenant_id": str(tenant_a.tenant_id),
-            "plan_slug": "starter",
-            "status": "active",
-            "stripe_customer_id": "cus_billing_a",
-            "stripe_subscription_id": "sub_billing_a",
-            "cancel_at_period_end": False,
-        },
+    webhook_response = _post_signed_subscription_webhook(
+        client,
+        tenant_id=tenant_a.tenant_id,
+        stripe_customer_id="cus_billing_a",
+        stripe_subscription_id="sub_billing_a",
     )
     assert webhook_response.status_code == 200
 
@@ -81,16 +84,11 @@ def test_tenant_b_does_not_see_tenant_a_subscription() -> None:
     assert checkout_response.status_code == 200
     assert checkout_response.json()["data"]["provider_session_id"].startswith("local_checkout_")
 
-    webhook_response_b = client.post(
-        "/api/v1/billing/webhooks/stripe/subscription",
-        json={
-            "tenant_id": str(tenant_b.tenant_id),
-            "plan_slug": "starter",
-            "status": "active",
-            "stripe_customer_id": "cus_billing_b",
-            "stripe_subscription_id": "sub_billing_b",
-            "cancel_at_period_end": False,
-        },
+    webhook_response_b = _post_signed_subscription_webhook(
+        client,
+        tenant_id=tenant_b.tenant_id,
+        stripe_customer_id="cus_billing_b",
+        stripe_subscription_id="sub_billing_b",
     )
     assert webhook_response_b.status_code == 200
 
@@ -104,6 +102,7 @@ def test_tenant_b_does_not_see_tenant_a_subscription() -> None:
     )
     assert plan_change_response.status_code == 200
     assert plan_change_response.json()["data"]["plan_slug"] == "growth"
+    get_settings.cache_clear()
 
 
 @dataclass(frozen=True)
@@ -137,3 +136,41 @@ def _signup(client: TestClient, slug: str) -> TenantAccount:
 
 def _headers(slug: str, access_token: str) -> dict[str, str]:
     return {"host": f"{slug}.localhost", "authorization": f"Bearer {access_token}"}
+
+
+def _post_signed_subscription_webhook(
+    client: TestClient,
+    *,
+    tenant_id: UUID,
+    stripe_customer_id: str,
+    stripe_subscription_id: str,
+) -> Response:
+    timestamp = int(time.time())
+    payload = json.dumps(
+        {
+            "type": "customer.subscription.updated",
+            "data": {
+                "object": {
+                    "cancel_at_period_end": False,
+                    "customer": stripe_customer_id,
+                    "id": stripe_subscription_id,
+                    "metadata": {"plan_slug": "starter", "tenant_id": str(tenant_id)},
+                    "status": "active",
+                },
+            },
+        },
+        separators=(",", ":"),
+    ).encode()
+    signature = hmac.new(
+        b"whsec_test",
+        f"{timestamp}.{payload.decode('utf-8')}".encode(),
+        hashlib.sha256,
+    ).hexdigest()
+    return client.post(
+        "/api/v1/billing/webhooks/stripe",
+        content=payload,
+        headers={
+            "content-type": "application/json",
+            "stripe-signature": f"t={timestamp},v1={signature}",
+        },
+    )

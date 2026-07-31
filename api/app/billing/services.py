@@ -244,7 +244,7 @@ async def change_subscription_plan(
     return subscription_response(subscription, target_plan)
 
 
-async def apply_stripe_subscription_event(
+async def _apply_stripe_subscription_event(
     session: AsyncSession,
     event: StripeSubscriptionEvent,
 ) -> SubscriptionResponse:
@@ -308,7 +308,7 @@ async def apply_signed_stripe_webhook(
     }:
         return None
     subscription_event = stripe_event_to_subscription_event(event)
-    return await apply_stripe_subscription_event(session, subscription_event)
+    return await _apply_stripe_subscription_event(session, subscription_event)
 
 
 def verify_stripe_webhook_payload(
@@ -654,7 +654,6 @@ __all__ = [
     "LocalBillingProvider",
     "StripeBillingProvider",
     "apply_signed_stripe_webhook",
-    "apply_stripe_subscription_event",
     "change_subscription_plan",
     "create_checkout_session",
     "ensure_admin_capacity",

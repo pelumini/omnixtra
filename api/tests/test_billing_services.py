@@ -1,5 +1,7 @@
 import hashlib
 import hmac
+import json
+import time
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -10,6 +12,7 @@ from app.billing.models import BillingPlan, SubscriptionStatus, TenantSubscripti
 from app.billing.services import (
     CheckoutSessionCreate,
     StripeBillingProvider,
+    apply_signed_stripe_webhook,
     change_subscription_plan,
     ensure_admin_capacity,
     ensure_learner_capacity,
@@ -185,6 +188,67 @@ def test_stripe_webhook_signature_verification_accepts_valid_payload(
     get_settings.cache_clear()
 
 
+def test_stripe_webhook_signature_rejects_tampered_payload(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    get_settings.cache_clear()
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+    original_payload = b'{"type":"customer.subscription.updated","data":{"object":{}}}'
+    tampered_payload = b'{"type":"customer.subscription.deleted","data":{"object":{}}}'
+    timestamp = 1_000
+    signature = _stripe_signature(original_payload, timestamp=timestamp, secret="whsec_test")
+
+    with pytest.raises(ValidationAppError, match="signature verification"):
+        verify_stripe_webhook_payload(
+            tampered_payload,
+            f"t={timestamp},v1={signature}",
+            now=timestamp,
+        )
+    get_settings.cache_clear()
+
+
+def test_stripe_webhook_signature_rejects_wrong_secret(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    get_settings.cache_clear()
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+    payload = b'{"type":"customer.subscription.updated","data":{"object":{}}}'
+    timestamp = 1_000
+    signature = _stripe_signature(payload, timestamp=timestamp, secret="wrong_secret")
+
+    with pytest.raises(ValidationAppError, match="signature verification"):
+        verify_stripe_webhook_payload(payload, f"t={timestamp},v1={signature}", now=timestamp)
+    get_settings.cache_clear()
+
+
+@pytest.mark.parametrize("signature_header", ["v1=abc", "t=1000", "not-a-stripe-header"])
+def test_stripe_webhook_signature_rejects_malformed_header(
+    monkeypatch: pytest.MonkeyPatch,
+    signature_header: str,
+) -> None:
+    get_settings.cache_clear()
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+    payload = b'{"type":"customer.subscription.updated","data":{"object":{}}}'
+
+    with pytest.raises(ValidationAppError, match="malformed"):
+        verify_stripe_webhook_payload(payload, signature_header, now=1_000)
+    get_settings.cache_clear()
+
+
+def test_stripe_webhook_signature_rejects_stale_timestamp(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    get_settings.cache_clear()
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+    payload = b'{"type":"customer.subscription.updated","data":{"object":{}}}'
+    timestamp = 1_000
+    signature = _stripe_signature(payload, timestamp=timestamp, secret="whsec_test")
+
+    with pytest.raises(ValidationAppError, match="outside tolerance"):
+        verify_stripe_webhook_payload(payload, f"t={timestamp},v1={signature}", now=2_000)
+    get_settings.cache_clear()
+
+
 def test_stripe_event_maps_subscription_payload() -> None:
     event = {
         "type": "customer.subscription.updated",
@@ -206,6 +270,46 @@ def test_stripe_event_maps_subscription_payload() -> None:
     assert mapped.tenant_id == TENANT_ID
     assert mapped.plan_slug == "growth"
     assert mapped.stripe_subscription_id == "sub_123"
+
+
+@pytest.mark.anyio
+async def test_signed_stripe_webhook_upserts_subscription(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    get_settings.cache_clear()
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+    timestamp = int(time.time())
+    payload = json.dumps(
+        {
+            "type": "customer.subscription.updated",
+            "data": {
+                "object": {
+                    "cancel_at_period_end": False,
+                    "customer": "cus_signed",
+                    "id": "sub_signed",
+                    "metadata": {"plan_slug": "starter", "tenant_id": str(TENANT_ID)},
+                    "status": "active",
+                },
+            },
+        },
+        separators=(",", ":"),
+    ).encode()
+    signature = _stripe_signature(payload, timestamp=timestamp, secret="whsec_test")
+    session = _SignedWebhookSession(plan=_plan(included_learners=50, included_storage_gb=10))
+
+    response = await apply_signed_stripe_webhook(
+        session,
+        payload=payload,
+        signature_header=f"t={timestamp},v1={signature}",
+    )
+
+    assert response is not None
+    assert response.plan_slug == "starter"
+    assert response.stripe_subscription_id == "sub_signed"
+    assert isinstance(session.subscription, TenantSubscription)
+    assert session.subscription.status == "active"
+    assert session.commit_count == 1
+    get_settings.cache_clear()
 
 
 @pytest.mark.anyio
@@ -345,6 +449,32 @@ class _PlanChangeSession:
 
     async def commit(self) -> None:
         pass
+
+
+class _SignedWebhookSession:
+    def __init__(self, *, plan: BillingPlan) -> None:
+        self.plan = plan
+        self.subscription: TenantSubscription | None = None
+        self.scalar_calls = 0
+        self.commit_count = 0
+
+    async def scalar(self, _statement: object) -> BillingPlan | TenantSubscription | None:
+        self.scalar_calls += 1
+        if self.scalar_calls == 1:
+            return self.plan
+        return self.subscription
+
+    def add(self, instance: object) -> None:
+        if isinstance(instance, TenantSubscription):
+            self.subscription = instance
+
+    async def flush(self) -> None:
+        if self.subscription is not None:
+            self.subscription.id = SUBSCRIPTION_ID
+            self.subscription.seats_used = 0
+
+    async def commit(self) -> None:
+        self.commit_count += 1
 
 
 class _NoopBillingProvider:
