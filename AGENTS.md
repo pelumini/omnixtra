@@ -4,7 +4,7 @@
 **Source of Truth**: `OmniXtra_Project_Charter_v1.2.docx` + `ADR-002_Multi-Tenant_Isolation.docx`  
 **Charter Version**: 1.2, pre-kickoff draft  
 **ADR Status**: ADR-002 proposed, awaiting sign-off  
-**Status**: Sprints 0-5 complete; MVP readiness verification track ready
+**Status**: Sprints 0-5 complete; MVP implementation and readiness remediation tracks complete
 **Scope**: Full-stack LMS, FastAPI backend, Next.js frontend, AI tutor, multi-tenant SaaS
 
 ---
@@ -1086,7 +1086,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint 3: Learning Experience | Complete | 11 / 11 | Learning backend, idempotent learner workflows, real route-level attack tests, learner course player, quiz/completion UI, and certificate PDF download workflow are in place. |
 | Sprint 4: AI Tutor | Complete | 17 / 17 | Provider-backed tutor jobs, provider-failure handling, embedding-provider provenance, hybrid retrieval SQL, Redis Pub/Sub job streaming, LangSmith wrapper, vector isolation coverage, route attack tests, actor-path cache reuse coverage, tutor UI, and recorded OpenAI 20-question eval evidence are in place. |
 | Sprint 5: Billing, Branding, Analytics, and MVP Polish | Complete | 15 / 15 | Sprint 5 audit remediation is complete: unsigned billing webhook removed, signed Stripe webhook negative tests and signed-path coverage added, CSV cells neutralized, Sprint 5 smoke specs pass, and Docker-backed integration suite passes against PostgreSQL 16 + pgvector with RLS. |
-| MVP Readiness Remediation | In progress | 5 / 6 | AI tutor tenant/user rate limits, monthly token budget reservation, env settings, frontend MVP journey coverage, and local integration rerun hardening are implemented; manual readiness evidence remains. |
+| MVP Readiness Remediation | Complete | 6 / 6 | AI tutor tenant/user rate limits, monthly token budget reservation, env settings, frontend MVP journey coverage, local integration rerun hardening, and recorded manual readiness evidence are complete. |
 | Phase 2: Months 4-6 | Not started | 0 / 11 | Post-MVP expansion. |
 | Phase 3: Months 7-9 | Not started | 0 / 9 | Post-MVP platform/compliance expansion. |
 
@@ -1381,10 +1381,10 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Add Redis-backed per-tenant monthly AI token budget reservation with warning metadata.
 - [x] Expose AI limit settings in `.env.example`.
 - [x] Expand frontend tests to cover the named MVP journeys in Part 9.
-- [ ] Execute and record the manual MVP verification checklist in Part 9.
+- [x] Execute and record the manual MVP verification checklist in Part 9.
 - [x] Make Docker-backed integration tests clean-rerun friendly against a reused local database.
 
-**Exit criteria:** CI remains green, AI tutor abuse/cost controls are enforced before provider work is queued, required frontend journeys map to Part 9, manual readiness evidence is recorded under `docs/runbooks/`, and local Docker-backed verification can be rerun without rebuilding the database from scratch.
+**Exit criteria:** CI remains green, AI tutor abuse/cost controls are enforced before provider work is queued, required frontend journeys map to Part 9, manual readiness evidence is recorded under `docs/runbooks/`, and local Docker-backed verification can be rerun without rebuilding the database from scratch. Evidence is recorded in `docs/runbooks/mvp-readiness-verification-2026-07-31.md`.
 
 ### Phase 2: Months 4-6
 
