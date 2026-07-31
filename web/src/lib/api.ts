@@ -12,6 +12,8 @@ import {
   enrolmentEnvelopeSchema,
   errorBodySchema,
   healthEnvelopeSchema,
+  authEnvelopeSchema,
+  loginRequestSchema,
   lessonCreateRequestSchema,
   lessonEnvelopeSchema,
   lessonProgressEnvelopeSchema,
@@ -22,6 +24,7 @@ import {
   quizAttemptEnvelopeSchema,
   quizAttemptRequestSchema,
   sectionCreateRequestSchema,
+  signupRequestSchema,
   sectionEnvelopeSchema,
   tenantBrandingEnvelopeSchema,
   tutorJobEnvelopeSchema,
@@ -34,6 +37,8 @@ import type {
   LessonProgressRequest,
   MediaAssetCreateRequest,
   SectionCreateRequest,
+  SignupRequest,
+  LoginRequest,
 } from "@/lib/schemas";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -48,6 +53,20 @@ export async function getHealth() {
   const body: unknown = await response.json();
 
   return healthEnvelopeSchema.parse(body);
+}
+
+export async function signup(request: SignupRequest) {
+  const body = signupRequestSchema.parse(request);
+  const response = await postJson("/api/v1/auth/signup", body);
+
+  return authEnvelopeSchema.parse(response);
+}
+
+export async function login(request: LoginRequest) {
+  const body = loginRequestSchema.parse(request);
+  const response = await postJson("/api/v1/auth/login", body);
+
+  return authEnvelopeSchema.parse(response);
 }
 
 export async function getTenantBranding(context: RequestContext = {}) {

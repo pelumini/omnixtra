@@ -89,6 +89,39 @@ export const errorBodySchema = z.object({
   details: z.array(errorDetailSchema),
 });
 
+export const signupRequestSchema = z.object({
+  tenant_name: z.string().min(2).max(200),
+  tenant_slug: z.string().regex(/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/),
+  full_name: z.string().min(2).max(200),
+  email: z.string().email(),
+  password: z.string().min(12).max(128),
+});
+
+export const loginRequestSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1).max(128),
+});
+
+export const authenticatedUserSchema = z.object({
+  id: z.string().uuid(),
+  tenant_id: z.string().uuid(),
+  email: z.string().email(),
+  full_name: z.string(),
+  role: z.string(),
+});
+
+export const authResponseSchema = z.object({
+  access_token: z.string(),
+  token_type: z.literal("bearer"),
+  user: authenticatedUserSchema,
+});
+
+export const authEnvelopeSchema = z.object({
+  data: authResponseSchema,
+  error: z.null(),
+  meta: metaSchema,
+});
+
 export const courseStatusSchema = z.enum(["draft", "published", "archived"]);
 
 export const courseSchema = z.object({
@@ -385,6 +418,7 @@ export const tutorEventSchema = z.object({
 });
 
 export type Block = z.infer<typeof blockSchema>;
+export type AuthResponse = z.infer<typeof authResponseSchema>;
 export type BillingPlan = z.infer<typeof billingPlanSchema>;
 export type Course = z.infer<typeof courseSchema>;
 export type CourseCompletionAnalytics = z.infer<typeof courseCompletionAnalyticsSchema>;
@@ -393,6 +427,7 @@ export type CourseCreateRequest = z.infer<typeof courseCreateRequestSchema>;
 export type CoursePlayer = z.infer<typeof coursePlayerSchema>;
 export type CourseUpdateRequest = z.infer<typeof courseUpdateRequestSchema>;
 export type Enrolment = z.infer<typeof enrolmentSchema>;
+export type LoginRequest = z.infer<typeof loginRequestSchema>;
 export type Lesson = z.infer<typeof lessonSchema>;
 export type LessonCreateRequest = z.infer<typeof lessonCreateRequestSchema>;
 export type LessonProgress = z.infer<typeof lessonProgressSchema>;
@@ -404,6 +439,7 @@ export type Certificate = z.infer<typeof certificateSchema>;
 export type QuizAttempt = z.infer<typeof quizAttemptSchema>;
 export type Section = z.infer<typeof sectionSchema>;
 export type SectionCreateRequest = z.infer<typeof sectionCreateRequestSchema>;
+export type SignupRequest = z.infer<typeof signupRequestSchema>;
 export type TenantBranding = z.infer<typeof tenantBrandingSchema>;
 export type TutorJob = z.infer<typeof tutorJobSchema>;
 export type TutorEvent = z.infer<typeof tutorEventSchema>;
