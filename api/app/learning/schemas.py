@@ -8,6 +8,7 @@ class EnrolmentResponse(BaseModel):
     id: UUID
     learner_id: UUID
     course_id: UUID
+    course_role: str
     status: str
 
 

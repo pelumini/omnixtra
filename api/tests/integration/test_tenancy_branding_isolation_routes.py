@@ -14,6 +14,9 @@ TEST_PASSWORD = "correct horse battery staple"  # noqa: S105
 
 
 @pytest.mark.integration
+@covers_isolation("POST", "/api/v1/tenants")
+@covers_isolation("GET", "/api/v1/tenant/memberships")
+@covers_isolation("POST", "/api/v1/tenant/invitations")
 @covers_isolation("GET", "/api/v1/tenant/branding")
 @covers_isolation("PATCH", "/api/v1/tenant/branding")
 def test_tenant_b_does_not_see_tenant_a_branding() -> None:
@@ -48,6 +51,21 @@ def test_tenant_b_does_not_see_tenant_a_branding() -> None:
     assert tenant_b_branding.json()["data"]["primary_color"] == "#116149"
     assert tenant_b_branding.json()["data"]["logo_url"] is None
 
+    memberships_response = isolation_client.get(
+        "/api/v1/tenant/memberships",
+        headers=_headers(tenant_b.slug, tenant_b.access_token),
+    )
+    assert memberships_response.status_code == 200
+    assert len(memberships_response.json()["data"]) == 1
+
+    invitation_response = isolation_client.post(
+        "/api/v1/tenant/invitations",
+        json={"email": f"member-{tenant_b.slug}@example.com", "org_role": "member"},
+        headers=_headers(tenant_b.slug, tenant_b.access_token),
+    )
+    assert invitation_response.status_code == 200
+    assert invitation_response.json()["data"]["accepted"] is True
+
 
 @dataclass(frozen=True)
 class TenantAccount:
@@ -58,7 +76,7 @@ class TenantAccount:
 
 def _signup(client: TestClient, slug: str) -> TenantAccount:
     response = client.post(
-        "/api/v1/auth/signup",
+        "/api/v1/tenants",
         json={
             "tenant_name": slug.title(),
             "tenant_slug": slug,
@@ -72,7 +90,7 @@ def _signup(client: TestClient, slug: str) -> TenantAccount:
     data = response.json()["data"]
     return TenantAccount(
         slug=slug,
-        tenant_id=UUID(data["user"]["tenant_id"]),
+        tenant_id=UUID(data["tenant_id"]),
         access_token=data["access_token"],
     )
 

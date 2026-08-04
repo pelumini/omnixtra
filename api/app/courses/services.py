@@ -37,6 +37,7 @@ from app.courses.schemas import (
     SectionCreateRequest,
     SectionResponse,
 )
+from app.learning.models import CourseRole, Enrolment, EnrolmentStatus
 from app.shared.models import utc_now
 from app.tenancy.context import require_tenant_id
 
@@ -60,6 +61,16 @@ async def create_course(
     )
     session.add(course)
     await session.flush()
+    if actor_id is not None:
+        session.add(
+            Enrolment(
+                learner_id=actor_id,
+                course_id=course.id,
+                course_role=CourseRole.course_owner.value,
+                status=EnrolmentStatus.active.value,
+                idempotency_key=f"course-owner-{course.id}-{actor_id}",
+            ),
+        )
     _audit(session, course.id, actor_id, "course.created", f"Created course {course.slug}")
     await session.commit()
     return course_response(course)

@@ -20,6 +20,7 @@ class Tenant(TimestampMixin, Base):
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     slug: Mapped[str] = mapped_column(String(63), unique=True, index=True)
     name: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str | None] = mapped_column(String(1000), default=None)
     status: Mapped[str] = mapped_column(String(32), default=TenantStatus.active.value)
     logo_url: Mapped[str | None] = mapped_column(String(2048), default=None)
     primary_color: Mapped[str] = mapped_column(String(16), default="#116149")

@@ -32,6 +32,7 @@ def test_learning_response_mappers_expose_expected_fields() -> None:
         tenant_id=TENANT_ID,
         learner_id=LEARNER_ID,
         course_id=COURSE_ID,
+        course_role="learner",
         status="active",
         idempotency_key="enrol-key",
     )

@@ -510,6 +510,11 @@ class _AdminLimitSession:
 
     async def scalar(self, _statement: object) -> TenantSubscription | int:
         self.scalar_calls += 1
+        if self.scalar_calls == 2:
+            compiled = str(_statement)
+            assert "memberships" in compiled
+            assert "memberships.org_role" in compiled
+            assert "users.role" not in compiled
         return self.subscription if self.scalar_calls == 1 else self.admin_count
 
     async def get(self, _model: object, _identifier: object) -> BillingPlan:

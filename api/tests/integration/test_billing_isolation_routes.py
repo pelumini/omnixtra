@@ -105,6 +105,46 @@ def test_tenant_b_does_not_see_tenant_a_subscription(monkeypatch: pytest.MonkeyP
     get_settings.cache_clear()
 
 
+@pytest.mark.integration
+@covers_isolation("POST", "/api/v1/tenant/invitations")
+def test_admin_seat_limit_counts_tenant_admin_memberships(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    if not os.getenv(APP_DATABASE_URL_ENV):
+        pytest.skip(f"{APP_DATABASE_URL_ENV} is not set")
+
+    get_settings.cache_clear()
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+    client = TestClient(create_app())
+    tenant = _signup(client, f"admin-seats-{uuid4().hex[:12]}")
+
+    webhook_response = _post_signed_subscription_webhook(
+        client,
+        tenant_id=tenant.tenant_id,
+        stripe_customer_id="cus_admin_seats",
+        stripe_subscription_id="sub_admin_seats",
+    )
+    assert webhook_response.status_code == 200
+
+    for index in range(2):
+        email = f"tenant-admin-{index}-{tenant.slug}@example.com"
+        invitation_response = _invite_admin(client, tenant, email)
+        assert invitation_response.status_code == 200
+        token = invitation_response.json()["data"]["token"]
+        accept_response = _accept_invitation(client, tenant.slug, token, email)
+        assert accept_response.status_code == 200
+
+    rejected_response = _invite_admin(
+        client,
+        tenant,
+        f"tenant-admin-over-{tenant.slug}@example.com",
+    )
+
+    assert rejected_response.status_code == 400
+    assert "admin seat limit" in rejected_response.text
+    get_settings.cache_clear()
+
+
 @dataclass(frozen=True)
 class TenantAccount:
     slug: str
@@ -115,7 +155,7 @@ class TenantAccount:
 def _signup(client: TestClient, slug: str) -> TenantAccount:
     email = f"admin-{slug}@example.com"
     response = client.post(
-        "/api/v1/auth/signup",
+        "/api/v1/tenants",
         json={
             "tenant_name": slug.title(),
             "tenant_slug": slug,
@@ -129,13 +169,34 @@ def _signup(client: TestClient, slug: str) -> TenantAccount:
     data = response.json()["data"]
     return TenantAccount(
         slug=slug,
-        tenant_id=UUID(data["user"]["tenant_id"]),
+        tenant_id=UUID(data["tenant_id"]),
         access_token=data["access_token"],
     )
 
 
 def _headers(slug: str, access_token: str) -> dict[str, str]:
     return {"host": f"{slug}.localhost", "authorization": f"Bearer {access_token}"}
+
+
+def _invite_admin(client: TestClient, tenant: TenantAccount, email: str) -> Response:
+    return client.post(
+        "/api/v1/tenant/invitations",
+        json={"email": email, "org_role": "tenant_admin"},
+        headers=_headers(tenant.slug, tenant.access_token),
+    )
+
+
+def _accept_invitation(client: TestClient, slug: str, token: str, email: str) -> Response:
+    return client.post(
+        "/api/v1/auth/invitations/accept",
+        json={
+            "token": token,
+            "email": email,
+            "full_name": "Tenant Admin",
+            "password": TEST_PASSWORD,
+        },
+        headers={"host": f"{slug}.localhost"},
+    )
 
 
 def _post_signed_subscription_webhook(

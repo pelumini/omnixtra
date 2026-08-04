@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Annotated
 from uuid import UUID
@@ -6,10 +6,13 @@ from uuid import UUID
 from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt.exceptions import InvalidTokenError
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.models import UserRole
+from app.auth.models import Membership, OrgRole
 from app.auth.rbac import has_permission
 from app.core.context import set_tenant_id
+from app.core.database import get_session
 from app.core.exceptions import AuthenticationError, AuthorizationError
 from app.core.security import decode_access_token
 
@@ -22,14 +25,18 @@ REFRESH_TOKEN_COOKIE = "__Host-omnixtra_refresh"  # noqa: S105
 class AuthPrincipal:
     user_id: UUID
     tenant_id: UUID
-    role: UserRole
+    role: OrgRole
 
 
 def require_permission(
     permission: str,
-) -> Callable[[Request, HTTPAuthorizationCredentials | None], AuthPrincipal]:
-    def dependency(
+) -> Callable[
+    [Request, AsyncSession, HTTPAuthorizationCredentials | None],
+    Awaitable[AuthPrincipal],
+]:
+    async def dependency(
         request: Request,
+        session: Annotated[AsyncSession, Depends(get_session)],
         credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
     ) -> AuthPrincipal:
         token = (
@@ -44,14 +51,23 @@ def require_permission(
             payload = decode_access_token(token)
             user_id = UUID(str(payload["sub"]))
             tenant_id = UUID(str(payload["tenant_id"]))
-            role = UserRole(str(payload["role"]))
         except (InvalidTokenError, KeyError, ValueError):
             msg = "invalid access token"
             raise AuthenticationError(msg) from None
+        set_tenant_id(str(tenant_id))
+        membership = await session.scalar(
+            select(Membership).where(
+                Membership.user_id == user_id,
+                Membership.deleted_at.is_(None),
+            ),
+        )
+        if membership is None or membership.tenant_id != tenant_id:
+            msg = "membership required"
+            raise AuthenticationError(msg)
+        role = OrgRole(membership.org_role)
         if not has_permission(role, permission):
             msg = "permission denied"
             raise AuthorizationError(msg)
-        set_tenant_id(str(tenant_id))
         return AuthPrincipal(user_id=user_id, tenant_id=tenant_id, role=role)
 
     return dependency

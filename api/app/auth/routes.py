@@ -9,30 +9,26 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import (
     ACCESS_TOKEN_COOKIE,
     REFRESH_TOKEN_COOKIE,
-    AuthPrincipal,
-    require_permission,
 )
 from app.auth.models import AuthTokenPurpose
 from app.auth.schemas import (
     AuthResponse,
-    InviteUserRequest,
+    InvitationAcceptRequest,
     LoginRequest,
     MagicLinkRequest,
     MagicLinkVerifyRequest,
     PasswordResetCompleteRequest,
     PasswordResetRequest,
-    SignupRequest,
     TokenRequestAccepted,
 )
 from app.auth.services import (
     AuthSession,
+    accept_invitation,
     complete_password_reset,
-    invite_user,
     issue_auth_token,
     login_with_session,
     logout_refresh_session,
     refresh_auth_session,
-    signup_with_session,
     verify_magic_link,
 )
 from app.core.database import get_session
@@ -44,7 +40,6 @@ from app.tenancy.context import require_tenant_id
 router = APIRouter(prefix="/auth", tags=["auth"])
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 EmailProviderDep = Annotated[EmailProvider, Depends(get_email_provider)]
-UserManagerDep = Annotated[AuthPrincipal, Depends(require_permission("users:manage"))]
 
 
 @dataclass
@@ -56,19 +51,6 @@ class RateLimitBucket:
 RATE_LIMIT_WINDOW = timedelta(minutes=1)
 RATE_LIMIT_MAX_ATTEMPTS = 5
 _rate_limit_buckets: dict[str, RateLimitBucket] = {}
-
-
-@router.post("/signup")
-async def signup_route(
-    request: SignupRequest,
-    session: SessionDep,
-    response: Response,
-    http_request: Request,
-) -> Envelope[AuthResponse]:
-    _enforce_rate_limit("signup", http_request, request.email)
-    auth_session = await signup_with_session(session, request)
-    _set_auth_cookies(response, auth_session)
-    return Envelope(data=auth_session.response, error=None, meta=Meta.current())
 
 
 @router.post("/login")
@@ -164,22 +146,17 @@ async def password_reset_complete_route(
     return Envelope(data=auth_session.response, error=None, meta=Meta.current())
 
 
-@router.post("/invitations", tags=["tenant-owned"])
-async def invite_user_route(
-    request: InviteUserRequest,
+@router.post("/invitations/accept")
+async def accept_invitation_route(
+    request: InvitationAcceptRequest,
     session: SessionDep,
-    email_provider: EmailProviderDep,
-    principal: UserManagerDep,
-) -> Envelope[TokenRequestAccepted]:
-    token = await invite_user(session, request, actor_id=principal.user_id)
-    await email_provider.send(
-        auth_token_email(
-            template=EmailTemplate.magic_link,
-            to_email=request.email,
-            token=token.raw_token,
-        ),
-    )
-    return Envelope(data=TokenRequestAccepted(accepted=True), error=None, meta=Meta.current())
+    response: Response,
+    http_request: Request,
+) -> Envelope[AuthResponse]:
+    _enforce_rate_limit("invitation-accept", http_request, request.email)
+    auth_session = await accept_invitation(session, UUID(require_tenant_id()), request)
+    _set_auth_cookies(response, auth_session)
+    return Envelope(data=auth_session.response, error=None, meta=Meta.current())
 
 
 @router.post("/refresh")

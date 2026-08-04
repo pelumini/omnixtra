@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import require_permission
+from app.auth.dependencies import AuthPrincipal, require_permission
 from app.core.database import get_session
 from app.courses.schemas import (
     BlockCreateRequest,
@@ -33,14 +33,16 @@ from app.courses.services import (
     reorder_sections,
     update_course,
 )
+from app.learning.permissions import require_course_permission
 from app.shared.responses import Envelope, Meta
 
 router = APIRouter(
     prefix="/courses",
     tags=["tenant-owned"],
-    dependencies=[Depends(require_permission("courses:manage"))],
 )
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
+CourseCreator = Annotated[AuthPrincipal, Depends(require_permission("courses:manage"))]
+CourseMember = Annotated[AuthPrincipal, Depends(require_permission("courses:read"))]
 AfterQuery = Annotated[UUID | None, Query()]
 LimitQuery = Annotated[int, Query(ge=1, le=100)]
 
@@ -49,14 +51,16 @@ LimitQuery = Annotated[int, Query(ge=1, le=100)]
 async def create_course_route(
     request: CourseCreateRequest,
     session: SessionDep,
+    principal: CourseCreator,
 ) -> Envelope[CourseResponse]:
-    response = await create_course(session, request)
+    response = await create_course(session, request, actor_id=principal.user_id)
     return Envelope(data=response, error=None, meta=Meta.current())
 
 
 @router.get("")
 async def list_courses_route(
     session: SessionDep,
+    _principal: CourseMember,
     after: AfterQuery = None,
     limit: LimitQuery = 20,
 ) -> Envelope[CursorPage]:
@@ -69,8 +73,12 @@ async def update_course_route(
     course_id: UUID,
     request: CourseUpdateRequest,
     session: SessionDep,
+    principal: CourseMember,
 ) -> Envelope[CourseResponse]:
-    response = await update_course(session, course_id, request)
+    await require_course_permission(
+        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+    )
+    response = await update_course(session, course_id, request, actor_id=principal.user_id)
     return Envelope(data=response, error=None, meta=Meta.current())
 
 
@@ -78,8 +86,12 @@ async def update_course_route(
 async def delete_course_route(
     course_id: UUID,
     session: SessionDep,
+    principal: CourseMember,
 ) -> Envelope[CourseResponse]:
-    response = await delete_course(session, course_id)
+    await require_course_permission(
+        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+    )
+    response = await delete_course(session, course_id, actor_id=principal.user_id)
     return Envelope(data=response, error=None, meta=Meta.current())
 
 
@@ -88,8 +100,12 @@ async def create_section_route(
     course_id: UUID,
     request: SectionCreateRequest,
     session: SessionDep,
+    principal: CourseMember,
 ) -> Envelope[SectionResponse]:
-    response = await create_section(session, course_id, request)
+    await require_course_permission(
+        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+    )
+    response = await create_section(session, course_id, request, actor_id=principal.user_id)
     return Envelope(data=response, error=None, meta=Meta.current())
 
 
@@ -98,8 +114,12 @@ async def create_lesson_route(
     course_id: UUID,
     request: LessonCreateRequest,
     session: SessionDep,
+    principal: CourseMember,
 ) -> Envelope[LessonResponse]:
-    response = await create_lesson(session, course_id, request)
+    await require_course_permission(
+        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+    )
+    response = await create_lesson(session, course_id, request, actor_id=principal.user_id)
     return Envelope(data=response, error=None, meta=Meta.current())
 
 
@@ -108,8 +128,12 @@ async def create_block_route(
     course_id: UUID,
     request: BlockCreateRequest,
     session: SessionDep,
+    principal: CourseMember,
 ) -> Envelope[BlockResponse]:
-    response = await create_block(session, course_id, request)
+    await require_course_permission(
+        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+    )
+    response = await create_block(session, course_id, request, actor_id=principal.user_id)
     return Envelope(data=response, error=None, meta=Meta.current())
 
 
@@ -118,8 +142,12 @@ async def create_media_asset_route(
     course_id: UUID,
     request: MediaAssetCreateRequest,
     session: SessionDep,
+    principal: CourseMember,
 ) -> Envelope[MediaAssetResponse]:
-    response = await create_media_asset(session, course_id, request)
+    await require_course_permission(
+        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+    )
+    response = await create_media_asset(session, course_id, request, actor_id=principal.user_id)
     return Envelope(data=response, error=None, meta=Meta.current())
 
 
@@ -128,8 +156,14 @@ async def reorder_sections_route(
     course_id: UUID,
     request: ReorderRequest,
     session: SessionDep,
+    principal: CourseMember,
 ) -> Envelope[list[SectionResponse]]:
-    response = await reorder_sections(session, course_id, request.ordered_ids)
+    await require_course_permission(
+        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+    )
+    response = await reorder_sections(
+        session, course_id, request.ordered_ids, actor_id=principal.user_id
+    )
     return Envelope(data=response, error=None, meta=Meta.current())
 
 
@@ -137,6 +171,10 @@ async def reorder_sections_route(
 async def publish_course_route(
     course_id: UUID,
     session: SessionDep,
+    principal: CourseMember,
 ) -> Envelope[CourseResponse]:
-    response = await publish_course(session, course_id)
+    await require_course_permission(
+        session, user_id=principal.user_id, course_id=course_id, permission="course.publish"
+    )
+    response = await publish_course(session, course_id, actor_id=principal.user_id)
     return Envelope(data=response, error=None, meta=Meta.current())

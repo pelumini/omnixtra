@@ -50,7 +50,9 @@ def test_isolation_coverage_gate_accepts_recorded_declared_hits(tmp_path: Path) 
           {"method": "GET", "path": "/api/v1/admin/analytics/completions"},
           {"method": "GET", "path": "/api/v1/admin/reports/learner-progress"},
           {"method": "GET", "path": "/api/v1/admin/reports/learner-progress.csv"},
-          {"method": "POST", "path": "/api/v1/auth/invitations"},
+          {"method": "POST", "path": "/api/v1/tenants"},
+          {"method": "POST", "path": "/api/v1/tenant/invitations"},
+          {"method": "GET", "path": "/api/v1/tenant/memberships"},
           {"method": "GET", "path": "/api/v1/tenant/branding"},
           {"method": "PATCH", "path": "/api/v1/tenant/branding"}
         ]

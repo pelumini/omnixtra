@@ -154,7 +154,7 @@ Never reuse `.env.example` secrets outside local development.
 
 - [ ] Deploy web, API, worker, Postgres, and Redis to staging.
 - [ ] Run `/health` against the deployed API.
-- [ ] Run signup/login smoke flow.
+- [ ] Run tenant-creation/login smoke flow.
 - [ ] Create Tenant A and Tenant B.
 - [ ] Confirm cross-tenant API attacks return indistinguishable `404`.
 - [ ] Publish a course with text, video, image, and quiz blocks.
@@ -183,7 +183,7 @@ Never reuse `.env.example` secrets outside local development.
 - [ ] Configure production Stripe webhook.
 - [ ] Configure production DNS and TLS.
 - [ ] Run production health check.
-- [ ] Run production signup/login smoke with a controlled tenant.
+- [ ] Run production tenant-creation/login smoke with a controlled tenant.
 - [ ] Run production tutor smoke within configured token budget.
 - [ ] Monitor logs, errors, traces, worker jobs, Redis, and database metrics for the first hour.
 

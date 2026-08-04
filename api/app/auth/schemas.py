@@ -5,14 +5,6 @@ from pydantic import BaseModel, EmailStr, Field
 BEARER_TOKEN_TYPE: Literal["bearer"] = "bearer"  # noqa: S105
 
 
-class SignupRequest(BaseModel):
-    tenant_name: str = Field(min_length=2, max_length=200)
-    tenant_slug: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$")
-    full_name: str = Field(min_length=2, max_length=200)
-    email: EmailStr
-    password: str = Field(min_length=12, max_length=128)
-
-
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=1, max_length=128)
@@ -42,8 +34,14 @@ class PasswordResetRequest(BaseModel):
 
 class InviteUserRequest(BaseModel):
     email: EmailStr
+    org_role: Literal["tenant_admin", "member"] = "member"
+
+
+class InvitationAcceptRequest(BaseModel):
+    token: str = Field(min_length=32, max_length=256)
+    email: EmailStr
     full_name: str = Field(min_length=2, max_length=200)
-    role: Literal["org_admin", "learner"] = "learner"
+    password: str = Field(min_length=12, max_length=128)
 
 
 class MagicLinkVerifyRequest(BaseModel):

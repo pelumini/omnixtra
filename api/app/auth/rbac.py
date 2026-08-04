@@ -1,19 +1,23 @@
-from app.auth.models import UserRole
+from app.auth.models import OrgRole
 
-DEFAULT_SIGNUP_ROLE = UserRole.org_admin
-DEFAULT_INVITE_ROLE = UserRole.learner
+DEFAULT_TENANT_CREATOR_ROLE = OrgRole.tenant_admin
+DEFAULT_INVITE_ROLE = OrgRole.member
 
-ROLE_PERMISSIONS: dict[UserRole, frozenset[str]] = {
-    UserRole.org_admin: frozenset(
+ORG_ROLE_PERMISSIONS: dict[OrgRole, frozenset[str]] = {
+    OrgRole.tenant_admin: frozenset(
         {
+            "roles:manage",
             "tenant:manage",
             "users:manage",
+            "courses:read",
             "courses:manage",
             "reports:read",
             "billing:manage",
+            "learning:write",
+            "tutor:use",
         },
     ),
-    UserRole.learner: frozenset(
+    OrgRole.member: frozenset(
         {
             "courses:read",
             "learning:write",
@@ -23,5 +27,5 @@ ROLE_PERMISSIONS: dict[UserRole, frozenset[str]] = {
 }
 
 
-def has_permission(role: UserRole, permission: str) -> bool:
-    return permission in ROLE_PERMISSIONS[role]
+def has_permission(role: OrgRole, permission: str) -> bool:
+    return permission in ORG_ROLE_PERMISSIONS[role]

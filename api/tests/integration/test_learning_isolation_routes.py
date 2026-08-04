@@ -115,7 +115,7 @@ def _signup(client: TestClient, label: str) -> TenantAccount:
     slug = f"{label}-{uuid4().hex[:12]}"
     email = f"{slug}@example.com"
     response = client.post(
-        "/api/v1/auth/signup",
+        "/api/v1/tenants",
         json={
             "tenant_name": label,
             "tenant_slug": slug,
@@ -130,8 +130,8 @@ def _signup(client: TestClient, label: str) -> TenantAccount:
     return TenantAccount(
         slug=slug,
         email=email,
-        user_id=data["user"]["id"],
-        tenant_id=data["user"]["tenant_id"],
+        user_id=data["user_id"],
+        tenant_id=data["tenant_id"],
         access_token=data["access_token"],
     )
 

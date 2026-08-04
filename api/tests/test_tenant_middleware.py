@@ -70,7 +70,7 @@ def test_bearer_token_for_different_tenant_is_rejected(
     token = create_access_token(
         subject=UUID("00000000-0000-0000-0000-000000000003"),
         tenant_id=other_tenant_id,
-        role="org_admin",
+        role="tenant_admin",
     )
     request = _request("acme.localhost", authorization=f"Bearer {token}")
     called = False
@@ -96,7 +96,7 @@ def test_access_cookie_for_different_tenant_is_rejected(
     token = create_access_token(
         subject=UUID("00000000-0000-0000-0000-000000000003"),
         tenant_id=other_tenant_id,
-        role="org_admin",
+        role="tenant_admin",
     )
     request = _request("acme.localhost", cookie=f"{ACCESS_TOKEN_COOKIE}={token}")
     called = False

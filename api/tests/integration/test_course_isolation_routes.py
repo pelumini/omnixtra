@@ -1,6 +1,7 @@
 import os
 from uuid import uuid4
 
+import psycopg
 import pytest
 from fastapi.testclient import TestClient
 from httpx import Response
@@ -147,18 +148,46 @@ def test_tenant_b_cannot_attack_tenant_a_course_routes() -> None:
     )
 
 
+@pytest.mark.integration
+def test_course_role_is_per_enrolment_through_publish_route() -> None:
+    if os.getenv(APP_DATABASE_URL_ENV) is None:
+        pytest.skip(f"{APP_DATABASE_URL_ENV} is not set")
+
+    client = TestClient(create_app())
+    tenant = _signup(client, "course-role")
+    token = _login(client, tenant.slug, tenant.email)
+    headers = _headers(tenant.slug, token)
+
+    course_a_id = _draft_course_with_lesson(client, headers, "Learner Course")
+    course_b_id = _draft_course_with_lesson(client, headers, "Owner Course")
+    _set_course_role(tenant.tenant_id, tenant.user_id, course_a_id, "learner")
+
+    learner_publish = client.post(
+        f"/api/v1/courses/{course_a_id}/publish",
+        headers=headers,
+    )
+    assert learner_publish.status_code == 404
+
+    owner_publish = client.post(
+        f"/api/v1/courses/{course_b_id}/publish",
+        headers=headers,
+    )
+    assert owner_publish.status_code == 200
+
+
 class TenantAccount:
-    def __init__(self, *, slug: str, email: str, tenant_id: str) -> None:
+    def __init__(self, *, slug: str, email: str, tenant_id: str, user_id: str) -> None:
         self.slug = slug
         self.email = email
         self.tenant_id = tenant_id
+        self.user_id = user_id
 
 
 def _signup(client: TestClient, label: str) -> TenantAccount:
     slug = f"{label}-{uuid4().hex[:12]}"
     email = f"{slug}@example.com"
     response = client.post(
-        "/api/v1/auth/signup",
+        "/api/v1/tenants",
         json={
             "tenant_name": label,
             "tenant_slug": slug,
@@ -172,7 +201,8 @@ def _signup(client: TestClient, label: str) -> TenantAccount:
     return TenantAccount(
         slug=slug,
         email=email,
-        tenant_id=response.json()["data"]["user"]["tenant_id"],
+        tenant_id=response.json()["data"]["tenant_id"],
+        user_id=response.json()["data"]["user_id"],
     )
 
 
@@ -194,6 +224,54 @@ def _tenant_course_titles(client: TestClient, headers: dict[str, str]) -> set[st
     response = client.get("/api/v1/courses", headers=headers)
     assert response.status_code == 200
     return {item["title"] for item in response.json()["data"]["items"]}
+
+
+def _draft_course_with_lesson(client: TestClient, headers: dict[str, str], title: str) -> str:
+    suffix = uuid4().hex[:8]
+    course_response = client.post(
+        "/api/v1/courses",
+        json={
+            "title": title,
+            "slug": f"{title.lower().replace(' ', '-')}-{suffix}",
+            "description": None,
+        },
+        headers=headers,
+    )
+    assert course_response.status_code == 200
+    course_id = str(course_response.json()["data"]["id"])
+    section_response = client.post(
+        f"/api/v1/courses/{course_id}/sections",
+        json={"title": "Section", "position": 0},
+        headers=headers,
+    )
+    assert section_response.status_code == 200
+    lesson_response = client.post(
+        f"/api/v1/courses/{course_id}/lessons",
+        json={
+            "section_id": section_response.json()["data"]["id"],
+            "title": "Lesson",
+            "position": 0,
+        },
+        headers=headers,
+    )
+    assert lesson_response.status_code == 200
+    return course_id
+
+
+def _set_course_role(tenant_id: str, user_id: str, course_id: str, course_role: str) -> None:
+    database_url = os.environ[APP_DATABASE_URL_ENV]
+    with psycopg.connect(database_url) as connection, connection.cursor() as cursor:
+        cursor.execute("SELECT set_config('app.current_tenant_id', %s, true)", (tenant_id,))
+        cursor.execute(
+            """
+            UPDATE enrolments
+            SET course_role = %s
+            WHERE tenant_id = %s
+              AND learner_id = %s
+              AND course_id = %s
+            """,
+            (course_role, tenant_id, user_id, course_id),
+        )
 
 
 def _assert_not_found(response: Response) -> None:

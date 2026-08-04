@@ -15,13 +15,13 @@ from app.main import create_app
 def test_auth_routes_are_registered_under_api_v1() -> None:
     paths = set(create_app().openapi()["paths"])
 
-    assert "/api/v1/auth/signup" in paths
+    assert "/api/v1/auth/signup" not in paths
     assert "/api/v1/auth/login" in paths
     assert "/api/v1/auth/magic-link" in paths
     assert "/api/v1/auth/magic-link/verify" in paths
     assert "/api/v1/auth/password-reset" in paths
     assert "/api/v1/auth/password-reset/complete" in paths
-    assert "/api/v1/auth/invitations" in paths
+    assert "/api/v1/auth/invitations/accept" in paths
     assert "/api/v1/auth/refresh" in paths
     assert "/api/v1/auth/logout" in paths
 
@@ -38,7 +38,7 @@ def test_auth_cookies_are_httponly_secure_samesite_lax() -> None:
                     tenant_id=str(UUID("00000000-0000-0000-0000-000000000002")),
                     email="admin@example.com",
                     full_name="Admin User",
-                    role="org_admin",
+                    role="tenant_admin",
                 ),
             ),
             refresh_token="refresh-token",

@@ -12,6 +12,7 @@ from app.learning.models import (
     CertificateStatus,
     CompletionStatus,
     CourseCompletion,
+    CourseRole,
     Enrolment,
     EnrolmentStatus,
     LearningAuditEvent,
@@ -66,6 +67,7 @@ async def enrol_in_course(
     enrolment = Enrolment(
         learner_id=learner_id,
         course_id=course_id,
+        course_role=CourseRole.learner.value,
         status=EnrolmentStatus.active.value,
         idempotency_key=idempotency_key,
     )
@@ -354,6 +356,7 @@ def enrolment_response(enrolment: Enrolment) -> EnrolmentResponse:
         id=enrolment.id,
         learner_id=enrolment.learner_id,
         course_id=enrolment.course_id,
+        course_role=enrolment.course_role,
         status=enrolment.status,
     )
 

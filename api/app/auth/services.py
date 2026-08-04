@@ -2,20 +2,24 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from secrets import token_urlsafe
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.models import AuthToken, AuthTokenPurpose, RefreshSession, User, UserRole, UserStatus
-from app.auth.rbac import DEFAULT_SIGNUP_ROLE
-from app.auth.schemas import AuthenticatedUser, AuthResponse, InviteUserRequest, SignupRequest
-from app.billing.services import ensure_admin_capacity
-from app.core.context import clear_tenant_id, set_tenant_id
-from app.core.exceptions import AuthenticationError, ConflictError, ValidationAppError
+from app.auth.models import (
+    AuthToken,
+    AuthTokenPurpose,
+    Invitation,
+    Membership,
+    OrgRole,
+    RefreshSession,
+    User,
+    UserStatus,
+)
+from app.auth.schemas import AuthenticatedUser, AuthResponse, InvitationAcceptRequest
+from app.core.exceptions import AuthenticationError, NotFoundError, ValidationAppError
 from app.core.security import create_access_token, hash_password, verify_password
-from app.tenancy.models import TenancyAuditEvent, Tenant, TenantStatus
-from app.tenancy.orm import TENANT_FILTER_BYPASS_OPTION
 
 
 @dataclass(frozen=True)
@@ -30,42 +34,6 @@ class AuthSession:
     refresh_token: str
 
 
-async def signup(session: AsyncSession, request: SignupRequest) -> AuthResponse:
-    existing_tenant = await session.scalar(
-        select(Tenant)
-        .where(Tenant.slug == request.tenant_slug)
-        .execution_options(**{TENANT_FILTER_BYPASS_OPTION: True}),
-    )
-    if existing_tenant is not None:
-        msg = "tenant slug is already taken"
-        raise ConflictError(msg)
-
-    tenant = Tenant(
-        id=uuid4(),
-        slug=request.tenant_slug,
-        name=request.tenant_name,
-        status=TenantStatus.active.value,
-    )
-    session.add(tenant)
-    await session.flush()
-    set_tenant_id(str(tenant.id))
-    try:
-        user = User(
-            email=_normalize_email(request.email),
-            full_name=request.full_name,
-            password_hash=hash_password(request.password),
-            role=DEFAULT_SIGNUP_ROLE.value,
-            status=UserStatus.active.value,
-        )
-        session.add(user)
-        await session.flush()
-        await session.commit()
-    finally:
-        clear_tenant_id()
-
-    return _auth_response(user)
-
-
 async def login(session: AsyncSession, tenant_id: UUID, email: str, password: str) -> AuthResponse:
     user = await session.scalar(select(User).where(User.email == _normalize_email(email)))
     if (
@@ -78,22 +46,7 @@ async def login(session: AsyncSession, tenant_id: UUID, email: str, password: st
     if user.status != UserStatus.active.value or user.tenant_id != tenant_id:
         msg = "invalid email or password"
         raise AuthenticationError(msg)
-    return _auth_response(user)
-
-
-async def signup_with_session(session: AsyncSession, request: SignupRequest) -> AuthSession:
-    response = await signup(session, request)
-    tenant_id = UUID(response.user.tenant_id)
-    set_tenant_id(str(tenant_id))
-    try:
-        refresh_token = await _create_refresh_session(
-            session,
-            tenant_id=tenant_id,
-            user_id=UUID(response.user.id),
-        )
-    finally:
-        clear_tenant_id()
-    return AuthSession(response=response, refresh_token=refresh_token)
+    return await _auth_response(session, user)
 
 
 async def login_with_session(
@@ -134,47 +87,56 @@ async def issue_auth_token(
     return IssuedAuthToken(raw_token=raw_token, token_hash=token_hash)
 
 
-async def invite_user(
+async def accept_invitation(
     session: AsyncSession,
-    request: InviteUserRequest,
-    *,
-    actor_id: UUID | None = None,
-) -> IssuedAuthToken:
-    normalized_email = _normalize_email(request.email)
-    existing_user = await session.scalar(select(User).where(User.email == normalized_email))
+    tenant_id: UUID,
+    request: InvitationAcceptRequest,
+) -> AuthSession:
+    invitation = await _consume_invitation(
+        session,
+        tenant_id=tenant_id,
+        raw_token=request.token,
+        email=str(request.email),
+    )
+    existing_user = await session.scalar(
+        select(User).where(User.email == _normalize_email(request.email)),
+    )
     if existing_user is not None:
-        msg = "user email is already invited"
-        raise ConflictError(msg)
-    if request.role == UserRole.org_admin.value:
-        await ensure_admin_capacity(session)
+        existing_membership = await session.scalar(
+            select(Membership).where(Membership.user_id == existing_user.id),
+        )
+        if existing_membership is None:
+            session.add(Membership(user_id=existing_user.id, org_role=invitation.org_role))
+            await session.flush()
+        response = await _auth_response(session, existing_user)
+        refresh_token = await _create_refresh_session(
+            session,
+            tenant_id=tenant_id,
+            user_id=existing_user.id,
+            commit=False,
+        )
+        await session.commit()
+        return AuthSession(response=response, refresh_token=refresh_token)
+
     user = User(
-        email=normalized_email,
+        email=_normalize_email(request.email),
         full_name=request.full_name,
-        password_hash=None,
-        role=request.role,
-        status=UserStatus.invited.value,
+        password_hash=hash_password(request.password),
+        role=OrgRole.member.value,
+        status=UserStatus.active.value,
     )
     session.add(user)
     await session.flush()
-    raw_token = token_urlsafe(32)
-    token = AuthToken(
+    session.add(Membership(user_id=user.id, org_role=invitation.org_role))
+    response = await _auth_response(session, user)
+    refresh_token = await _create_refresh_session(
+        session,
+        tenant_id=tenant_id,
         user_id=user.id,
-        email=normalized_email,
-        token_hash=hash_auth_token(raw_token),
-        purpose=AuthTokenPurpose.magic_link.value,
-        expires_at=datetime.now(UTC) + timedelta(minutes=15),
-    )
-    session.add(token)
-    session.add(
-        TenancyAuditEvent(
-            actor_id=actor_id,
-            action="tenant.user.invited",
-            summary=f"Invited {request.role} user",
-            event_data={"email": normalized_email, "role": request.role},
-        ),
+        commit=False,
     )
     await session.commit()
-    return IssuedAuthToken(raw_token=raw_token, token_hash=token.token_hash)
+    return AuthSession(response=response, refresh_token=refresh_token)
 
 
 async def verify_magic_link(
@@ -192,7 +154,7 @@ async def verify_magic_link(
         msg = "invalid or expired token"
         raise AuthenticationError(msg)
     user = await _active_user(session, auth_token.user_id)
-    response = _auth_response(user)
+    response = await _auth_response(session, user)
     refresh_token = await _create_refresh_session(
         session,
         tenant_id=tenant_id,
@@ -221,7 +183,7 @@ async def complete_password_reset(
     user = await _active_user(session, auth_token.user_id)
     user.password_hash = hash_password(password)
     await _revoke_user_refresh_sessions(session, tenant_id=tenant_id, user_id=user.id)
-    response = _auth_response(user)
+    response = await _auth_response(session, user)
     refresh_token = await _create_refresh_session(
         session,
         tenant_id=tenant_id,
@@ -262,7 +224,7 @@ async def refresh_auth_session(
         msg = "invalid refresh token"
         raise AuthenticationError(msg)
     user = await _active_user(session, refresh_session.user_id)
-    response = _auth_response(user)
+    response = await _auth_response(session, user)
     replacement_raw = token_urlsafe(48)
     replacement = RefreshSession(
         tenant_id=tenant_id,
@@ -375,11 +337,42 @@ async def _revoke_user_refresh_sessions(
         refresh_session.revoked_at = now
 
 
-def _auth_response(user: User) -> AuthResponse:
+async def _consume_invitation(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    raw_token: str,
+    email: str,
+) -> Invitation:
+    invitation = await session.scalar(
+        select(Invitation).where(Invitation.token_hash == hash_auth_token(raw_token)),
+    )
+    now = datetime.now(UTC)
+    if invitation is None:
+        msg = "invitation not found"
+        raise NotFoundError(msg)
+    if invitation.email != _normalize_email(email) or invitation.expires_at <= now:
+        msg = "invalid or expired invitation"
+        raise AuthenticationError(msg)
+    if invitation.tenant_id != tenant_id:
+        msg = "invitation not found"
+        raise NotFoundError(msg)
+    if invitation.used_at is not None:
+        msg = "invitation has already been used"
+        raise ValidationAppError(msg)
+    invitation.used_at = now
+    return invitation
+
+
+async def _auth_response(session: AsyncSession, user: User) -> AuthResponse:
+    membership = await session.scalar(select(Membership).where(Membership.user_id == user.id))
+    if membership is None:
+        msg = "membership required"
+        raise AuthenticationError(msg)
     access_token = create_access_token(
         subject=user.id,
         tenant_id=user.tenant_id,
-        role=user.role,
+        role=membership.org_role,
     )
     return AuthResponse(
         access_token=access_token,
@@ -388,7 +381,7 @@ def _auth_response(user: User) -> AuthResponse:
             tenant_id=str(user.tenant_id),
             email=user.email,
             full_name=user.full_name,
-            role=user.role,
+            role=membership.org_role,
         ),
     )
 

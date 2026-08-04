@@ -5,6 +5,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from starlette.requests import Request
 
 from app.auth.dependencies import ACCESS_TOKEN_COOKIE, require_permission
+from app.auth.models import Membership
 from app.core.context import clear_tenant_id
 from app.core.exceptions import AuthenticationError, AuthorizationError
 from app.core.security import create_access_token
@@ -14,13 +15,16 @@ USER_ID = UUID("00000000-0000-0000-0000-000000000001")
 TENANT_ID = UUID("00000000-0000-0000-0000-000000000002")
 
 
-def test_permission_dependency_accepts_authorized_role() -> None:
+@pytest.mark.anyio
+async def test_permission_dependency_accepts_authorized_role() -> None:
     dependency = require_permission("courses:manage")
-    token = create_access_token(subject=USER_ID, tenant_id=TENANT_ID, role="org_admin")
+    token = create_access_token(subject=USER_ID, tenant_id=TENANT_ID, role="tenant_admin")
 
     try:
-        principal = dependency(
-            _request(), HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
+        principal = await dependency(
+            _request(),
+            _session("tenant_admin"),
+            HTTPAuthorizationCredentials(scheme="Bearer", credentials=token),
         )
 
         assert require_tenant_id() == str(TENANT_ID)
@@ -30,20 +34,43 @@ def test_permission_dependency_accepts_authorized_role() -> None:
         clear_tenant_id()
 
 
-def test_permission_dependency_rejects_unauthorized_role() -> None:
+@pytest.mark.anyio
+async def test_permission_dependency_rejects_member_without_org_permission() -> None:
     dependency = require_permission("courses:manage")
-    token = create_access_token(subject=USER_ID, tenant_id=TENANT_ID, role="learner")
+    token = create_access_token(subject=USER_ID, tenant_id=TENANT_ID, role="member")
 
     with pytest.raises(AuthorizationError):
-        dependency(_request(), HTTPAuthorizationCredentials(scheme="Bearer", credentials=token))
+        await dependency(
+            _request(),
+            _session("member"),
+            HTTPAuthorizationCredentials(scheme="Bearer", credentials=token),
+        )
 
 
-def test_permission_dependency_accepts_access_cookie() -> None:
+@pytest.mark.anyio
+async def test_permission_dependency_requires_membership() -> None:
     dependency = require_permission("courses:manage")
-    token = create_access_token(subject=USER_ID, tenant_id=TENANT_ID, role="org_admin")
+    token = create_access_token(subject=USER_ID, tenant_id=TENANT_ID, role="tenant_admin")
+
+    with pytest.raises(AuthenticationError):
+        await dependency(
+            _request(),
+            _session(None),
+            HTTPAuthorizationCredentials(scheme="Bearer", credentials=token),
+        )
+
+
+@pytest.mark.anyio
+async def test_permission_dependency_accepts_access_cookie() -> None:
+    dependency = require_permission("courses:manage")
+    token = create_access_token(subject=USER_ID, tenant_id=TENANT_ID, role="tenant_admin")
 
     try:
-        principal = dependency(_request(cookie=f"{ACCESS_TOKEN_COOKIE}={token}"), None)
+        principal = await dependency(
+            _request(cookie=f"{ACCESS_TOKEN_COOKIE}={token}"),
+            _session("tenant_admin"),
+            None,
+        )
 
         assert principal.user_id == USER_ID
         assert principal.tenant_id == TENANT_ID
@@ -51,11 +78,28 @@ def test_permission_dependency_accepts_access_cookie() -> None:
         clear_tenant_id()
 
 
-def test_permission_dependency_requires_credentials() -> None:
+@pytest.mark.anyio
+async def test_permission_dependency_requires_credentials() -> None:
     dependency = require_permission("courses:manage")
 
     with pytest.raises(AuthenticationError):
-        dependency(_request(), None)
+        await dependency(_request(), _session("tenant_admin"), None)
+
+
+class _Session:
+    def __init__(self, org_role: str | None) -> None:
+        self.org_role = org_role
+
+    async def scalar(self, _statement: object) -> Membership | None:
+        if self.org_role is None:
+            return None
+        membership = Membership(user_id=USER_ID, org_role=self.org_role)
+        membership.tenant_id = TENANT_ID
+        return membership
+
+
+def _session(org_role: str | None) -> _Session:
+    return _Session(org_role)
 
 
 def _request(*, cookie: str | None = None) -> Request:

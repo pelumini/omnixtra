@@ -15,6 +15,12 @@ class EnrolmentStatus(StrEnum):
     cancelled = "cancelled"
 
 
+class CourseRole(StrEnum):
+    course_owner = "course_owner"
+    facilitator = "facilitator"
+    learner = "learner"
+
+
 class CompletionStatus(StrEnum):
     completed = "completed"
 
@@ -36,6 +42,9 @@ class Enrolment(TenantOwnedMixin, TimestampMixin, Base):
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     learner_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     course_id: Mapped[UUID] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"))
+    course_role: Mapped[str] = mapped_column(
+        String(32), nullable=False, default=CourseRole.learner.value
+    )
     status: Mapped[str] = mapped_column(
         String(32), nullable=False, default=EnrolmentStatus.active.value
     )

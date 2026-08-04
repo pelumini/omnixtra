@@ -78,7 +78,7 @@ The MVP is intentionally scoped. SCORM/xAPI, SSO, live classes, course marketpla
 | Marco, Customer Success Lead | B2B SaaS, 50-500 employees | Educate customers and reduce support volume | Reduction in onboarding tickets |
 | Sofia, Course Creator | SME or instructor | Build a course quickly with AI assistance | Course built in under 4 hours |
 | Leo, Learner | Employee, customer, or partner | Complete required training without friction | Course completion over 70% |
-| Ada, Org Admin | IT/Ops customer admin | Manage users, branding, SSO, and reporting | Self-serve without support tickets |
+| Ada, Tenant Admin | IT/Ops customer admin | Manage users, fixed roles, branding, SSO, and reporting | Self-serve without support tickets |
 
 ### Success Metrics
 
@@ -106,7 +106,7 @@ Engineering KPIs:
 
 | Capability | MVP Includes | Explicitly Excluded from MVP |
 |---|---|---|
-| Tenancy & Auth | Subdomain routing, RLS, email/password, magic link, Org Admin and Learner roles | SSO, MFA, custom roles |
+| Tenancy & Auth | Subdomain routing, RLS, email/password, magic link, tenant-scoped identity, tenant membership, Tenant Admin/Member org roles, and course roles on enrolments | SSO, MFA, custom roles |
 | Course Authoring | Sections, lessons, text/video/image/quiz blocks, drag-drop reorder, draft/publish | SCORM/xAPI import, AI course generation, branching scenarios |
 | Learning Experience | Course player, resume, progress bar, quiz scoring, completion certificate PDF | Forums, social learning, gamification |
 | AI Tutor | Per-course RAG chat, LangGraph, pgVector retrieval, SSE streaming, conversation history | Voice tutor, agentic skill execution, fine-tuned models |
@@ -493,7 +493,7 @@ Reserved subdomains are not valid tenant slugs:
 
 Failure to resolve a tenant returns `404`, not `403`, to avoid tenant enumeration.
 
-Allowed tenant-resolution exemptions are security-sensitive and must be reviewed. Examples include health checks, signup, and login.
+Allowed tenant-resolution exemptions are security-sensitive and must be reviewed. Examples include health checks, tenant creation, invitation acceptance, and login.
 
 ### 1.6 RLS Session Variable Discipline
 
@@ -581,10 +581,12 @@ The charter and ADR-002 are still draft/proposed documents. Do not treat the fol
 
 | Role | MVP Purpose |
 |---|---|
-| Org Admin | Tenant setup, branding, users, courses, reports, billing |
-| Learner | Enrolled course access, progress, quizzes, certificates, AI tutor |
+| Tenant Admin | Tenant setup, branding, user invitation, fixed org-role assignment, billing, reports, and organization management |
+| Member | Belongs to the tenant with minimal org-level powers; course capabilities come from enrolments |
 
-Custom roles, SSO, MFA, and advanced permissions are deferred beyond MVP unless needed for security foundations.
+Course-level roles are not tenant roles. Enrolments carry `course_owner`, `facilitator`, or `learner` for each specific course.
+
+The MVP supports fixed role assignment, not custom role definition. Custom roles, SSO, MFA, and advanced permissions are deferred beyond MVP unless needed for security foundations.
 
 ### 2.2 Auth Requirements
 
@@ -592,7 +594,7 @@ Custom roles, SSO, MFA, and advanced permissions are deferred beyond MVP unless 
 - JWT stored in httpOnly, Secure, SameSite cookies.
 - Refresh-token rotation with replay detection.
 - Argon2id password hashing.
-- Login and signup rate limiting.
+- Login, tenant-creation, invitation-acceptance, and password-reset rate limiting.
 - Breached-password check through HIBP API when implemented.
 - Password reset flow must avoid account enumeration.
 
@@ -1081,12 +1083,14 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint / Phase | Status | Completed | Notes |
 |---|---|---:|---|
 | Sprint 0: Pre-flight Foundations | Complete | 18 / 18 | Core repo, backend/frontend scaffolds, local and remote Git history, Docker services, DevContainer workflow, CI, lint/type/test gates, logging, request context, health, envelope, typed errors, and ADR docs are in place. |
-| Sprint 1: Tenancy & Auth | Complete | 17 / 17 | Tenant middleware, RLS, auth flows, Org Admin/Learner RBAC defaults, migration guard, RLS benchmark, real route attack tests, recorded-hit isolation coverage gate, cookie auth, refresh-token rotation, replay detection, logout invalidation, verification endpoints, and auth rate limiting are in place. |
+| Sprint 1: Tenancy & Auth | Complete | 17 / 17 | Tenant middleware, RLS, auth flows, original RBAC defaults, migration guard, RLS benchmark, real route attack tests, recorded-hit isolation coverage gate, cookie auth, refresh-token rotation, replay detection, logout invalidation, verification endpoints, and auth rate limiting are in place. Superseded identity semantics are tracked under the ADR-003 refactor row. |
 | Sprint 2: Course Authoring | Complete | 11 / 11 | Course authoring backend, media metadata, route coverage declarations, migration smoke, real route-level attack tests, admin course list, and course builder foundation are in place. |
 | Sprint 3: Learning Experience | Complete | 11 / 11 | Learning backend, idempotent learner workflows, real route-level attack tests, learner course player, quiz/completion UI, and certificate PDF download workflow are in place. |
 | Sprint 4: AI Tutor | Complete | 17 / 17 | Provider-backed tutor jobs, provider-failure handling, embedding-provider provenance, hybrid retrieval SQL, Redis Pub/Sub job streaming, LangSmith wrapper, vector isolation coverage, route attack tests, actor-path cache reuse coverage, tutor UI, and recorded OpenAI 20-question eval evidence are in place. |
 | Sprint 5: Billing, Branding, Analytics, and MVP Polish | Complete | 15 / 15 | Sprint 5 audit remediation is complete: unsigned billing webhook removed, signed Stripe webhook negative tests and signed-path coverage added, CSV cells neutralized, Sprint 5 smoke specs pass, and Docker-backed integration suite passes against PostgreSQL 16 + pgvector with RLS. |
 | MVP Readiness Remediation | Complete | 6 / 6 | AI tutor tenant/user rate limits, monthly token budget reservation, env settings, frontend MVP journey coverage, local integration rerun hardening, and recorded manual readiness evidence are complete. |
+| ADR-003 Identity, Membership, and Authorization Refactor | Complete | 14 / 14 | `/auth/signup` is retired; `/tenants` creates organizations; memberships and invitations are tenant-owned; org authorization reads membership; enrolments carry course roles; billing admin-seat counts read memberships; and Docker-backed integration verification passes against PostgreSQL 16 + pgvector with RLS. |
+| Frontend Redesign for ADR-003 Identity Model | Not started | 0 / 8 | Next frontend workstream: redesign tenant creation, invitation acceptance, tenant-admin user management, membership-aware navigation, course-role-aware authoring access, learner course access, billing/admin-seat feedback, and polished onboarding flows against the new backend contract. |
 | Phase 2: Months 4-6 | Not started | 0 / 11 | Post-MVP expansion. |
 | Phase 3: Months 7-9 | Not started | 0 / 9 | Post-MVP platform/compliance expansion. |
 
@@ -1155,13 +1159,13 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Isolation attack tests | Replace decorator-only route tests with real cross-tenant route attacks | Complete |
 | Auth foundation | Add Argon2id password hashing utilities | Complete |
 | Auth foundation | Add user and auth-token models/migrations with tenant ownership | Complete |
-| Auth foundation | Add signup and login schemas/services/routes | Complete |
+| Auth foundation | Add original signup and login schemas/services/routes; superseded by ADR-003 `/tenants` and invitation-accept flows | Complete |
 | Auth foundation | Add magic-link and password-reset request schemas/services/routes | Complete |
 | Auth hardening | Store JWT access and refresh tokens in httpOnly Secure SameSite cookies | Complete |
 | Auth hardening | Add refresh-token rotation, replay detection, and logout invalidation | Complete |
 | Auth hardening | Add magic-link verification and password-reset completion endpoints | Complete |
-| Auth hardening | Add login/signup/password-reset rate limiting | Complete |
-| RBAC foundation | Add Org Admin and Learner role enum/defaults | Complete |
+| Auth hardening | Add login/signup/password-reset rate limiting; ADR-003 replaces signup with tenant creation and invitation acceptance | Complete |
+| RBAC foundation | Add original broad role enum/defaults; superseded by ADR-003 membership and course-permission planes | Complete |
 | Auth tests | Add tests for password hashing, schemas, roles, and auth token flow | Complete |
 | RLS benchmark | Add synthetic dataset benchmark script | Complete |
 | RLS benchmark | Compare tenant-scoped RLS table reads with equivalent non-RLS table reads | Complete |
@@ -1178,8 +1182,8 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Implement per-cursor RLS tenant variable set/clear.
 - [x] Implement RLS migration helper and first tenant-owned table.
 - [x] Add CI check for tenant-owned migrations missing RLS helper.
-- [x] Implement signup, login, magic link, password reset.
-- [x] Implement Org Admin and Learner roles.
+- [x] Implement original signup, login, magic link, password reset.
+- [x] Implement original broad roles; superseded by ADR-003 fixed org roles and course roles on enrolment.
 - [x] Seed RBAC defaults.
 - [x] Add real cross-tenant isolation suite and OpenAPI coverage gate.
 - [x] Add RLS-as-last-defence raw SQL test running in CI against `omnixtra_app`.
@@ -1223,7 +1227,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Add real isolation tests for all course-owned routes.
 - [x] Add functional admin frontend course list and builder foundation.
 
-**Exit criteria:** an Org Admin can build and publish a five-lesson course with full audit trail.
+**Exit criteria:** a tenant member with `course_owner` enrolment can build and publish a five-lesson course with full audit trail.
 
 ### Sprint 3: Learning Experience, Weeks 7-8
 
@@ -1343,7 +1347,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Billing provider | Add negative Stripe signature verification tests | Complete |
 | Billing provider | Add plan upgrade/downgrade subscription change flow | Complete |
 | Plan limits | Enforce learner and storage limits in domain services | Complete |
-| Plan limits | Enforce admin-seat limits on Org Admin invitations | Complete |
+| Plan limits | Enforce admin-seat limits on Tenant Admin invitations | Complete |
 | Tenant branding | Add current tenant branding API with audit logging | Complete |
 | Tenant branding | Apply tenant name, logo, primary colour, and locale to web shell | Complete |
 | Admin users | Add tenant-scoped learner/admin invitation endpoint with audit logging | Complete |
@@ -1385,6 +1389,36 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Make Docker-backed integration tests clean-rerun friendly against a reused local database.
 
 **Exit criteria:** CI remains green, AI tutor abuse/cost controls are enforced before provider work is queued, required frontend journeys map to Part 9, manual readiness evidence is recorded under `docs/runbooks/`, and local Docker-backed verification can be rerun without rebuilding the database from scratch. Evidence is recorded in `docs/runbooks/mvp-readiness-verification-2026-07-31.md`.
+
+### ADR-003 Identity, Membership, and Authorization Refactor
+
+- [x] Add tenant-owned `memberships` model and migration with RLS.
+- [x] Backfill memberships from existing users while keeping `users.role` deprecated in place.
+- [x] Add `POST /api/v1/tenants` for organization creation and first tenant-admin membership.
+- [x] Move org permission checks to membership-backed authorization.
+- [x] Add tenant-owned `invitations` model and migration with RLS.
+- [x] Add `POST /api/v1/tenant/invitations` for tenant-admin invitation creation.
+- [x] Add `POST /api/v1/auth/invitations/accept`; request body does not carry org role.
+- [x] Add `course_role` to enrolments and course-role permission helper.
+- [x] Guard course mutation routes through per-course enrolment permissions.
+- [x] Add Docker-backed integration proof for membership/invitation isolation and invitation acceptance attacks.
+- [x] Add Docker-backed integration proof that the same user can be learner on Course A and course_owner on Course B through real route handlers.
+- [x] Set ADR-003 record to Accepted under `docs/adr/`.
+- [x] Add `docs/runbooks/identity-and-roles.md`.
+- [x] Rerun full Docker-backed integration verification and record evidence.
+- [x] Add follow-up tests for invitation role escalation, expired/used/cross-tenant invitation tokens, membership backfill mapping, and billing admin-seat counting.
+- [x] Enforce billing admin-seat limits from `memberships.org_role`, not deprecated `users.role`.
+
+### Frontend Redesign for ADR-003 Identity Model
+
+- [ ] Replace broad signup UX with dedicated tenant creation flow backed by `POST /api/v1/tenants`.
+- [ ] Add invitation acceptance UX backed by `POST /api/v1/auth/invitations/accept`.
+- [ ] Redesign tenant-admin user management around memberships and invitations.
+- [ ] Make navigation and shells membership-aware for `tenant_admin` versus `member`.
+- [ ] Make course authoring access course-role-aware for `course_owner`, `facilitator`, and `learner`.
+- [ ] Align learner course access with enrolment-scoped permissions and no-leak backend responses.
+- [ ] Surface billing/admin-seat limit feedback during tenant-admin invitations.
+- [ ] Rework onboarding and regression tests around the new identity, membership, and course-role model.
 
 ### Phase 2: Months 4-6
 
@@ -1444,7 +1478,7 @@ npx playwright test
 | `tests/tenancy/test_rls.py` | RLS helper, raw SQL last-defence |
 | `tests/isolation/` | Cross-tenant attack tests per route |
 | `tests/auth/` | Signup, login, magic link, password reset |
-| `tests/rbac/` | Org Admin and Learner permissions |
+| `tests/rbac/` | Tenant Admin/Member org permissions and enrolment-backed course permissions |
 | `tests/courses/` | Course/section/lesson/block CRUD and publish |
 | `tests/learning/` | Enrolment, progress, quiz scoring, certificates |
 | `tests/ai/` | Retrieval, tutor graph, citations, guardrails |
@@ -1508,6 +1542,7 @@ npx playwright test
 | D-003 | Jobs | Dramatiq with Redis | Simpler and reliable versus Celery for MVP |
 | D-004 | Vector store | pgvector | Avoids extra datastore until scale demands one |
 | D-005 | Hosting | Fly.io/Railway, Vercel, Neon/Supabase | Operationally feasible solo; portable later |
+| D-006 | Identity, membership, authorization | ADR-003 D-A-D-G accepted | Tenant-scoped identity, org membership roles, course roles on enrolments, permission checks only |
 | D-006 | Video | Mux or Cloudflare Stream | Avoid DIY encoding and adaptive bitrate |
 | D-007 | Mobile | PWA only | Native apps deferred until DAU justifies cost |
 | D-008 | SCORM/xAPI | Phase 2 | Not required for first SMB design partners |
@@ -1520,6 +1555,7 @@ npx playwright test
 | D-015 | Audit consistency | Transactional outbox | Business mutation and audit record commit together |
 | D-016 | Sensitive fields | Structured encryption envelopes | Future-compatible with KMS migration |
 | D-017 | Package management | uv | Fast, lockfile-first Python workflow |
+| D-018 | Billing role authority | Admin-seat counts read memberships | `memberships.org_role` is authoritative; `users.role` is deprecated and retained only for backfill history |
 | D-018 | API contract | `{data,error,meta}` envelope | Consistent REST and future MCP shape |
 | D-019 | Rate limits | Redis token bucket by tenant | Burst-friendly and noisy-neighbour resistant |
 | D-020 | Audit immutability | WORM storage for sensitive events | Tamper-evident compliance evidence |

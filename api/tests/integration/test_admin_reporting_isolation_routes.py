@@ -17,7 +17,7 @@ TEST_PASSWORD = "correct horse battery staple"  # noqa: S105
 @covers_isolation("GET", "/api/v1/admin/analytics/completions")
 @covers_isolation("GET", "/api/v1/admin/reports/learner-progress")
 @covers_isolation("GET", "/api/v1/admin/reports/learner-progress.csv")
-@covers_isolation("POST", "/api/v1/auth/invitations")
+@covers_isolation("POST", "/api/v1/tenant/invitations")
 def test_admin_reporting_routes_are_tenant_scoped() -> None:
     if not os.getenv(APP_DATABASE_URL_ENV):
         pytest.skip(f"{APP_DATABASE_URL_ENV} is not set")
@@ -50,11 +50,10 @@ def test_admin_reporting_routes_are_tenant_scoped() -> None:
     assert "learner_id,learner_name,learner_email" in csv_response.text
 
     invite_response = isolation_client.post(
-        "/api/v1/auth/invitations",
+        "/api/v1/tenant/invitations",
         json={
             "email": f"learner-{tenant.slug}@example.com",
-            "full_name": "Invited Learner",
-            "role": "learner",
+            "org_role": "member",
         },
         headers=headers,
     )
@@ -71,7 +70,7 @@ class TenantAccount:
 
 def _signup(client: TestClient, slug: str) -> TenantAccount:
     response = client.post(
-        "/api/v1/auth/signup",
+        "/api/v1/tenants",
         json={
             "tenant_name": slug.title(),
             "tenant_slug": slug,
@@ -85,7 +84,7 @@ def _signup(client: TestClient, slug: str) -> TenantAccount:
     data = response.json()["data"]
     return TenantAccount(
         slug=slug,
-        tenant_id=UUID(data["user"]["tenant_id"]),
+        tenant_id=UUID(data["tenant_id"]),
         access_token=data["access_token"],
     )
 

@@ -385,17 +385,24 @@ async def ensure_admin_capacity(session: AsyncSession) -> None:
     if result is None:
         return
     plan, _subscription = result
+    memberships = table(
+        "memberships",
+        column("user_id"),
+        column("org_role"),
+        column("deleted_at"),
+    )
     users = table(
         "users",
-        column("role"),
+        column("id"),
         column("status"),
         column("deleted_at"),
     )
     admin_count = await session.scalar(
         select(func.count())
-        .select_from(users)
+        .select_from(memberships.join(users, memberships.c.user_id == users.c.id))
         .where(
-            users.c.role == "org_admin",
+            memberships.c.org_role == "tenant_admin",
+            memberships.c.deleted_at.is_(None),
             users.c.status.in_(["active", "invited"]),
             users.c.deleted_at.is_(None),
         ),
