@@ -26,8 +26,8 @@ def test_tenant_b_does_not_see_tenant_a_branding() -> None:
     client = TestClient(create_app())
     isolation_client = IsolationTestClient(client)
     run_id = uuid4().hex[:12]
-    tenant_a = _signup(client, f"brand-a-{run_id}")
-    tenant_b = _signup(client, f"brand-b-{run_id}")
+    tenant_a = _signup(isolation_client, f"brand-a-{run_id}")
+    tenant_b = _signup(isolation_client, f"brand-b-{run_id}")
 
     update_response = isolation_client.patch(
         "/api/v1/tenant/branding",
@@ -74,7 +74,7 @@ class TenantAccount:
     access_token: str
 
 
-def _signup(client: TestClient, slug: str) -> TenantAccount:
+def _signup(client: IsolationTestClient, slug: str) -> TenantAccount:
     response = client.post(
         "/api/v1/tenants",
         json={
