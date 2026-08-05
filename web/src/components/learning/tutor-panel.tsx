@@ -1,12 +1,15 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Bot, CircleAlert, Send } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
-import type { FormEvent } from "react";
+import { useForm } from "react-hook-form";
 
-import { Button } from "@/components/ui/button";
+import { FormError, SubmitButton, TextareaField } from "@/components/ui/form-controls";
 import { createTutorJob, parseTutorEventMessage, tutorJobEventsUrl } from "@/lib/api";
+import { resolveMessage } from "@/lib/forms/messages";
 import type { TutorJob } from "@/lib/schemas";
+import { tutorQuestionFormSchema, type TutorQuestionFormInput } from "@/lib/schemas/learning-forms";
 
 type TutorPanelProps = {
   courseId: string;
@@ -30,6 +33,17 @@ export function TutorPanel({ courseId }: TutorPanelProps) {
   const [status, setStatus] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const eventSourceRef = useRef<EventSource | null>(null);
+  const {
+    formState: { errors },
+    handleSubmit,
+    register,
+    reset,
+  } = useForm<TutorQuestionFormInput>({
+    defaultValues: { question: "" },
+    mode: "onTouched",
+    reValidateMode: "onChange",
+    resolver: zodResolver(tutorQuestionFormSchema),
+  });
 
   useEffect(() => {
     if (activeJob === null) {
@@ -66,13 +80,7 @@ export function TutorPanel({ courseId }: TutorPanelProps) {
     };
   }, [activeJob, courseId]);
 
-  function handleAsk(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const question = formString(form, "question");
-    if (question === "") {
-      return;
-    }
+  function handleAsk({ question }: TutorQuestionFormInput) {
     setMessages((current) => [
       ...current,
       { id: crypto.randomUUID(), role: "learner", text: question },
@@ -83,7 +91,7 @@ export function TutorPanel({ courseId }: TutorPanelProps) {
       try {
         const response = await createTutorJob(courseId, question, `tutor-${crypto.randomUUID()}`);
         setActiveJob(response.data);
-        event.currentTarget.reset();
+        reset();
       } catch (error) {
         setStatus("failed");
         setMessages((current) => [
@@ -123,21 +131,17 @@ export function TutorPanel({ courseId }: TutorPanelProps) {
         ))}
       </div>
 
-      <form className="grid gap-2" onSubmit={handleAsk}>
-        <label className="grid gap-1 text-sm font-medium">
-          Question
-          <textarea
-            className="min-h-24 resize-y border border-[var(--border)] px-3 py-2 text-sm font-normal outline-none focus:border-[var(--primary)]"
-            maxLength={2000}
-            minLength={3}
-            name="question"
-            required
-          />
-        </label>
-        <Button className="gap-2" disabled={isPending} type="submit">
+      <form className="grid gap-2" noValidate onSubmit={handleSubmit(handleAsk)}>
+        <FormError>{null}</FormError>
+        <TextareaField
+          error={errors.question?.message ? resolveMessage("question", errors.question.message) : undefined}
+          label="Question"
+          registration={register("question")}
+        />
+        <SubmitButton className="gap-2" isSubmitting={isPending}>
           <Send aria-hidden="true" className="size-4" />
           Ask
-        </Button>
+        </SubmitButton>
       </form>
 
       <div className="flex items-start gap-2 text-xs leading-5 text-gray-600">
@@ -146,9 +150,4 @@ export function TutorPanel({ courseId }: TutorPanelProps) {
       </div>
     </section>
   );
-}
-
-function formString(form: FormData, name: string) {
-  const value = form.get(name);
-  return typeof value === "string" ? value.trim() : "";
 }

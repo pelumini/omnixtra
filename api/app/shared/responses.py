@@ -23,6 +23,7 @@ class Meta(BaseModel):
 class ErrorDetail(BaseModel):
     field: str
     constraint: str
+    message: str | None = None
 
 
 class ErrorBody(BaseModel):

@@ -1,5 +1,6 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Award,
   BadgeCheck,
@@ -12,9 +13,10 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
-import type { FormEvent } from "react";
+import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
+import { Field, FormError, SubmitButton } from "@/components/ui/form-controls";
 import { TutorPanel } from "@/components/learning/tutor-panel";
 import {
   certificateDownloadUrl,
@@ -24,7 +26,10 @@ import {
   submitQuizAttempt,
   updateLessonProgress,
 } from "@/lib/api";
+import { resolveMessage } from "@/lib/forms/messages";
+import { useFormSubmit } from "@/lib/forms/use-form-submit";
 import type { Certificate, CourseCompletion, CoursePlayer, LessonProgress } from "@/lib/schemas";
+import { quizAttemptFormSchema, type QuizAttemptFormInput } from "@/lib/schemas/learning-forms";
 
 type LearnerCoursePlayerProps = {
   courseId: string;
@@ -76,23 +81,6 @@ export function LearnerCoursePlayer({
         setMessage(percentComplete === 100 ? "Lesson marked complete" : "Progress saved");
       } catch (error) {
         setMessage(errorMessage(error, "Progress could not be saved"));
-      }
-    });
-  }
-
-  function handleQuiz(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const blockId = formString(form, "block_id");
-    const selectedOptionId = formString(form, "selected_option_id");
-
-    startTransition(async () => {
-      try {
-        const response = await submitQuizAttempt(courseId, blockId, selectedOptionId);
-        setMessage(response.data.passed ? "Quiz passed" : "Quiz submitted");
-        event.currentTarget.reset();
-      } catch (error) {
-        setMessage(errorMessage(error, "Quiz attempt could not be submitted"));
       }
     });
   }
@@ -214,28 +202,10 @@ export function LearnerCoursePlayer({
         <aside className="grid content-start gap-4">
           <TutorPanel courseId={courseId} />
 
-          <form className="grid gap-3 border border-[var(--border)] bg-white p-4" onSubmit={handleQuiz}>
-            <div className="flex items-center gap-2">
-              <ListChecks aria-hidden="true" className="size-4 text-gray-500" />
-              <h2 className="text-sm font-semibold">Quiz</h2>
-            </div>
-            <input
-              className="h-10 border border-[var(--border)] px-3 text-sm outline-none focus:border-[var(--primary)]"
-              name="block_id"
-              placeholder="Quiz block ID"
-              required
-            />
-            <input
-              className="h-10 border border-[var(--border)] px-3 text-sm outline-none focus:border-[var(--primary)]"
-              name="selected_option_id"
-              placeholder="Selected option ID"
-              required
-            />
-            <Button className="gap-2" disabled={isPending} type="submit">
-              <ListChecks aria-hidden="true" className="size-4" />
-              Submit
-            </Button>
-          </form>
+          <QuizAttemptForm
+            courseId={courseId}
+            onSubmitted={(passed) => setMessage(passed ? "Quiz passed" : "Quiz submitted")}
+          />
 
           <section className="grid gap-3 border border-[var(--border)] bg-white p-4">
             <div className="flex items-center gap-2">
@@ -288,7 +258,60 @@ function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-function formString(form: FormData, name: string) {
-  const value = form.get(name);
-  return typeof value === "string" ? value.trim() : "";
+function QuizAttemptForm({
+  courseId,
+  onSubmitted,
+}: {
+  courseId: string;
+  onSubmitted: (passed: boolean) => void;
+}) {
+  const {
+    formState: { errors },
+    handleSubmit,
+    register,
+    reset,
+    setError,
+  } = useForm<QuizAttemptFormInput>({
+    defaultValues: { blockId: "", selectedOptionId: "" },
+    mode: "onTouched",
+    reValidateMode: "onChange",
+    resolver: zodResolver(quizAttemptFormSchema),
+  });
+  const { formError, isSubmitting, submit } = useFormSubmit({
+    action: (input: QuizAttemptFormInput) =>
+      submitQuizAttempt(courseId, input.blockId, input.selectedOptionId),
+    onSuccess: (response) => {
+      onSubmitted(response.data.passed);
+      reset();
+    },
+    setError,
+  });
+  const fieldError = (field: keyof QuizAttemptFormInput) => {
+    const message = errors[field]?.message;
+    return message ? resolveMessage(field, message) : undefined;
+  };
+
+  return (
+    <form className="grid gap-3 border border-[var(--border)] bg-white p-4" noValidate onSubmit={handleSubmit(submit)}>
+      <div className="flex items-center gap-2">
+        <ListChecks aria-hidden="true" className="size-4 text-gray-500" />
+        <h2 className="text-sm font-semibold">Quiz</h2>
+      </div>
+      <FormError>{formError}</FormError>
+      <Field
+        error={fieldError("blockId")}
+        label="Quiz block ID"
+        registration={register("blockId")}
+      />
+      <Field
+        error={fieldError("selectedOptionId")}
+        label="Selected option ID"
+        registration={register("selectedOptionId")}
+      />
+      <SubmitButton className="gap-2" isSubmitting={isSubmitting}>
+        <ListChecks aria-hidden="true" className="size-4" />
+        Submit
+      </SubmitButton>
+    </form>
+  );
 }

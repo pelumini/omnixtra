@@ -52,6 +52,18 @@ import type {
   LoginRequest,
 } from "@/lib/schemas";
 
+export class ApiRequestError extends Error {
+  envelope: unknown;
+  status: number;
+
+  constructor(message: string, envelope: unknown, status: number) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.envelope = envelope;
+    this.status = status;
+  }
+}
+
 const publicApiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const serverApiUrl = process.env.API_INTERNAL_URL ?? publicApiUrl;
 const apiUrl = typeof window === "undefined" ? serverApiUrl : publicApiUrl;
@@ -406,5 +418,9 @@ function throwIfApiError(response: Response, body: unknown) {
     return;
   }
   const parsed = errorBodySchema.safeParse((body as { error?: unknown }).error);
-  throw new Error(parsed.success ? parsed.data.message : "API request failed");
+  throw new ApiRequestError(
+    parsed.success ? parsed.data.message : "API request failed",
+    body,
+    response.status,
+  );
 }

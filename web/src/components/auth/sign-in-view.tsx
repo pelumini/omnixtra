@@ -1,52 +1,59 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { useState, useTransition } from "react";
-import type { FormEvent } from "react";
+import { useForm } from "react-hook-form";
 
-import { Button } from "@/components/ui/button";
+import { Field, FormError, SubmitButton } from "@/components/ui/form-controls";
 import { login } from "@/lib/api";
-import { AuthShell, Field } from "./auth-shell";
+import { resolveMessage } from "@/lib/forms/messages";
+import { useFormSubmit } from "@/lib/forms/use-form-submit";
+import { signInSchema, type SignInInput } from "@/lib/schemas/auth";
+import { AuthShell } from "./auth-shell";
 
 export function SignInView() {
-  const [message, setMessage] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-
-    startTransition(async () => {
-      try {
-        await login({
-          email: formString(form, "email"),
-          password: formString(form, "password"),
-        });
-        window.location.assign("/");
-      } catch {
-        setMessage("That email and password do not match. Try again.");
-      }
-    });
-  }
+  const {
+    formState: { errors },
+    handleSubmit,
+    register,
+    setError,
+  } = useForm<SignInInput>({
+    defaultValues: { email: "", password: "" },
+    mode: "onTouched",
+    reValidateMode: "onChange",
+    resolver: zodResolver(signInSchema),
+  });
+  const { formError, isSubmitting, submit } = useFormSubmit({
+    action: login,
+    onSuccess: () => window.location.assign("/"),
+    setError,
+  });
+  const fieldError = (field: keyof SignInInput) => {
+    const message = errors[field]?.message;
+    return message ? resolveMessage(field, message) : undefined;
+  };
 
   return (
     <AuthShell title="Sign in" subtitle="Continue to your academy.">
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        <Field autoComplete="email" label="Email" name="email" placeholder="you@company.com" required type="email" />
+      <form className="space-y-4" noValidate onSubmit={handleSubmit(submit)}>
+        <FormError>{formError}</FormError>
+        <Field
+          autoComplete="email"
+          error={fieldError("email")}
+          label="Email"
+          placeholder="you@company.com"
+          registration={register("email")}
+          type="email"
+        />
         <Field
           autoComplete="current-password"
+          error={fieldError("password")}
           label="Password"
-          maxLength={128}
-          name="password"
-          required
+          registration={register("password")}
           type="password"
         />
 
-        {message ? <p className="text-sm text-red-600">{message}</p> : null}
-
-        <Button className="h-11 w-full" disabled={isPending} type="submit">
-          {isPending ? "Signing in..." : "Sign in"}
-        </Button>
+        <SubmitButton isSubmitting={isSubmitting}>Sign in</SubmitButton>
       </form>
 
       <div className="mt-6 space-y-2 border-t border-[var(--border)] pt-5 text-sm text-slate-600">
@@ -65,9 +72,4 @@ export function SignInView() {
       </div>
     </AuthShell>
   );
-}
-
-function formString(form: FormData, name: string) {
-  const value = form.get(name);
-  return typeof value === "string" ? value.trim() : "";
 }

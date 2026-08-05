@@ -1,13 +1,17 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { BookOpen, CircleAlert, ExternalLink, FilePlus2, Search } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
-import type { FormEvent } from "react";
+import { useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 
-import { Button } from "@/components/ui/button";
+import { Field, FormError, SubmitButton, TextareaField } from "@/components/ui/form-controls";
 import { createCourse } from "@/lib/api";
+import { resolveMessage } from "@/lib/forms/messages";
+import { useFormSubmit } from "@/lib/forms/use-form-submit";
 import { canCreateCourse } from "@/lib/permissions";
+import { courseFormSchema, type CourseFormInput } from "@/lib/schemas/admin-forms";
 import type { Course } from "@/lib/schemas";
 import type { OrgRole } from "@/lib/schemas";
 
@@ -27,35 +31,11 @@ export function AdminCourseList({
   const [courses, setCourses] = useState(initialCourses);
   const [status, setStatus] = useState<(typeof statusTabs)[number]>("all");
   const [message, setMessage] = useState(loadError);
-  const [isPending, startTransition] = useTransition();
 
   const filteredCourses = useMemo(
     () => courses.filter((course) => status === "all" || course.status === status),
     [courses, status],
   );
-
-  function handleCreate(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const title = formString(form, "title");
-    const slug = formString(form, "slug");
-    const descriptionValue = formString(form, "description");
-
-    startTransition(async () => {
-      try {
-        const response = await createCourse({
-          description: descriptionValue === "" ? null : descriptionValue,
-          slug,
-          title,
-        });
-        setCourses((current) => [response.data, ...current]);
-        setMessage("Course draft created");
-        event.currentTarget.reset();
-      } catch (error) {
-        setMessage(error instanceof Error ? error.message : "Course could not be created");
-      }
-    });
-  }
 
   return (
     <main className="mx-auto grid min-h-screen max-w-7xl content-start gap-6 px-5 py-5">
@@ -84,46 +64,12 @@ export function AdminCourseList({
 
       <section className="grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
         {canCreateCourse(viewerRole) ? (
-          <form
-            className="grid content-start gap-4 border border-[var(--border)] bg-white p-4"
-            onSubmit={handleCreate}
-          >
-            <div className="flex items-center gap-2">
-              <FilePlus2 aria-hidden="true" className="size-4 text-gray-500" />
-              <h2 className="text-sm font-semibold">New Course</h2>
-            </div>
-            <label className="grid gap-1 text-sm font-medium">
-              Title
-              <input
-                className="h-10 border border-[var(--border)] px-3 text-sm font-normal outline-none focus:border-[var(--primary)]"
-                maxLength={200}
-                minLength={3}
-                name="title"
-                required
-              />
-            </label>
-            <label className="grid gap-1 text-sm font-medium">
-              Slug
-              <input
-                className="h-10 border border-[var(--border)] px-3 text-sm font-normal outline-none focus:border-[var(--primary)]"
-                name="slug"
-                pattern="^[a-z0-9][a-z0-9-]{1,118}[a-z0-9]$"
-                required
-              />
-            </label>
-            <label className="grid gap-1 text-sm font-medium">
-              Description
-              <textarea
-                className="min-h-24 resize-y border border-[var(--border)] px-3 py-2 text-sm font-normal outline-none focus:border-[var(--primary)]"
-                maxLength={2000}
-                name="description"
-              />
-            </label>
-            <Button className="gap-2" disabled={isPending} type="submit">
-              <FilePlus2 aria-hidden="true" className="size-4" />
-              Create
-            </Button>
-          </form>
+          <NewCourseForm
+            onCreated={(course) => {
+              setCourses((current) => [course, ...current]);
+              setMessage("Course draft created");
+            }}
+          />
         ) : (
           <div className="hidden lg:block" />
         )}
@@ -178,6 +124,72 @@ export function AdminCourseList({
   );
 }
 
+function NewCourseForm({ onCreated }: { onCreated: (course: Course) => void }) {
+  const {
+    formState: { errors },
+    handleSubmit,
+    register,
+    reset,
+    setError,
+  } = useForm<CourseFormInput>({
+    defaultValues: { description: "", slug: "", title: "" },
+    mode: "onTouched",
+    reValidateMode: "onChange",
+    resolver: zodResolver(courseFormSchema),
+  });
+  const { formError, isSubmitting, submit } = useFormSubmit({
+    action: (input: CourseFormInput) =>
+      createCourse({
+        description: input.description === "" ? null : input.description,
+        slug: input.slug,
+        title: input.title,
+      }),
+    onSuccess: (response) => {
+      onCreated(response.data);
+      reset();
+    },
+    setError,
+  });
+  const fieldError = (field: keyof CourseFormInput) => {
+    const message = errors[field]?.message;
+    return message ? resolveMessage(field, message) : undefined;
+  };
+
+  return (
+    <form
+      className="grid content-start gap-4 border border-[var(--border)] bg-white p-4"
+      noValidate
+      onSubmit={handleSubmit(submit)}
+    >
+      <div className="flex items-center gap-2">
+        <FilePlus2 aria-hidden="true" className="size-4 text-gray-500" />
+        <h2 className="text-sm font-semibold">New Course</h2>
+      </div>
+      <FormError>{formError}</FormError>
+      <Field error={fieldError("title")} label="Title" registration={register("title")} />
+      <Field
+        error={fieldError("slug")}
+        label="Slug"
+        registration={register("slug", {
+          setValueAs: (value: unknown) =>
+            typeof value === "string"
+              ? value.toLowerCase().replace(/[^a-z0-9-]/g, "")
+              : value,
+        })}
+      />
+      <TextareaField
+        error={fieldError("description")}
+        label="Description"
+        registration={register("description")}
+      />
+      <SubmitButton className="gap-2" isSubmitting={isSubmitting}>
+        <FilePlus2 aria-hidden="true" className="size-4" />
+        Create
+      </SubmitButton>
+    </form>
+  );
+}
+
 function CourseStatus({ status }: { status: Course["status"] }) {
   const styles = {
     archived: "bg-gray-100 text-gray-700",
@@ -186,9 +198,4 @@ function CourseStatus({ status }: { status: Course["status"] }) {
   };
 
   return <span className={`px-2 py-1 text-xs font-medium ${styles[status]}`}>{status}</span>;
-}
-
-function formString(form: FormData, name: string) {
-  const value = form.get(name);
-  return typeof value === "string" ? value.trim() : "";
 }

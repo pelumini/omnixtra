@@ -1,13 +1,18 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import type { FormEvent } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import type { ReactNode } from "react";
+import { useForm } from "react-hook-form";
 
 import { DeniedState } from "@/components/app/denied-state";
 import { Button } from "@/components/ui/button";
+import { Field, FormError, SelectField, SubmitButton } from "@/components/ui/form-controls";
 import { createInvitation } from "@/lib/api";
+import { resolveMessage } from "@/lib/forms/messages";
+import { useFormSubmit } from "@/lib/forms/use-form-submit";
 import { canManageMembers } from "@/lib/permissions";
+import { inviteMemberFormSchema, type InviteMemberFormInput } from "@/lib/schemas/admin-forms";
 import type { Membership, OrgRole } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
@@ -165,28 +170,37 @@ function InviteControl({
   seats: SeatUsage;
 }) {
   const [open, setOpen] = useState(initialOpen);
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState<OrgRole>(initialRole);
-  const [isPending, startTransition] = useTransition();
+  const {
+    formState: { errors },
+    handleSubmit,
+    register,
+    reset,
+    setError,
+    watch,
+  } = useForm<InviteMemberFormInput>({
+    defaultValues: { email: "", orgRole: initialRole },
+    mode: "onTouched",
+    reValidateMode: "onChange",
+    resolver: zodResolver(inviteMemberFormSchema),
+  });
+  const role = watch("orgRole");
 
   const atAdminLimit = seats.adminSeatsUsed >= seats.adminSeatsIncluded;
   const inviteBlocked = role === "tenant_admin" && atAdminLimit;
-
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    onMessage(null);
-    startTransition(async () => {
-      try {
-        await createInvitation({ email, org_role: role });
-        onMessage("Invitation sent");
-        setOpen(false);
-        setEmail("");
-        setRole("member");
-      } catch (error) {
-        onMessage(error instanceof Error ? error.message : "Could not send the invitation.");
-      }
-    });
-  }
+  const { formError, isSubmitting, submit } = useFormSubmit({
+    action: (input: InviteMemberFormInput) =>
+      createInvitation({ email: input.email, org_role: input.orgRole }),
+    onSuccess: () => {
+      onMessage("Invitation sent");
+      setOpen(false);
+      reset({ email: "", orgRole: "member" });
+    },
+    setError,
+  });
+  const fieldError = (field: keyof InviteMemberFormInput) => {
+    const message = errors[field]?.message;
+    return message ? resolveMessage(field, message) : undefined;
+  };
 
   if (!open) {
     return <Button onClick={() => setOpen(true)}>Invite member</Button>;
@@ -195,31 +209,26 @@ function InviteControl({
   return (
     <form
       className="w-80 rounded-lg border border-[var(--border)] bg-white p-4 shadow-sm"
-      onSubmit={submit}
+      noValidate
+      onSubmit={handleSubmit((input) => {
+        onMessage(null);
+        return submit(input);
+      })}
     >
-      <label className="block text-xs font-medium text-slate-600">
-        Email
-        <input
-          className="mt-1 h-10 w-full rounded-md border border-[var(--border)] px-3 text-sm font-normal focus:border-[var(--primary)] focus:outline-none"
-          onChange={(event) => setEmail(event.target.value)}
+      <FormError>{formError}</FormError>
+      <div className="grid gap-3">
+        <Field
+          error={fieldError("email")}
+          label="Email"
           placeholder="name@company.com"
-          required
+          registration={register("email")}
           type="email"
-          value={email}
         />
-      </label>
-
-      <label className="mt-3 block text-xs font-medium text-slate-600">
-        Role
-        <select
-          className="mt-1 h-10 w-full rounded-md border border-[var(--border)] bg-white px-3 text-sm font-normal focus:border-[var(--primary)] focus:outline-none"
-          onChange={(event) => setRole(event.target.value as OrgRole)}
-          value={role}
-        >
+        <SelectField error={fieldError("orgRole")} label="Role" registration={register("orgRole")}>
           <option value="member">Member</option>
           <option value="tenant_admin">Admin</option>
-        </select>
-      </label>
+        </SelectField>
+      </div>
 
       {inviteBlocked ? (
         <p className="mt-2 text-xs text-amber-700">
@@ -229,12 +238,15 @@ function InviteControl({
       ) : null}
 
       <div className="mt-4 flex items-center gap-2">
-        <Button disabled={isPending || inviteBlocked || email.length === 0} type="submit">
-          {isPending ? "Sending..." : "Send invitation"}
-        </Button>
+        <SubmitButton className="w-auto" disabled={inviteBlocked} isSubmitting={isSubmitting}>
+          Send invitation
+        </SubmitButton>
         <button
           className="text-sm text-slate-500 hover:text-slate-700"
-          onClick={() => setOpen(false)}
+          onClick={() => {
+            setOpen(false);
+            reset({ email: "", orgRole: "member" });
+          }}
           type="button"
         >
           Cancel

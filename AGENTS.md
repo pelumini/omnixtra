@@ -994,6 +994,19 @@ Rules:
 - Internal architecture words such as `tenant`, `tenancy`, `RLS`, and `membership` must not appear in visible UI copy.
 - The endpoint stays `POST /api/v1/tenants`; the button says `Create your academy`.
 
+### 6.2.2 Form and Validation Standard
+
+All frontend forms use the same validation and submission stack:
+
+- Use React Hook Form plus `zodResolver` for field state, submit state, and client-side validation.
+- Define reusable Zod primitives in `web/src/lib/validation/` and compose domain schemas from them.
+- Keep user-facing validation copy in `web/src/lib/forms/messages.ts`; schemas and server responses emit terse constraint keys such as `required`, `min_length`, `email`, and `subdomain_taken`.
+- Use shared controls from `web/src/components/ui/form-controls.tsx`: `Field`, `FieldError`, `FormError`, `SubmitButton`, and `Spinner`.
+- Forms must set `noValidate` so browser-native validation bubbles do not replace product copy.
+- Use `mode: "onTouched"` and `reValidateMode: "onChange"` so validation appears after first touch/submit, then updates as the user fixes input.
+- Server validation errors must use the standard envelope with field names normalized for client mapping: no `body.` prefix, snake_case converted toward client field names, and business-rule conflicts represented as field details where possible.
+- Page files stay thin: render a form component, pass the API action, and handle success routing.
+
 ### 6.3 Permission-Contract E2E Discipline
 
 Frontend permission specs are part of the product contract, not optional smoke tests.
@@ -1132,7 +1145,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint 5: Billing, Branding, Analytics, and MVP Polish | Complete | 15 / 15 | Sprint 5 audit remediation is complete: unsigned billing webhook removed, signed Stripe webhook negative tests and signed-path coverage added, CSV cells neutralized, Sprint 5 smoke specs pass, and Docker-backed integration suite passes against PostgreSQL 16 + pgvector with RLS. |
 | MVP Readiness Remediation | Complete | 7 / 7 | AI tutor tenant/user rate limits, monthly token budget reservation, env settings, frontend MVP journey coverage, local integration rerun hardening, recorded manual readiness evidence, and local-dev URL reproducibility are complete. |
 | ADR-003 Identity, Membership, and Authorization Refactor | Complete | 15 / 15 | `/auth/signup` is retired; `/tenants` creates organizations; memberships and invitations are tenant-owned; org authorization reads membership; enrolments carry course roles; unauthenticated invitation preview is oracle-safe and rate-limited; billing admin-seat counts read memberships; and Docker-backed integration verification passes against PostgreSQL 16 + pgvector with RLS. |
-| Frontend Redesign for ADR-003 Identity Model | Complete | 10 / 10 | Academy-labeled tenant creation, invitation acceptance with token preview, member management, conservative/role-aware navigation foundation, course-role authoring gates, learner-safe course player surface, admin-seat feedback, component permission tests, bounded Playwright runner, and browser permission-contract specs with break-test evidence are in place. |
+| Frontend Redesign for ADR-003 Identity Model | Complete | 12 / 12 | Academy-labeled tenant creation, invitation acceptance with token preview, member management, conservative/role-aware navigation foundation, course-role authoring gates, learner-safe course player surface, admin-seat feedback, component permission tests, bounded Playwright runner, site-wide v1.3 form standard, and browser permission-contract specs with break-test evidence are in place. |
 | Phase 2: Months 4-6 | In progress | 0 / 11 | Post-MVP expansion started with SSO storage and validation foundation. No Phase 2 top-level capability is complete yet. |
 | Phase 3: Months 7-9 | Not started | 0 / 9 | Post-MVP platform/compliance expansion. |
 
@@ -1469,6 +1482,9 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] 2026-08-05 invitation preview wiring: `/join?token=...` resolves the unauthenticated preview before rendering, greets the invitee with the academy, locks the invited email, and falls back to a generic invalid-invitation state when the preview cannot be used.
 - [x] 2026-08-05 UX Permission Contract v1.2 vocabulary pass: visible frontend copy now maps customer spaces to `academy` while preserving `tenant` in API/schema/code, and regression tests enforce the public/auth flow vocabulary.
 - [x] 2026-08-05 loose-end baseline lock: reconciled tracker state after the API URL split, invitation preview, public/auth flow, and academy vocabulary work; verification passed with backend Ruff, strict mypy, full backend pytest, Docker-backed invitation/session/my-courses contract tests, frontend lint/type/unit tests, focused Playwright, Docker service health, and local URL smoke for API, docs, web, login, get-started, join, `/auth -> /login`, and `/admin -> /login`.
+- [x] 2026-08-05 UX Permission Contract v1.3 form-standard foundation: added React Hook Form/Zod resolver stack, shared validation primitives, shared form controls, form submit/error machinery, parsed API-error envelope throwing, backend validation normalization for client field mapping, and migrated `/get-started` to the thin page plus `CreateAcademyForm` template.
+- [x] 2026-08-05 form-standard message remediation: `/get-started` now resolves validation constraint keys into user-facing product copy, and the public signup Playwright spec asserts raw keys such as `min_length` and `required` never render.
+- [x] 2026-08-05 site-wide form-standard rollout: migrated sign-in, invitation acceptance/token entry, member invitations, course creation/details, section/lesson/block/media authoring forms, quiz attempts, and tutor questions to React Hook Form, Zod resolver schemas, shared controls, `noValidate`, and centralized message resolution.
 
 ### Phase 2: Months 4-6
 

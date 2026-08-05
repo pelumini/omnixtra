@@ -100,6 +100,7 @@ export const learnerProgressReportEnvelopeSchema = z.object({
 export const errorDetailSchema = z.object({
   field: z.string(),
   constraint: z.string(),
+  message: z.string().nullable().optional(),
 });
 
 export const errorBodySchema = z.object({

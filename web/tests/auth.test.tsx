@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 
 import { PublicLanding } from "@/components/app/public-landing";
 import { AcceptInvitationView } from "@/components/auth/accept-invitation-view";
-import { CreateOrganizationView } from "@/components/auth/create-organization-view";
 import { SignInView } from "@/components/auth/sign-in-view";
+import { CreateAcademyForm } from "@/components/forms/create-academy-form";
 
 describe("auth UI", () => {
   it("keeps public landing focused on academy creation with quiet auth links", () => {
@@ -23,9 +23,14 @@ describe("auth UI", () => {
 
   it("renders separate login, academy creation, and invitation surfaces", () => {
     expect(renderToStaticMarkup(<SignInView />)).toContain("Continue to your academy");
-    expect(renderToStaticMarkup(<CreateOrganizationView />)).toContain(
-      "Set up your academy and your admin account in one step.",
+    const createAcademyHtml = renderToStaticMarkup(
+      <CreateAcademyForm action={async () => ({ subdomain: "acme" })} onSuccess={() => {}} />,
     );
+    expect(createAcademyHtml).toContain("Your academy");
+    expect(createAcademyHtml).toContain("Your admin account");
+    expect(createAcademyHtml).toContain("Academy name");
+    expect(createAcademyHtml).toContain("Create academy");
+    expect(createAcademyHtml).toContain("noValidate");
     expect(
       renderToStaticMarkup(
         <AcceptInvitationView

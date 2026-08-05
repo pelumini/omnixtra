@@ -1,12 +1,20 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import type { FormEvent } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
-import { Button } from "@/components/ui/button";
+import { Field, FormError, SubmitButton } from "@/components/ui/form-controls";
 import { acceptInvitation } from "@/lib/api";
+import { resolveMessage } from "@/lib/forms/messages";
+import { useFormSubmit } from "@/lib/forms/use-form-submit";
 import type { InvitationPreview } from "@/lib/schemas";
-import { AuthShell, Field } from "./auth-shell";
+import {
+  acceptInvitationSchema,
+  type AcceptInvitationInput,
+} from "@/lib/schemas/auth";
+import { invitationTokenSchema } from "@/lib/validation/primitives";
+import { AuthShell } from "./auth-shell";
 
 type AcceptInvitationViewProps = {
   preview: InvitationPreview | null;
@@ -24,56 +32,62 @@ export function AcceptInvitationView({ preview, token }: AcceptInvitationViewPro
 }
 
 function AcceptForm({ preview, token }: { preview: InvitationPreview; token: string }) {
-  const [message, setMessage] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-
-    startTransition(async () => {
-      try {
-        await acceptInvitation({
-          email: preview.email,
-          full_name: formString(form, "full_name"),
-          password: formString(form, "password"),
-          token,
-        });
-        window.location.assign("/");
-      } catch {
-        setMessage("This invitation cannot be accepted. It may have expired; ask for a new one.");
-      }
-    });
-  }
+  const {
+    formState: { errors },
+    handleSubmit,
+    register,
+    setError,
+  } = useForm<AcceptInvitationInput>({
+    defaultValues: { fullName: "", password: "" },
+    mode: "onTouched",
+    reValidateMode: "onChange",
+    resolver: zodResolver(acceptInvitationSchema),
+  });
+  const { formError, isSubmitting, submit } = useFormSubmit({
+    action: (input: AcceptInvitationInput) =>
+      acceptInvitation({
+        email: preview.email,
+        full_name: input.fullName,
+        password: input.password,
+        token,
+      }),
+    onSuccess: () => window.location.assign("/"),
+    setError,
+  });
+  const fieldError = (field: keyof AcceptInvitationInput) => {
+    const message = errors[field]?.message;
+    return message ? resolveMessage(field, message) : undefined;
+  };
 
   return (
     <AuthShell
       subtitle={`You have been invited to join ${preview.organization_name}.`}
       title={`Join ${preview.organization_name}`}
     >
-      <form className="space-y-4" onSubmit={handleSubmit}>
+      <form className="space-y-4" noValidate onSubmit={handleSubmit(submit)}>
+        <FormError>{formError}</FormError>
         <div>
           <span className="block text-xs font-medium text-slate-600">Invited email</span>
           <p className="mt-1 flex h-10 items-center truncate rounded-md border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-slate-700">
             {preview.email}
           </p>
         </div>
-        <Field autoComplete="name" label="Full name" name="full_name" required />
+        <Field
+          autoComplete="name"
+          error={fieldError("fullName")}
+          label="Full name"
+          registration={register("fullName")}
+        />
         <Field
           autoComplete="new-password"
+          error={fieldError("password")}
           hint="At least 12 characters."
           label="Create a password"
-          minLength={12}
-          name="password"
-          required
+          registration={register("password")}
           type="password"
         />
 
-        {message ? <p className="text-sm text-red-600">{message}</p> : null}
-
-        <Button className="h-11 w-full" disabled={isPending} type="submit">
-          {isPending ? "Joining..." : "Accept invitation and join"}
-        </Button>
+        <SubmitButton isSubmitting={isSubmitting}>Accept invitation and join</SubmitButton>
       </form>
     </AuthShell>
   );
@@ -93,39 +107,46 @@ function InvalidInvitation() {
 }
 
 function TokenFallback() {
-  const [token, setToken] = useState("");
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const normalizedToken = token.trim();
-    if (normalizedToken) {
-      window.location.assign(`/join?token=${encodeURIComponent(normalizedToken)}`);
-    }
-  }
+  const tokenFallbackSchema = z.object({ token: invitationTokenSchema });
+  type TokenFallbackInput = z.infer<typeof tokenFallbackSchema>;
+  const {
+    formState: { errors },
+    handleSubmit,
+    register,
+    watch,
+  } = useForm<TokenFallbackInput>({
+    defaultValues: { token: "" },
+    mode: "onTouched",
+    reValidateMode: "onChange",
+    resolver: zodResolver(tokenFallbackSchema),
+  });
+  const token = watch("token");
+  const tokenError = errors.token?.message
+    ? resolveMessage("token", errors.token.message)
+    : undefined;
 
   return (
     <AuthShell
       subtitle="Invitations are usually links in your email. Lost it? Enter your code below."
       title="Join an academy"
     >
-      <form className="space-y-4" onSubmit={handleSubmit}>
+      <form
+        className="space-y-4"
+        noValidate
+        onSubmit={handleSubmit(({ token }) => {
+          window.location.assign(`/join?token=${encodeURIComponent(token.trim())}`);
+        })}
+      >
         <Field
+          error={tokenError}
           label="Invitation code"
-          name="token"
-          onChange={setToken}
           placeholder="Paste your invitation code"
-          required
-          value={token}
+          registration={register("token")}
         />
-        <Button className="h-11 w-full" disabled={token.trim().length === 0} type="submit">
+        <SubmitButton disabled={token.trim().length === 0} isSubmitting={false}>
           Continue
-        </Button>
+        </SubmitButton>
       </form>
     </AuthShell>
   );
-}
-
-function formString(form: FormData, name: string) {
-  const value = form.get(name);
-  return typeof value === "string" ? value.trim() : "";
 }
