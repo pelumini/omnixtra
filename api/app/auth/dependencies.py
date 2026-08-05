@@ -28,6 +28,35 @@ class AuthPrincipal:
     role: OrgRole
 
 
+@dataclass(frozen=True)
+class AuthenticatedPrincipal:
+    user_id: UUID
+    tenant_id: UUID
+
+
+async def require_authenticated_principal(
+    request: Request,
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+) -> AuthenticatedPrincipal:
+    token = (
+        credentials.credentials
+        if credentials is not None
+        else request.cookies.get(ACCESS_TOKEN_COOKIE)
+    )
+    if token is None:
+        msg = "authentication required"
+        raise AuthenticationError(msg)
+    try:
+        payload = decode_access_token(token)
+        user_id = UUID(str(payload["sub"]))
+        tenant_id = UUID(str(payload["tenant_id"]))
+    except (InvalidTokenError, KeyError, ValueError):
+        msg = "invalid access token"
+        raise AuthenticationError(msg) from None
+    set_tenant_id(str(tenant_id))
+    return AuthenticatedPrincipal(user_id=user_id, tenant_id=tenant_id)
+
+
 def require_permission(
     permission: str,
 ) -> Callable[
@@ -73,4 +102,11 @@ def require_permission(
     return dependency
 
 
-__all__ = ["ACCESS_TOKEN_COOKIE", "REFRESH_TOKEN_COOKIE", "AuthPrincipal", "require_permission"]
+__all__ = [
+    "ACCESS_TOKEN_COOKIE",
+    "REFRESH_TOKEN_COOKIE",
+    "AuthPrincipal",
+    "AuthenticatedPrincipal",
+    "require_authenticated_principal",
+    "require_permission",
+]

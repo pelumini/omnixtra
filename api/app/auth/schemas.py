@@ -24,6 +24,22 @@ class AuthResponse(BaseModel):
     user: AuthenticatedUser
 
 
+class SessionUser(BaseModel):
+    id: str
+    email: EmailStr
+    full_name: str
+
+
+class SessionMembership(BaseModel):
+    tenant_id: str
+    org_role: Literal["tenant_admin", "member"]
+
+
+class SessionResponse(BaseModel):
+    user: SessionUser
+    membership: SessionMembership | None
+
+
 class MagicLinkRequest(BaseModel):
     email: EmailStr
 
@@ -42,6 +58,11 @@ class InvitationAcceptRequest(BaseModel):
     email: EmailStr
     full_name: str = Field(min_length=2, max_length=200)
     password: str = Field(min_length=12, max_length=128)
+
+
+class InvitationPreviewResponse(BaseModel):
+    organization_name: str
+    email: EmailStr
 
 
 class MagicLinkVerifyRequest(BaseModel):

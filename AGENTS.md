@@ -33,15 +33,16 @@
 15. All API request and response types must be validated with Zod schemas mirroring backend Pydantic schemas.
 16. Use ESLint and Prettier. All frontend code must pass linting, formatting, and `tsc` strict checks.
 17. Build tenant-brandable interfaces. Logo, primary colour, locale, time zone, and email templates must not be hard-coded when they should be configurable.
+18. For frontend API URLs, keep server-side and browser-side targets separate. Server-side fetches from RSC, route handlers, middleware, or SSR use `API_INTERNAL_URL` on the container network; browser fetches and browser-visible URLs use `NEXT_PUBLIC_API_URL`. Do not collapse them. Using `localhost` for a server-side fetch inside Docker is the common "ready then 500" local-dev failure.
 
 ### AI Features
 
-18. AI features must never block API calls. All AI workloads run asynchronously through Dramatiq jobs and stream status/results via Redis Pub/Sub and SSE.
-19. AI outputs are advisory. Tutor responses must be visibly AI-generated; AI-assisted course authoring must require human review before publishing.
-20. Never send learner PII to third-party LLMs. Paid-tenant course content may be sent to external LLM providers only when tenant settings explicitly consent.
-21. Retrieval must be tenant-scoped at the index/query level. pgvector searches always filter by `tenant_id` and relevant resource scope, such as `course_id`, before or during retrieval.
-22. AI jobs must be retry-safe, idempotent, cost-aware, and traceable in LangSmith.
-23. Learner-facing tutor tools must not execute actions. Agentic tool execution is Phase 3 and must go through MCP auth, RBAC, tenant scoping, rate limits, and audit logging.
+19. AI features must never block API calls. All AI workloads run asynchronously through Dramatiq jobs and stream status/results via Redis Pub/Sub and SSE.
+20. AI outputs are advisory. Tutor responses must be visibly AI-generated; AI-assisted course authoring must require human review before publishing.
+21. Never send learner PII to third-party LLMs. Paid-tenant course content may be sent to external LLM providers only when tenant settings explicitly consent.
+22. Retrieval must be tenant-scoped at the index/query level. pgvector searches always filter by `tenant_id` and relevant resource scope, such as `course_id`, before or during retrieval.
+23. AI jobs must be retry-safe, idempotent, cost-aware, and traceable in LangSmith.
+24. Learner-facing tutor tools must not execute actions. Agentic tool execution is Phase 3 and must go through MCP auth, RBAC, tenant scoping, rate limits, and audit logging.
 
 ### Agent Execution Contract
 
@@ -975,6 +976,24 @@ web/
 - Keep API response parsing at the boundary.
 - Keep tenant branding tokenized.
 
+### 6.2.1 User-Facing Vocabulary
+
+The UI names the customer's space by what users recognize, not by backend implementation terms. The copy layer maps system terms to product language:
+
+| Concept | User-facing label | System / API / code |
+|---|---|---|
+| Customer learning space | academy | tenant |
+| Org-level admin | admin | `tenant_admin` |
+| Org-level non-admin | member | `member` |
+| Course roles | owner / facilitator / learner | `course_owner` / `facilitator` / `learner` |
+
+Rules:
+
+- User-facing copy says `academy`, not `tenant` or `organization`.
+- API routes, schemas, database fields, and code identifiers keep existing `tenant` names.
+- Internal architecture words such as `tenant`, `tenancy`, `RLS`, and `membership` must not appear in visible UI copy.
+- The endpoint stays `POST /api/v1/tenants`; the button says `Create your academy`.
+
 ### 6.3 Permission-Contract E2E Discipline
 
 Frontend permission specs are part of the product contract, not optional smoke tests.
@@ -1111,9 +1130,9 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint 3: Learning Experience | Complete | 11 / 11 | Learning backend, idempotent learner workflows, real route-level attack tests, learner course player, quiz/completion UI, and certificate PDF download workflow are in place. |
 | Sprint 4: AI Tutor | Complete | 17 / 17 | Provider-backed tutor jobs, provider-failure handling, embedding-provider provenance, hybrid retrieval SQL, Redis Pub/Sub job streaming, LangSmith wrapper, vector isolation coverage, route attack tests, actor-path cache reuse coverage, tutor UI, and recorded OpenAI 20-question eval evidence are in place. |
 | Sprint 5: Billing, Branding, Analytics, and MVP Polish | Complete | 15 / 15 | Sprint 5 audit remediation is complete: unsigned billing webhook removed, signed Stripe webhook negative tests and signed-path coverage added, CSV cells neutralized, Sprint 5 smoke specs pass, and Docker-backed integration suite passes against PostgreSQL 16 + pgvector with RLS. |
-| MVP Readiness Remediation | Complete | 6 / 6 | AI tutor tenant/user rate limits, monthly token budget reservation, env settings, frontend MVP journey coverage, local integration rerun hardening, and recorded manual readiness evidence are complete. |
-| ADR-003 Identity, Membership, and Authorization Refactor | Complete | 14 / 14 | `/auth/signup` is retired; `/tenants` creates organizations; memberships and invitations are tenant-owned; org authorization reads membership; enrolments carry course roles; billing admin-seat counts read memberships; and Docker-backed integration verification passes against PostgreSQL 16 + pgvector with RLS. |
-| Frontend Redesign for ADR-003 Identity Model | Complete | 8 / 8 | Tenant creation, invitation acceptance, member management, conservative/role-aware navigation foundation, course-role authoring gates, learner-safe course player surface, admin-seat feedback, component permission tests, bounded Playwright runner, and browser permission-contract specs with break-test evidence are in place. |
+| MVP Readiness Remediation | Complete | 7 / 7 | AI tutor tenant/user rate limits, monthly token budget reservation, env settings, frontend MVP journey coverage, local integration rerun hardening, recorded manual readiness evidence, and local-dev URL reproducibility are complete. |
+| ADR-003 Identity, Membership, and Authorization Refactor | Complete | 15 / 15 | `/auth/signup` is retired; `/tenants` creates organizations; memberships and invitations are tenant-owned; org authorization reads membership; enrolments carry course roles; unauthenticated invitation preview is oracle-safe and rate-limited; billing admin-seat counts read memberships; and Docker-backed integration verification passes against PostgreSQL 16 + pgvector with RLS. |
+| Frontend Redesign for ADR-003 Identity Model | Complete | 10 / 10 | Academy-labeled tenant creation, invitation acceptance with token preview, member management, conservative/role-aware navigation foundation, course-role authoring gates, learner-safe course player surface, admin-seat feedback, component permission tests, bounded Playwright runner, and browser permission-contract specs with break-test evidence are in place. |
 | Phase 2: Months 4-6 | In progress | 0 / 11 | Post-MVP expansion started with SSO storage and validation foundation. No Phase 2 top-level capability is complete yet. |
 | Phase 3: Months 7-9 | Not started | 0 / 9 | Post-MVP platform/compliance expansion. |
 
@@ -1410,6 +1429,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Expand frontend tests to cover the named MVP journeys in Part 9.
 - [x] Execute and record the manual MVP verification checklist in Part 9.
 - [x] Make Docker-backed integration tests clean-rerun friendly against a reused local database.
+- [x] 2026-08-05 local-dev URL reproducibility remediation: Compose starts API, worker, PostgreSQL, Redis, and the Next.js local dev server on fixed ports; the web service healthcheck validates `/auth` on `next dev`, not the production image; API root, health, docs, and web auth URLs were proven after clean run-twice Compose starts.
 
 **Exit criteria:** CI remains green, AI tutor abuse/cost controls are enforced before provider work is queued, required frontend journeys map to Part 9, manual readiness evidence is recorded under `docs/runbooks/`, and local Docker-backed verification can be rerun without rebuilding the database from scratch. Evidence is recorded in `docs/runbooks/mvp-readiness-verification-2026-07-31.md`.
 
@@ -1430,6 +1450,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Add `docs/runbooks/identity-and-roles.md`.
 - [x] Rerun full Docker-backed integration verification and record evidence.
 - [x] Add follow-up tests for invitation role escalation, expired/used/cross-tenant invitation tokens, membership backfill mapping, and billing admin-seat counting.
+- [x] Add unauthenticated `GET /api/v1/auth/invitations/{token}` preview with tenant-host lookup, an allow-listed `organization_name` + `email` response, byte-identical invalid-token responses for expired/used/nonexistent invitations, and per-IP rate limiting.
 - [x] Enforce billing admin-seat limits from `memberships.org_role`, not deprecated `users.role`.
 
 ### Frontend Redesign for ADR-003 Identity Model
@@ -1442,6 +1463,12 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Align learner course access with enrolment-scoped permissions and no-leak backend responses.
 - [x] Surface billing/admin-seat limit feedback during tenant-admin invitations.
 - [x] Rework onboarding and regression tests around the new identity, membership, and course-role model. Browser permission-contract specs cover `tenant_admin`, `member`, `course_owner`, and `learner` states through deterministic E2E fixtures, and targeted break-tests prove the gates fail red when removed.
+- [x] 2026-08-05 backend contract slice for UX routing: added read-only `GET /api/v1/auth/session` and `GET /api/v1/learning/my-courses` with allow-listed session user fields, membership-null routing support, flat enrolment-role course tagging, route coverage declarations, Docker-backed integration tests, and same-tenant cross-user break-test evidence for the `my-courses` user scope.
+- [x] 2026-08-05 authenticated routing and blended `/my-courses` home: implemented UX Permission Contract sections 4.3-4.4 with server-side root routing, invitation-pending state, role-grouped course dashboard, zero-total member state, CI-running Playwright specs, and break-test evidence for public landing, member redirect, role-section omission, empty state, and existing member-admin denial.
+- [x] 2026-08-05 focused public/auth flow remediation: split the old mixed auth hub into `/login`, `/get-started`, and `/join`; `/` now presents academy creation as the single primary CTA, sign-in as a quiet returning-user action, invitation acceptance as an emailed-link/fallback flow, and `/auth` redirects to `/login`.
+- [x] 2026-08-05 invitation preview wiring: `/join?token=...` resolves the unauthenticated preview before rendering, greets the invitee with the academy, locks the invited email, and falls back to a generic invalid-invitation state when the preview cannot be used.
+- [x] 2026-08-05 UX Permission Contract v1.2 vocabulary pass: visible frontend copy now maps customer spaces to `academy` while preserving `tenant` in API/schema/code, and regression tests enforce the public/auth flow vocabulary.
+- [x] 2026-08-05 loose-end baseline lock: reconciled tracker state after the API URL split, invitation preview, public/auth flow, and academy vocabulary work; verification passed with backend Ruff, strict mypy, full backend pytest, Docker-backed invitation/session/my-courses contract tests, frontend lint/type/unit tests, focused Playwright, Docker service health, and local URL smoke for API, docs, web, login, get-started, join, `/auth -> /login`, and `/admin -> /login`.
 
 ### Phase 2: Months 4-6
 

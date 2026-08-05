@@ -9,9 +9,14 @@ const serverTimeoutMs = numberFromEnv("E2E_SERVER_TIMEOUT_MS", 60_000);
 const testTimeoutMs = numberFromEnv("E2E_TEST_TIMEOUT_MS", 180_000);
 
 let server;
+const e2eEnv = {
+  ...process.env,
+  OMNIXTRA_E2E_FIXTURES: "1",
+};
 
 try {
   const buildExitCode = await run(process.execPath, ["./node_modules/next/dist/bin/next", "build"], {
+    env: e2eEnv,
     label: "next build",
     timeoutMs: buildTimeoutMs,
   });
@@ -24,7 +29,7 @@ try {
     process.execPath,
     ["./node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", port],
     {
-      env: process.env,
+      env: e2eEnv,
       stdio: "inherit",
     },
   );
@@ -36,7 +41,7 @@ try {
     ["./node_modules/@playwright/test/cli.js", "test", ...process.argv.slice(2)],
     {
       env: {
-        ...process.env,
+        ...e2eEnv,
         PLAYWRIGHT_BASE_URL: baseURL,
         PLAYWRIGHT_SKIP_WEBSERVER: "1",
       },

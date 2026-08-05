@@ -39,7 +39,7 @@ export function MembersView({
   if (!canManageMembers(viewerRole)) {
     return (
       <DeniedState
-        description="Managing members is available to organization admins. If you need access, ask an admin in your organization."
+        description="Managing members is available to academy admins. If you need access, ask an admin in your academy."
         title="This area is for admins"
       />
     );
@@ -55,7 +55,7 @@ export function MembersView({
           seats={seats}
         />
       }
-      description="People in your organization and their access."
+      description="People in your academy and their access."
       title="Members"
     >
       {message ? (
@@ -249,7 +249,7 @@ function EmptyState() {
     <div className="rounded-lg border border-dashed border-[var(--border)] bg-white px-6 py-16 text-center">
       <h2 className="text-sm font-semibold text-[var(--foreground)]">No members yet</h2>
       <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
-        Invite the first person to your organization. They&apos;ll get an email link to set a
+        Invite the first person to your academy. They&apos;ll get an email link to set a
         password and join.
       </p>
     </div>

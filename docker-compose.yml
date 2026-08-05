@@ -51,6 +51,35 @@ services:
       timeout: 5s
       retries: 10
 
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile.dev
+    environment:
+      API_INTERNAL_URL: http://api:8000
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_APP_URL: http://localhost:3001
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./web:/app
+      - web-node-modules:/app/node_modules
+      - web-next-cache:/app/.next
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/auth').then((response) => response.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   migrate:
     build:
       context: ./api
@@ -78,3 +107,5 @@ services:
 volumes:
   postgres-data:
   redis-data:
+  web-node-modules:
+  web-next-cache:

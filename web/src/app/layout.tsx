@@ -46,11 +46,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               {branding.tenant_name}
             </span>
             <nav className="ml-auto flex items-center gap-3 text-sm text-gray-600">
-              <Link className="hover:text-[var(--primary)]" href="/auth">
-                Access
-              </Link>
-              <Link className="hover:text-[var(--primary)]" href="/admin/courses">
-                Courses
+              <Link className="hover:text-[var(--primary)]" href="/login">
+                Sign in
               </Link>
             </nav>
           </div>

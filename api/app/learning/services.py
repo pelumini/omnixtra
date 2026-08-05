@@ -36,9 +36,12 @@ from app.learning.schemas import (
     CertificateResponse,
     CourseCompletionResponse,
     CoursePlayerResponse,
+    CourseProgressSummary,
     EnrolmentResponse,
     LessonProgressRequest,
     LessonProgressResponse,
+    MyCourseResponse,
+    MyCoursesResponse,
     PlayerLesson,
     PlayerSection,
     QuizAttemptRequest,
@@ -125,6 +128,78 @@ async def get_course_player(
             for section in sections
         ],
     )
+
+
+async def list_my_courses(session: AsyncSession, *, user_id: UUID) -> MyCoursesResponse:
+    lesson_counts = (
+        select(
+            Lesson.course_id.label("course_id"),
+            func.count(Lesson.id).label("total_lessons"),
+        )
+        .where(Lesson.deleted_at.is_(None))
+        .group_by(Lesson.course_id)
+        .subquery()
+    )
+    completed_counts = (
+        select(
+            LessonProgress.course_id.label("course_id"),
+            func.count(LessonProgress.id).label("completed_lessons"),
+        )
+        .where(
+            LessonProgress.learner_id == user_id,
+            LessonProgress.percent_complete == COMPLETE_PERCENT,
+            LessonProgress.deleted_at.is_(None),
+        )
+        .group_by(LessonProgress.course_id)
+        .subquery()
+    )
+    rows = (
+        await session.execute(
+            select(
+                Course.id,
+                Course.title,
+                Course.slug,
+                Course.status,
+                Enrolment.course_role,
+                lesson_counts.c.total_lessons,
+                completed_counts.c.completed_lessons,
+            )
+            .join(Enrolment, Enrolment.course_id == Course.id)
+            .outerjoin(lesson_counts, lesson_counts.c.course_id == Course.id)
+            .outerjoin(completed_counts, completed_counts.c.course_id == Course.id)
+            .where(
+                Enrolment.learner_id == user_id,
+                Enrolment.status == EnrolmentStatus.active.value,
+                Enrolment.deleted_at.is_(None),
+                Course.deleted_at.is_(None),
+            )
+            .order_by(Course.title, Course.id),
+        )
+    ).all()
+    courses: list[MyCourseResponse] = []
+    for row in rows:
+        total_lessons = int(row.total_lessons or 0)
+        completed_lessons = int(row.completed_lessons or 0)
+        progress = (
+            None
+            if total_lessons == 0
+            else CourseProgressSummary(
+                completed_lessons=completed_lessons,
+                total_lessons=total_lessons,
+                percent_complete=round((completed_lessons / total_lessons) * COMPLETE_PERCENT),
+            )
+        )
+        courses.append(
+            MyCourseResponse(
+                course_id=row.id,
+                title=row.title,
+                slug=row.slug,
+                status=row.status,
+                course_role=row.course_role,
+                progress=progress,
+            ),
+        )
+    return MyCoursesResponse(courses=courses)
 
 
 async def update_lesson_progress(

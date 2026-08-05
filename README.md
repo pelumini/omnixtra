@@ -10,6 +10,20 @@ Sprint 0-5 and MVP readiness remediation are complete. The first release-candida
 
 ## Local Development
 
+Canonical local development runs through Compose so the API and web app always
+come up on the same URLs:
+
+```bash
+docker compose up --build --wait
+```
+
+Local testing URLs:
+
+- API: `http://localhost:8000`
+- API health: `http://localhost:8000/health`
+- API docs: `http://localhost:8000/docs`
+- Web: `http://localhost:3001`
+
 Backend commands are run from `api/` with `uv`:
 
 ```bash
@@ -28,24 +42,25 @@ npm install
 npm run lint
 npm run typecheck
 npm test
-npm run dev
+npm run dev -- --port 3001
 ```
 
-Local infrastructure:
+Backend-only local infrastructure remains available for backend-focused work:
 
 ```bash
-docker compose up
+docker compose up postgres redis api worker
 ```
 
 Fresh-clone Docker flow:
 
 1. Copy `.env.example` values or create a compatible local `.env` if you need overrides.
 2. Run `docker compose up --build --wait`.
-3. Compose starts PostgreSQL and Redis, runs the one-shot `migrate` service with Alembic, then starts the API and worker after migrations complete.
-4. Verify the API health endpoint:
+3. Compose starts PostgreSQL and Redis, runs the one-shot `migrate` service with Alembic, then starts the API, worker, and web app after dependencies are healthy.
+4. Verify the API and web endpoints:
 
 ```bash
 curl http://localhost:8000/health
+curl http://localhost:3001
 ```
 
 If an older local Docker volume was created with different database role passwords, recreate that local development volume before retrying Compose.

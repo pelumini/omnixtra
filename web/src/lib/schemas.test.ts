@@ -14,12 +14,15 @@ import {
   healthEnvelopeSchema,
   invitationAcceptRequestSchema,
   invitationCreateEnvelopeSchema,
+  invitationPreviewEnvelopeSchema,
   membershipsEnvelopeSchema,
   lessonProgressRequestSchema,
   learnerProgressReportEnvelopeSchema,
   mediaAssetCreateRequestSchema,
   mediaAssetSchema,
+  myCoursesEnvelopeSchema,
   quizAttemptRequestSchema,
+  sessionEnvelopeSchema,
   tenantCreateEnvelopeSchema,
   tenantCreateRequestSchema,
   tenantBrandingEnvelopeSchema,
@@ -144,6 +147,20 @@ describe("ADR-003 identity schemas", () => {
     ).toBe(true);
 
     expect(
+      invitationPreviewEnvelopeSchema.parse({
+        data: {
+          organization_name: "Acme",
+          email: "member@example.com",
+        },
+        error: null,
+        meta: { request_id: "req_test", timestamp: null },
+      }).data,
+    ).toEqual({
+      organization_name: "Acme",
+      email: "member@example.com",
+    });
+
+    expect(
       membershipsEnvelopeSchema.parse({
         data: [
           {
@@ -156,6 +173,41 @@ describe("ADR-003 identity schemas", () => {
         meta: { request_id: "req_test", timestamp: null },
       }).data[0]?.org_role,
     ).toBe("tenant_admin");
+  });
+
+  it("accepts auth session responses with nullable memberships", () => {
+    expect(
+      sessionEnvelopeSchema.parse({
+        data: {
+          membership: {
+            org_role: "member",
+            tenant_id: "00000000-0000-0000-0000-000000000001",
+          },
+          user: {
+            email: "member@example.com",
+            full_name: "Member User",
+            id: "00000000-0000-0000-0000-000000000002",
+          },
+        },
+        error: null,
+        meta: { request_id: "req_test", timestamp: null },
+      }).data.membership?.org_role,
+    ).toBe("member");
+
+    expect(
+      sessionEnvelopeSchema.parse({
+        data: {
+          membership: null,
+          user: {
+            email: "pending@example.com",
+            full_name: "Pending User",
+            id: "00000000-0000-0000-0000-000000000003",
+          },
+        },
+        error: null,
+        meta: { request_id: "req_test", timestamp: null },
+      }).data.membership,
+    ).toBeNull();
   });
 });
 
@@ -326,6 +378,33 @@ describe("coursePlayerEnvelopeSchema", () => {
         meta: { request_id: "req_test", timestamp: null },
       }).data.sections[0]?.lessons[0]?.percent_complete,
     ).toBe(80);
+  });
+});
+
+describe("myCoursesEnvelopeSchema", () => {
+  it("accepts flat my-courses responses tagged by enrolment course role", () => {
+    expect(
+      myCoursesEnvelopeSchema.parse({
+        data: {
+          courses: [
+            {
+              course_id: "00000000-0000-0000-0000-000000000010",
+              course_role: "facilitator",
+              progress: {
+                completed_lessons: 1,
+                percent_complete: 50,
+                total_lessons: 2,
+              },
+              slug: "security-basics",
+              status: "published",
+              title: "Security Basics",
+            },
+          ],
+        },
+        error: null,
+        meta: { request_id: "req_test", timestamp: null },
+      }).data.courses[0]?.course_role,
+    ).toBe("facilitator");
   });
 });
 

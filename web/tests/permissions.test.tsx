@@ -6,7 +6,9 @@ import { AppShell } from "@/components/app/app-shell";
 import { MembersView } from "@/components/admin/members-view";
 import { CourseBuilder } from "@/components/admin/course-builder";
 import { AdminCourseList } from "@/components/admin/admin-course-list";
+import { MyCoursesDashboard } from "@/components/learning/my-courses-dashboard";
 import type { TenantBranding } from "@/lib/schemas";
+import { e2eMyCourses } from "@/lib/e2e-fixtures";
 import { draftCourse } from "./fixtures";
 
 const branding: TenantBranding = {
@@ -74,7 +76,7 @@ describe("ADR-003 frontend permissions", () => {
     expect(html).toContain("Send invitation");
   });
 
-  it("hides tenant-wide course creation from ordinary members", () => {
+  it("hides academy-wide course creation from ordinary members", () => {
     const html = renderToStaticMarkup(
       <AdminCourseList initialCourses={[draftCourse]} loadError={null} viewerRole="member" />,
     );
@@ -90,5 +92,20 @@ describe("ADR-003 frontend permissions", () => {
     expect(html).toContain("This course is not yours to edit");
     expect(html).not.toContain("Publish");
     expect(html).not.toContain("Block");
+  });
+
+  it("renders only my-courses sections backed by enrolled course roles", () => {
+    const html = renderToStaticMarkup(
+      <MyCoursesDashboard
+        courses={e2eMyCourses.filter((course) => course.course_role === "learner")}
+        loadError={null}
+        tenantName="Acme Learning"
+      />,
+    );
+
+    expect(html).toContain("Courses I&#x27;m taking");
+    expect(html).toContain("Security Basics");
+    expect(html).not.toContain("Courses I facilitate");
+    expect(html).not.toContain("Courses I own");
   });
 });

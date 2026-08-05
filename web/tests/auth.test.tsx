@@ -2,21 +2,46 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { AuthPanel } from "@/components/auth/auth-panel";
+import { PublicLanding } from "@/components/app/public-landing";
+import { AcceptInvitationView } from "@/components/auth/accept-invitation-view";
+import { CreateOrganizationView } from "@/components/auth/create-organization-view";
+import { SignInView } from "@/components/auth/sign-in-view";
 
 describe("auth UI", () => {
-  it("renders tenant creation, invitation acceptance, and login forms", () => {
-    const html = renderToStaticMarkup(<AuthPanel />);
+  it("keeps public landing focused on academy creation with quiet auth links", () => {
+    const html = renderToStaticMarkup(<PublicLanding />);
 
-    expect(html).toContain("Create Organization");
-    expect(html).toContain("Accept Invitation");
-    expect(html).toContain("Sign In");
-    expect(html).toContain("name=\"tenant_slug\"");
-    expect(html).toContain("name=\"invite_token\"");
-    expect(html).toContain("type=\"email\"");
-    expect(html).toContain("minLength=\"12\"");
-    expect(html).toContain("Create organization");
-    expect(html).toContain("Join organization");
-    expect(html).toContain("Login");
+    expect(html).toContain("Create your academy");
+    expect(html).toContain('href="/get-started"');
+    expect(html).toContain('href="/login"');
+    expect(html).toContain('href="/join"');
+    expect(html).not.toContain("Create Organization");
+    expect(html).not.toContain("Accept Invitation");
+    expect(html).not.toContain("organization");
+    expect(html).not.toContain("tenant");
+  });
+
+  it("renders separate login, academy creation, and invitation surfaces", () => {
+    expect(renderToStaticMarkup(<SignInView />)).toContain("Continue to your academy");
+    expect(renderToStaticMarkup(<CreateOrganizationView />)).toContain(
+      "Set up your academy and your admin account in one step.",
+    );
+    expect(
+      renderToStaticMarkup(
+        <AcceptInvitationView
+          preview={{
+            organization_name: "Acme Learning",
+            email: "learner@example.com",
+          }}
+          token={"invite_token_123"}
+        />,
+      ),
+    ).toContain("learner@example.com");
+    expect(renderToStaticMarkup(<AcceptInvitationView preview={null} token={null} />)).toContain(
+      "Join an academy",
+    );
+    expect(
+      renderToStaticMarkup(<AcceptInvitationView preview={null} token={"invite_token_123"} />),
+    ).toContain("This invitation is not valid");
   });
 });

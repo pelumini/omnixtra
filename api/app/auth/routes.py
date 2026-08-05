@@ -4,30 +4,37 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, Response
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import (
     ACCESS_TOKEN_COOKIE,
     REFRESH_TOKEN_COOKIE,
+    AuthenticatedPrincipal,
+    require_authenticated_principal,
 )
 from app.auth.models import AuthTokenPurpose
 from app.auth.schemas import (
     AuthResponse,
     InvitationAcceptRequest,
+    InvitationPreviewResponse,
     LoginRequest,
     MagicLinkRequest,
     MagicLinkVerifyRequest,
     PasswordResetCompleteRequest,
     PasswordResetRequest,
+    SessionResponse,
     TokenRequestAccepted,
 )
 from app.auth.services import (
     AuthSession,
     accept_invitation,
     complete_password_reset,
+    get_auth_session,
     issue_auth_token,
     login_with_session,
     logout_refresh_session,
+    preview_invitation,
     refresh_auth_session,
     verify_magic_link,
 )
@@ -40,6 +47,7 @@ from app.tenancy.context import require_tenant_id
 router = APIRouter(prefix="/auth", tags=["auth"])
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 EmailProviderDep = Annotated[EmailProvider, Depends(get_email_provider)]
+AuthenticatedDep = Annotated[AuthenticatedPrincipal, Depends(require_authenticated_principal)]
 
 
 @dataclass
@@ -50,7 +58,18 @@ class RateLimitBucket:
 
 RATE_LIMIT_WINDOW = timedelta(minutes=1)
 RATE_LIMIT_MAX_ATTEMPTS = 5
+INVITATION_PREVIEW_RATE_LIMIT_MAX_ATTEMPTS = 5
 _rate_limit_buckets: dict[str, RateLimitBucket] = {}
+
+INVALID_INVITATION_PREVIEW_BODY = {
+    "data": None,
+    "error": {
+        "type": "NotFoundError",
+        "message": "this invitation isn't valid",
+        "details": [],
+    },
+    "meta": {"request_id": "invitation-preview", "timestamp": None},
+}
 
 
 @router.post("/login")
@@ -159,6 +178,19 @@ async def accept_invitation_route(
     return Envelope(data=auth_session.response, error=None, meta=Meta.current())
 
 
+@router.get("/invitations/{token}", response_model=None)
+async def invitation_preview_route(
+    token: str,
+    session: SessionDep,
+    http_request: Request,
+) -> Envelope[InvitationPreviewResponse] | JSONResponse:
+    _enforce_ip_rate_limit("invitation-preview", http_request)
+    preview = await preview_invitation(session, UUID(require_tenant_id()), token)
+    if preview is None:
+        return JSONResponse(status_code=404, content=INVALID_INVITATION_PREVIEW_BODY)
+    return Envelope(data=preview, error=None, meta=Meta.current())
+
+
 @router.post("/refresh")
 async def refresh_route(
     http_request: Request,
@@ -187,6 +219,19 @@ async def logout_route(
     )
     _clear_auth_cookies(response)
     return Envelope(data=TokenRequestAccepted(accepted=True), error=None, meta=Meta.current())
+
+
+@router.get("/session", tags=["tenant-owned"])
+async def session_route(
+    session: SessionDep,
+    principal: AuthenticatedDep,
+) -> Envelope[SessionResponse]:
+    response = await get_auth_session(
+        session,
+        user_id=principal.user_id,
+        tenant_id=principal.tenant_id,
+    )
+    return Envelope(data=response, error=None, meta=Meta.current())
 
 
 def _set_auth_cookies(response: Response, auth_session: AuthSession) -> None:
@@ -225,5 +270,19 @@ def _enforce_rate_limit(kind: str, request: Request, email: str) -> None:
         return
     if bucket.count >= RATE_LIMIT_MAX_ATTEMPTS:
         msg = "too many authentication attempts"
+        raise RateLimitError(msg)
+    bucket.count += 1
+
+
+def _enforce_ip_rate_limit(kind: str, request: Request) -> None:
+    now = datetime.now(UTC)
+    client_host = request.client.host if request.client is not None else "unknown"
+    key = f"{kind}:{client_host}"
+    bucket = _rate_limit_buckets.get(key)
+    if bucket is None or bucket.reset_at <= now:
+        _rate_limit_buckets[key] = RateLimitBucket(count=1, reset_at=now + RATE_LIMIT_WINDOW)
+        return
+    if bucket.count >= INVITATION_PREVIEW_RATE_LIMIT_MAX_ATTEMPTS:
+        msg = "too many invitation preview attempts"
         raise RateLimitError(msg)
     bucket.count += 1

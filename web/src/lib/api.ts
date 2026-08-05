@@ -17,6 +17,7 @@ import {
   invitationAcceptRequestSchema,
   invitationCreateEnvelopeSchema,
   invitationCreateRequestSchema,
+  invitationPreviewEnvelopeSchema,
   loginRequestSchema,
   membershipsEnvelopeSchema,
   lessonCreateRequestSchema,
@@ -26,9 +27,11 @@ import {
   learnerProgressReportEnvelopeSchema,
   mediaAssetCreateRequestSchema,
   mediaAssetEnvelopeSchema,
+  myCoursesEnvelopeSchema,
   quizAttemptEnvelopeSchema,
   quizAttemptRequestSchema,
   sectionCreateRequestSchema,
+  sessionEnvelopeSchema,
   sectionEnvelopeSchema,
   tenantCreateEnvelopeSchema,
   tenantCreateRequestSchema,
@@ -49,7 +52,9 @@ import type {
   LoginRequest,
 } from "@/lib/schemas";
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const publicApiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const serverApiUrl = process.env.API_INTERNAL_URL ?? publicApiUrl;
+const apiUrl = typeof window === "undefined" ? serverApiUrl : publicApiUrl;
 
 type RequestContext = {
   cookie?: string;
@@ -77,11 +82,40 @@ export async function login(request: LoginRequest) {
   return authEnvelopeSchema.parse(response);
 }
 
+export async function getAuthSession(context: RequestContext = {}) {
+  const response = await fetch(`${apiUrl}/api/v1/auth/session`, {
+    cache: "no-store",
+    credentials: "include",
+    headers: requestHeaders(context),
+  });
+  const body: unknown = await response.json();
+  throwIfApiError(response, body);
+
+  return sessionEnvelopeSchema.parse(body);
+}
+
 export async function acceptInvitation(request: InvitationAcceptRequest, context: RequestContext = {}) {
   const body = invitationAcceptRequestSchema.parse(request);
   const response = await postJson("/api/v1/auth/invitations/accept", body, requestHeaders(context));
 
   return authEnvelopeSchema.parse(response);
+}
+
+export async function getInvitationPreview(token: string, context: RequestContext = {}) {
+  const response = await fetch(
+    `${apiUrl}/api/v1/auth/invitations/${encodeURIComponent(token)}`,
+    {
+      cache: "no-store",
+      headers: requestHeaders(context),
+    },
+  );
+  const body: unknown = await response.json();
+  if (response.status === 404) {
+    return null;
+  }
+  throwIfApiError(response, body);
+
+  return invitationPreviewEnvelopeSchema.parse(body).data;
 }
 
 export async function getMemberships(context: RequestContext = {}) {
@@ -163,7 +197,7 @@ export async function getLearnerProgressReport(context: RequestContext = {}) {
 }
 
 export function learnerProgressCsvUrl() {
-  return `${apiUrl}/api/v1/admin/reports/learner-progress.csv`;
+  return `${publicApiUrl}/api/v1/admin/reports/learner-progress.csv`;
 }
 
 export async function getCourses(context: RequestContext = {}) {
@@ -188,6 +222,18 @@ export async function getCoursePlayer(courseId: string, context: RequestContext 
   throwIfApiError(response, body);
 
   return coursePlayerEnvelopeSchema.parse(body);
+}
+
+export async function getMyCourses(context: RequestContext = {}) {
+  const response = await fetch(`${apiUrl}/api/v1/learning/my-courses`, {
+    cache: "no-store",
+    credentials: "include",
+    headers: requestHeaders(context),
+  });
+  const body: unknown = await response.json();
+  throwIfApiError(response, body);
+
+  return myCoursesEnvelopeSchema.parse(body);
 }
 
 export async function enrolInCourse(courseId: string, idempotencyKey: string) {
@@ -248,7 +294,7 @@ export async function issueCertificate(courseId: string, idempotencyKey: string)
 }
 
 export function certificateDownloadUrl(courseId: string) {
-  return `${apiUrl}/api/v1/learning/courses/${courseId}/certificate/download`;
+  return `${publicApiUrl}/api/v1/learning/courses/${courseId}/certificate/download`;
 }
 
 export async function createTutorJob(courseId: string, question: string, idempotencyKey: string) {
@@ -268,7 +314,7 @@ export async function createTutorJob(courseId: string, question: string, idempot
 }
 
 export function tutorJobEventsUrl(courseId: string, jobId: string) {
-  return `${apiUrl}/api/v1/ai/courses/${courseId}/tutor/jobs/${jobId}/events`;
+  return `${publicApiUrl}/api/v1/ai/courses/${courseId}/tutor/jobs/${jobId}/events`;
 }
 
 export function parseTutorEventMessage(data: string) {

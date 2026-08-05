@@ -1,7 +1,9 @@
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 import { MembersView } from "@/components/admin/members-view";
-import { getBillingPlans, getBillingSubscription, getMemberships } from "@/lib/api";
+import { InvitationPending } from "@/components/app/invitation-pending";
+import { getAuthSession, getBillingPlans, getBillingSubscription, getMemberships } from "@/lib/api";
 import type { BillingPlan, Membership, OrgRole } from "@/lib/schemas";
 
 const starterAdminSeats = 3;
@@ -11,9 +13,18 @@ export default async function AdminMembersPage() {
   const host = requestHeaders.get("host") ?? undefined;
   const cookie = requestHeaders.get("cookie") ?? undefined;
   const context = { cookie, host };
+  const authSession = await loadSession(context);
+
+  if (authSession === null) {
+    redirect("/login");
+  }
+  if (authSession.data.membership === null) {
+    return <InvitationPending session={authSession.data} />;
+  }
+
   let memberships: Membership[] = [];
   let loadError: string | null = null;
-  let viewerRole: OrgRole = "tenant_admin";
+  const viewerRole: OrgRole = authSession.data.membership.org_role;
   let adminSeatsIncluded = starterAdminSeats;
 
   try {
@@ -28,7 +39,6 @@ export default async function AdminMembersPage() {
       subscriptionResponse.data?.plan_slug ?? "starter",
     );
   } catch (error) {
-    viewerRole = "member";
     loadError = error instanceof Error ? error.message : "Members could not be loaded";
   }
 
@@ -47,4 +57,12 @@ export default async function AdminMembersPage() {
 
 function includedAdminSeats(plans: BillingPlan[], planSlug: string) {
   return plans.find((plan) => plan.slug === planSlug)?.included_admin_seats ?? starterAdminSeats;
+}
+
+async function loadSession(context: { cookie?: string; host?: string }) {
+  try {
+    return await getAuthSession(context);
+  } catch {
+    return null;
+  }
 }

@@ -13,6 +13,7 @@ from app.learning.schemas import (
     EnrolmentResponse,
     LessonProgressRequest,
     LessonProgressResponse,
+    MyCoursesResponse,
     QuizAttemptRequest,
     QuizAttemptResponse,
 )
@@ -22,6 +23,7 @@ from app.learning.services import (
     get_certificate_pdf,
     get_course_player,
     issue_certificate,
+    list_my_courses,
     submit_quiz_attempt,
     update_lesson_progress,
 )
@@ -57,6 +59,15 @@ async def get_course_player_route(
     principal: ReadPrincipal,
 ) -> Envelope[CoursePlayerResponse]:
     response = await get_course_player(session, learner_id=principal.user_id, course_id=course_id)
+    return Envelope(data=response, error=None, meta=Meta.current())
+
+
+@router.get("/my-courses")
+async def list_my_courses_route(
+    session: SessionDep,
+    principal: ReadPrincipal,
+) -> Envelope[MyCoursesResponse]:
+    response = await list_my_courses(session, user_id=principal.user_id)
     return Envelope(data=response, error=None, meta=Meta.current())
 
 

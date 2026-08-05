@@ -79,3 +79,22 @@ class CoursePlayerResponse(BaseModel):
     title: str
     status: str
     sections: list[PlayerSection]
+
+
+class CourseProgressSummary(BaseModel):
+    completed_lessons: int
+    total_lessons: int
+    percent_complete: int
+
+
+class MyCourseResponse(BaseModel):
+    course_id: UUID
+    title: str
+    slug: str
+    status: str
+    course_role: str
+    progress: CourseProgressSummary | None = None
+
+
+class MyCoursesResponse(BaseModel):
+    courses: list[MyCourseResponse]

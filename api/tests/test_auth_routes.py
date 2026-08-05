@@ -21,9 +21,11 @@ def test_auth_routes_are_registered_under_api_v1() -> None:
     assert "/api/v1/auth/magic-link/verify" in paths
     assert "/api/v1/auth/password-reset" in paths
     assert "/api/v1/auth/password-reset/complete" in paths
+    assert "/api/v1/auth/invitations/{token}" in paths
     assert "/api/v1/auth/invitations/accept" in paths
     assert "/api/v1/auth/refresh" in paths
     assert "/api/v1/auth/logout" in paths
+    assert "/api/v1/auth/session" in paths
 
 
 def test_auth_cookies_are_httponly_secure_samesite_lax() -> None:

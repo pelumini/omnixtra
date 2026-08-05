@@ -32,6 +32,9 @@ export function AppShell({ branding, children, viewerRole }: AppShellProps) {
             {branding.tenant_name}
           </span>
           <nav className="ml-auto flex items-center gap-4 text-sm text-slate-600">
+            <Link className="hover:text-[var(--primary)]" href="/my-courses">
+              My Courses
+            </Link>
             <Link className="hover:text-[var(--primary)]" href="/admin/courses">
               Courses
             </Link>

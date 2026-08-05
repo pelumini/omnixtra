@@ -36,6 +36,19 @@ def create_app() -> FastAPI:
     application.include_router(tenancy_router, prefix="/api/v1")
     application.include_router(api_router, prefix="/api/v1")
 
+    @application.get("/", include_in_schema=False)
+    async def root() -> Envelope[dict[str, str]]:
+        return Envelope(
+            data={
+                "service": settings.app_name,
+                "status": "ok",
+                "health": "/health",
+                "docs": "/docs",
+            },
+            error=None,
+            meta=Meta.current(),
+        )
+
     @application.get("/health", tags=["system"])
     async def health() -> Envelope[dict[str, str]]:
         return Envelope(data={"status": "ok"}, error=None, meta=Meta.current())

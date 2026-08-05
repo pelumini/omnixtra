@@ -1,5 +1,5 @@
-import { AuthPanel } from "@/components/auth/auth-panel";
+import { redirect } from "next/navigation";
 
 export default function AuthPage() {
-  return <AuthPanel />;
+  redirect("/login");
 }

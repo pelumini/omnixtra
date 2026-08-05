@@ -1,4 +1,9 @@
-from app.auth.dependencies import AuthPrincipal, require_permission
+from app.auth.dependencies import (
+    AuthenticatedPrincipal,
+    AuthPrincipal,
+    require_authenticated_principal,
+    require_permission,
+)
 from app.auth.models import (
     AuthToken,
     AuthTokenPurpose,
@@ -17,6 +22,7 @@ __all__ = [
     "AuthPrincipal",
     "AuthToken",
     "AuthTokenPurpose",
+    "AuthenticatedPrincipal",
     "OrgRole",
     "RefreshSession",
     "SSOIdentityProvider",
@@ -25,6 +31,7 @@ __all__ = [
     "SSOProviderStatus",
     "User",
     "UserStatus",
+    "require_authenticated_principal",
     "require_permission",
     "router",
 ]

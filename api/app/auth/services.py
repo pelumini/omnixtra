@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from secrets import token_urlsafe
+from typing import Literal, cast
 from uuid import UUID
 
 from sqlalchemy import select
@@ -17,9 +18,18 @@ from app.auth.models import (
     User,
     UserStatus,
 )
-from app.auth.schemas import AuthenticatedUser, AuthResponse, InvitationAcceptRequest
+from app.auth.schemas import (
+    AuthenticatedUser,
+    AuthResponse,
+    InvitationAcceptRequest,
+    InvitationPreviewResponse,
+    SessionMembership,
+    SessionResponse,
+    SessionUser,
+)
 from app.core.exceptions import AuthenticationError, NotFoundError, ValidationAppError
 from app.core.security import create_access_token, hash_password, verify_password
+from app.tenancy.models import Tenant
 
 
 @dataclass(frozen=True)
@@ -32,6 +42,9 @@ class IssuedAuthToken:
 class AuthSession:
     response: AuthResponse
     refresh_token: str
+
+
+SessionOrgRole = Literal["tenant_admin", "member"]
 
 
 async def login(session: AsyncSession, tenant_id: UUID, email: str, password: str) -> AuthResponse:
@@ -137,6 +150,31 @@ async def accept_invitation(
     )
     await session.commit()
     return AuthSession(response=response, refresh_token=refresh_token)
+
+
+async def preview_invitation(
+    session: AsyncSession,
+    tenant_id: UUID,
+    raw_token: str,
+) -> InvitationPreviewResponse | None:
+    invitation = await session.scalar(
+        select(Invitation).where(
+            Invitation.tenant_id == tenant_id,
+            Invitation.token_hash == hash_auth_token(raw_token),
+        ),
+    )
+    now = datetime.now(UTC)
+    if invitation is None or invitation.expires_at <= now or invitation.used_at is not None:
+        return None
+
+    tenant = await session.get(Tenant, tenant_id)
+    if tenant is None:
+        return None
+
+    return InvitationPreviewResponse(
+        organization_name=tenant.name,
+        email=invitation.email,
+    )
 
 
 async def verify_magic_link(
@@ -256,6 +294,40 @@ async def logout_refresh_session(
         return
     refresh_session.revoked_at = datetime.now(UTC)
     await session.commit()
+
+
+async def get_auth_session(
+    session: AsyncSession,
+    *,
+    user_id: UUID,
+    tenant_id: UUID,
+) -> SessionResponse:
+    user = await _active_user(session, user_id)
+    if user.tenant_id != tenant_id:
+        msg = "invalid access token"
+        raise AuthenticationError(msg)
+    membership = await session.scalar(
+        select(Membership).where(
+            Membership.tenant_id == tenant_id,
+            Membership.user_id == user.id,
+            Membership.deleted_at.is_(None),
+        ),
+    )
+    return SessionResponse(
+        user=SessionUser(
+            id=str(user.id),
+            email=user.email,
+            full_name=user.full_name,
+        ),
+        membership=(
+            None
+            if membership is None
+            else SessionMembership(
+                tenant_id=str(membership.tenant_id),
+                org_role=cast("SessionOrgRole", membership.org_role),
+            )
+        ),
+    )
 
 
 def hash_auth_token(raw_token: str) -> str:
