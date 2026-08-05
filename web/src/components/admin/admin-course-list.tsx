@@ -7,16 +7,23 @@ import type { FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { createCourse } from "@/lib/api";
+import { canCreateCourse } from "@/lib/permissions";
 import type { Course } from "@/lib/schemas";
+import type { OrgRole } from "@/lib/schemas";
 
 type AdminCourseListProps = {
   initialCourses: Course[];
   loadError: string | null;
+  viewerRole?: OrgRole;
 };
 
 const statusTabs = ["all", "draft", "published", "archived"] as const;
 
-export function AdminCourseList({ initialCourses, loadError }: AdminCourseListProps) {
+export function AdminCourseList({
+  initialCourses,
+  loadError,
+  viewerRole = "tenant_admin",
+}: AdminCourseListProps) {
   const [courses, setCourses] = useState(initialCourses);
   const [status, setStatus] = useState<(typeof statusTabs)[number]>("all");
   const [message, setMessage] = useState(loadError);
@@ -76,43 +83,50 @@ export function AdminCourseList({ initialCourses, loadError }: AdminCourseListPr
       ) : null}
 
       <section className="grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
-        <form className="grid content-start gap-4 border border-[var(--border)] bg-white p-4" onSubmit={handleCreate}>
-          <div className="flex items-center gap-2">
-            <FilePlus2 aria-hidden="true" className="size-4 text-gray-500" />
-            <h2 className="text-sm font-semibold">New Course</h2>
-          </div>
-          <label className="grid gap-1 text-sm font-medium">
-            Title
-            <input
-              className="h-10 border border-[var(--border)] px-3 text-sm font-normal outline-none focus:border-[var(--primary)]"
-              maxLength={200}
-              minLength={3}
-              name="title"
-              required
-            />
-          </label>
-          <label className="grid gap-1 text-sm font-medium">
-            Slug
-            <input
-              className="h-10 border border-[var(--border)] px-3 text-sm font-normal outline-none focus:border-[var(--primary)]"
-              name="slug"
-              pattern="^[a-z0-9][a-z0-9-]{1,118}[a-z0-9]$"
-              required
-            />
-          </label>
-          <label className="grid gap-1 text-sm font-medium">
-            Description
-            <textarea
-              className="min-h-24 resize-y border border-[var(--border)] px-3 py-2 text-sm font-normal outline-none focus:border-[var(--primary)]"
-              maxLength={2000}
-              name="description"
-            />
-          </label>
-          <Button className="gap-2" disabled={isPending} type="submit">
-            <FilePlus2 aria-hidden="true" className="size-4" />
-            Create
-          </Button>
-        </form>
+        {canCreateCourse(viewerRole) ? (
+          <form
+            className="grid content-start gap-4 border border-[var(--border)] bg-white p-4"
+            onSubmit={handleCreate}
+          >
+            <div className="flex items-center gap-2">
+              <FilePlus2 aria-hidden="true" className="size-4 text-gray-500" />
+              <h2 className="text-sm font-semibold">New Course</h2>
+            </div>
+            <label className="grid gap-1 text-sm font-medium">
+              Title
+              <input
+                className="h-10 border border-[var(--border)] px-3 text-sm font-normal outline-none focus:border-[var(--primary)]"
+                maxLength={200}
+                minLength={3}
+                name="title"
+                required
+              />
+            </label>
+            <label className="grid gap-1 text-sm font-medium">
+              Slug
+              <input
+                className="h-10 border border-[var(--border)] px-3 text-sm font-normal outline-none focus:border-[var(--primary)]"
+                name="slug"
+                pattern="^[a-z0-9][a-z0-9-]{1,118}[a-z0-9]$"
+                required
+              />
+            </label>
+            <label className="grid gap-1 text-sm font-medium">
+              Description
+              <textarea
+                className="min-h-24 resize-y border border-[var(--border)] px-3 py-2 text-sm font-normal outline-none focus:border-[var(--primary)]"
+                maxLength={2000}
+                name="description"
+              />
+            </label>
+            <Button className="gap-2" disabled={isPending} type="submit">
+              <FilePlus2 aria-hidden="true" className="size-4" />
+              Create
+            </Button>
+          </form>
+        ) : (
+          <div className="hidden lg:block" />
+        )}
 
         <section className="grid content-start gap-4">
           <div className="flex flex-wrap gap-2">

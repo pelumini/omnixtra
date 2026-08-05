@@ -1090,7 +1090,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | Sprint 5: Billing, Branding, Analytics, and MVP Polish | Complete | 15 / 15 | Sprint 5 audit remediation is complete: unsigned billing webhook removed, signed Stripe webhook negative tests and signed-path coverage added, CSV cells neutralized, Sprint 5 smoke specs pass, and Docker-backed integration suite passes against PostgreSQL 16 + pgvector with RLS. |
 | MVP Readiness Remediation | Complete | 6 / 6 | AI tutor tenant/user rate limits, monthly token budget reservation, env settings, frontend MVP journey coverage, local integration rerun hardening, and recorded manual readiness evidence are complete. |
 | ADR-003 Identity, Membership, and Authorization Refactor | Complete | 14 / 14 | `/auth/signup` is retired; `/tenants` creates organizations; memberships and invitations are tenant-owned; org authorization reads membership; enrolments carry course roles; billing admin-seat counts read memberships; and Docker-backed integration verification passes against PostgreSQL 16 + pgvector with RLS. |
-| Frontend Redesign for ADR-003 Identity Model | Not started | 0 / 8 | Next frontend workstream: redesign tenant creation, invitation acceptance, tenant-admin user management, membership-aware navigation, course-role-aware authoring access, learner course access, billing/admin-seat feedback, and polished onboarding flows against the new backend contract. |
+| Frontend Redesign for ADR-003 Identity Model | Complete | 8 / 8 | Tenant creation, invitation acceptance, member management, conservative/role-aware navigation foundation, course-role authoring gates, learner-safe course player surface, admin-seat feedback, component permission tests, bounded Playwright runner, and browser permission-contract specs with break-test evidence are in place. |
 | Phase 2: Months 4-6 | Not started | 0 / 11 | Post-MVP expansion. |
 | Phase 3: Months 7-9 | Not started | 0 / 9 | Post-MVP platform/compliance expansion. |
 
@@ -1411,14 +1411,14 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 
 ### Frontend Redesign for ADR-003 Identity Model
 
-- [ ] Replace broad signup UX with dedicated tenant creation flow backed by `POST /api/v1/tenants`.
-- [ ] Add invitation acceptance UX backed by `POST /api/v1/auth/invitations/accept`.
-- [ ] Redesign tenant-admin user management around memberships and invitations.
-- [ ] Make navigation and shells membership-aware for `tenant_admin` versus `member`.
-- [ ] Make course authoring access course-role-aware for `course_owner`, `facilitator`, and `learner`.
-- [ ] Align learner course access with enrolment-scoped permissions and no-leak backend responses.
-- [ ] Surface billing/admin-seat limit feedback during tenant-admin invitations.
-- [ ] Rework onboarding and regression tests around the new identity, membership, and course-role model.
+- [x] Replace broad signup UX with dedicated tenant creation flow backed by `POST /api/v1/tenants`.
+- [x] Add invitation acceptance UX backed by `POST /api/v1/auth/invitations/accept`.
+- [x] Redesign tenant-admin user management around memberships and invitations.
+- [x] Make navigation and shells membership-aware for `tenant_admin` versus `member`.
+- [x] Make course authoring access course-role-aware for `course_owner`, `facilitator`, and `learner`.
+- [x] Align learner course access with enrolment-scoped permissions and no-leak backend responses.
+- [x] Surface billing/admin-seat limit feedback during tenant-admin invitations.
+- [x] Rework onboarding and regression tests around the new identity, membership, and course-role model. Browser permission-contract specs cover `tenant_admin`, `member`, `course_owner`, and `learner` states through deterministic E2E fixtures, and targeted break-tests prove the gates fail red when removed.
 
 ### Phase 2: Months 4-6
 

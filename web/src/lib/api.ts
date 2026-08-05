@@ -1,6 +1,7 @@
 import {
   blockCreateRequestSchema,
   blockEnvelopeSchema,
+  billingSubscriptionEnvelopeSchema,
   billingPlansEnvelopeSchema,
   certificateEnvelopeSchema,
   courseCompletionAnalyticsEnvelopeSchema,
@@ -13,7 +14,11 @@ import {
   errorBodySchema,
   healthEnvelopeSchema,
   authEnvelopeSchema,
+  invitationAcceptRequestSchema,
+  invitationCreateEnvelopeSchema,
+  invitationCreateRequestSchema,
   loginRequestSchema,
+  membershipsEnvelopeSchema,
   lessonCreateRequestSchema,
   lessonEnvelopeSchema,
   lessonProgressEnvelopeSchema,
@@ -24,8 +29,9 @@ import {
   quizAttemptEnvelopeSchema,
   quizAttemptRequestSchema,
   sectionCreateRequestSchema,
-  signupRequestSchema,
   sectionEnvelopeSchema,
+  tenantCreateEnvelopeSchema,
+  tenantCreateRequestSchema,
   tenantBrandingEnvelopeSchema,
   tutorJobEnvelopeSchema,
   tutorEventSchema,
@@ -33,11 +39,13 @@ import {
 import type {
   CourseCreateRequest,
   CourseUpdateRequest,
+  InvitationAcceptRequest,
+  InvitationCreateRequest,
   LessonCreateRequest,
   LessonProgressRequest,
   MediaAssetCreateRequest,
   SectionCreateRequest,
-  SignupRequest,
+  TenantCreateRequest,
   LoginRequest,
 } from "@/lib/schemas";
 
@@ -55,11 +63,11 @@ export async function getHealth() {
   return healthEnvelopeSchema.parse(body);
 }
 
-export async function signup(request: SignupRequest) {
-  const body = signupRequestSchema.parse(request);
-  const response = await postJson("/api/v1/auth/signup", body);
+export async function createTenant(request: TenantCreateRequest) {
+  const body = tenantCreateRequestSchema.parse(request);
+  const response = await postJson("/api/v1/tenants", body);
 
-  return authEnvelopeSchema.parse(response);
+  return tenantCreateEnvelopeSchema.parse(response);
 }
 
 export async function login(request: LoginRequest) {
@@ -67,6 +75,32 @@ export async function login(request: LoginRequest) {
   const response = await postJson("/api/v1/auth/login", body);
 
   return authEnvelopeSchema.parse(response);
+}
+
+export async function acceptInvitation(request: InvitationAcceptRequest, context: RequestContext = {}) {
+  const body = invitationAcceptRequestSchema.parse(request);
+  const response = await postJson("/api/v1/auth/invitations/accept", body, requestHeaders(context));
+
+  return authEnvelopeSchema.parse(response);
+}
+
+export async function getMemberships(context: RequestContext = {}) {
+  const response = await fetch(`${apiUrl}/api/v1/tenant/memberships`, {
+    cache: "no-store",
+    credentials: "include",
+    headers: requestHeaders(context),
+  });
+  const body: unknown = await response.json();
+  throwIfApiError(response, body);
+
+  return membershipsEnvelopeSchema.parse(body);
+}
+
+export async function createInvitation(request: InvitationCreateRequest, context: RequestContext = {}) {
+  const body = invitationCreateRequestSchema.parse(request);
+  const response = await postJson("/api/v1/tenant/invitations", body, requestHeaders(context));
+
+  return invitationCreateEnvelopeSchema.parse(response);
 }
 
 export async function getTenantBranding(context: RequestContext = {}) {
@@ -90,6 +124,18 @@ export async function getBillingPlans(context: RequestContext = {}) {
   throwIfApiError(response, body);
 
   return billingPlansEnvelopeSchema.parse(body);
+}
+
+export async function getBillingSubscription(context: RequestContext = {}) {
+  const response = await fetch(`${apiUrl}/api/v1/billing/subscription`, {
+    cache: "no-store",
+    credentials: "include",
+    headers: requestHeaders(context),
+  });
+  const body: unknown = await response.json();
+  throwIfApiError(response, body);
+
+  return billingSubscriptionEnvelopeSchema.parse(body);
 }
 
 export async function getCompletionAnalytics(context: RequestContext = {}) {

@@ -45,6 +45,25 @@ export const billingPlansEnvelopeSchema = z.object({
   meta: metaSchema,
 });
 
+export const billingSubscriptionSchema = z.object({
+  id: z.string().uuid(),
+  plan_slug: z.string(),
+  status: z.string(),
+  stripe_customer_id: z.string().nullable(),
+  stripe_subscription_id: z.string().nullable(),
+  current_period_start: z.string().datetime().nullable(),
+  current_period_end: z.string().datetime().nullable(),
+  trial_ends_at: z.string().datetime().nullable(),
+  cancel_at_period_end: z.boolean(),
+  seats_used: z.number().int().nonnegative(),
+});
+
+export const billingSubscriptionEnvelopeSchema = z.object({
+  data: billingSubscriptionSchema.nullable(),
+  error: z.null(),
+  meta: metaSchema,
+});
+
 export const courseCompletionAnalyticsSchema = z.object({
   course_id: z.string().uuid(),
   course_title: z.string(),
@@ -89,9 +108,17 @@ export const errorBodySchema = z.object({
   details: z.array(errorDetailSchema),
 });
 
-export const signupRequestSchema = z.object({
+export const orgRoleSchema = z.enum(["tenant_admin", "member"]);
+export const courseRoleSchema = z.enum(["course_owner", "facilitator", "learner"]);
+
+export const tenantCreateRequestSchema = z.object({
   tenant_name: z.string().min(2).max(200),
+  tenant_description: z.string().max(1000).nullable().optional(),
   tenant_slug: z.string().regex(/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/),
+  logo_url: z.string().url().nullable().optional(),
+  primary_color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  locale: z.string().min(2).max(16).optional(),
+  time_zone: z.string().min(1).max(64).optional(),
   full_name: z.string().min(2).max(200),
   email: z.string().email(),
   password: z.string().min(12).max(128),
@@ -107,7 +134,7 @@ export const authenticatedUserSchema = z.object({
   tenant_id: z.string().uuid(),
   email: z.string().email(),
   full_name: z.string(),
-  role: z.string(),
+  role: orgRoleSchema,
 });
 
 export const authResponseSchema = z.object({
@@ -118,6 +145,56 @@ export const authResponseSchema = z.object({
 
 export const authEnvelopeSchema = z.object({
   data: authResponseSchema,
+  error: z.null(),
+  meta: metaSchema,
+});
+
+export const tenantCreateResponseSchema = z.object({
+  tenant_id: z.string().uuid(),
+  tenant_slug: z.string(),
+  user_id: z.string().uuid(),
+  membership_id: z.string().uuid(),
+  access_token: z.string(),
+  token_type: z.literal("bearer"),
+});
+
+export const tenantCreateEnvelopeSchema = z.object({
+  data: tenantCreateResponseSchema,
+  error: z.null(),
+  meta: metaSchema,
+});
+
+export const invitationCreateRequestSchema = z.object({
+  email: z.string().email(),
+  org_role: orgRoleSchema.default("member"),
+});
+
+export const invitationCreateResponseSchema = z.object({
+  accepted: z.boolean(),
+  token: z.string().nullable(),
+});
+
+export const invitationCreateEnvelopeSchema = z.object({
+  data: invitationCreateResponseSchema,
+  error: z.null(),
+  meta: metaSchema,
+});
+
+export const invitationAcceptRequestSchema = z.object({
+  token: z.string().min(32).max(256),
+  email: z.string().email(),
+  full_name: z.string().min(2).max(200),
+  password: z.string().min(12).max(128),
+});
+
+export const membershipSchema = z.object({
+  id: z.string().uuid(),
+  user_id: z.string().uuid(),
+  org_role: orgRoleSchema,
+});
+
+export const membershipsEnvelopeSchema = z.object({
+  data: z.array(membershipSchema),
   error: z.null(),
   meta: metaSchema,
 });
@@ -318,6 +395,7 @@ export const enrolmentSchema = z.object({
   id: z.string().uuid(),
   learner_id: z.string().uuid(),
   course_id: z.string().uuid(),
+  course_role: courseRoleSchema,
   status: z.string(),
 });
 
@@ -420,13 +498,17 @@ export const tutorEventSchema = z.object({
 export type Block = z.infer<typeof blockSchema>;
 export type AuthResponse = z.infer<typeof authResponseSchema>;
 export type BillingPlan = z.infer<typeof billingPlanSchema>;
+export type BillingSubscription = z.infer<typeof billingSubscriptionSchema>;
 export type Course = z.infer<typeof courseSchema>;
 export type CourseCompletionAnalytics = z.infer<typeof courseCompletionAnalyticsSchema>;
 export type CourseCompletion = z.infer<typeof courseCompletionSchema>;
 export type CourseCreateRequest = z.infer<typeof courseCreateRequestSchema>;
 export type CoursePlayer = z.infer<typeof coursePlayerSchema>;
+export type CourseRole = z.infer<typeof courseRoleSchema>;
 export type CourseUpdateRequest = z.infer<typeof courseUpdateRequestSchema>;
 export type Enrolment = z.infer<typeof enrolmentSchema>;
+export type InvitationAcceptRequest = z.infer<typeof invitationAcceptRequestSchema>;
+export type InvitationCreateRequest = z.infer<typeof invitationCreateRequestSchema>;
 export type LoginRequest = z.infer<typeof loginRequestSchema>;
 export type Lesson = z.infer<typeof lessonSchema>;
 export type LessonCreateRequest = z.infer<typeof lessonCreateRequestSchema>;
@@ -439,7 +521,10 @@ export type Certificate = z.infer<typeof certificateSchema>;
 export type QuizAttempt = z.infer<typeof quizAttemptSchema>;
 export type Section = z.infer<typeof sectionSchema>;
 export type SectionCreateRequest = z.infer<typeof sectionCreateRequestSchema>;
-export type SignupRequest = z.infer<typeof signupRequestSchema>;
+export type Membership = z.infer<typeof membershipSchema>;
+export type OrgRole = z.infer<typeof orgRoleSchema>;
 export type TenantBranding = z.infer<typeof tenantBrandingSchema>;
+export type TenantCreateRequest = z.infer<typeof tenantCreateRequestSchema>;
+export type TenantCreateResponse = z.infer<typeof tenantCreateResponseSchema>;
 export type TutorJob = z.infer<typeof tutorJobSchema>;
 export type TutorEvent = z.infer<typeof tutorEventSchema>;

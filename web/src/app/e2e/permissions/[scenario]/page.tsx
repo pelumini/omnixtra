@@ -1,0 +1,127 @@
+import { notFound } from "next/navigation";
+
+import { AdminCourseList } from "@/components/admin/admin-course-list";
+import { CourseBuilder } from "@/components/admin/course-builder";
+import { MembersView } from "@/components/admin/members-view";
+import { AppShell } from "@/components/app/app-shell";
+import { LearnerCoursePlayer } from "@/components/learning/learner-course-player";
+import type { Course, CoursePlayer, Membership, TenantBranding } from "@/lib/schemas";
+
+type PermissionFixturePageProps = {
+  params: Promise<{
+    scenario: string;
+  }>;
+};
+
+const branding: TenantBranding = {
+  locale: "en",
+  logo_url: null,
+  primary_color: "#116149",
+  tenant_name: "Acme Learning",
+  time_zone: "UTC",
+};
+
+const course: Course = {
+  description: "Role-gated onboarding course",
+  id: "00000000-0000-0000-0000-000000000901",
+  slug: "role-gated-onboarding",
+  status: "draft",
+  title: "Role Gated Onboarding",
+};
+
+const memberships: Membership[] = [
+  {
+    id: "00000000-0000-0000-0000-000000000911",
+    org_role: "tenant_admin",
+    user_id: "00000000-0000-0000-0000-000000000921",
+  },
+  {
+    id: "00000000-0000-0000-0000-000000000912",
+    org_role: "tenant_admin",
+    user_id: "00000000-0000-0000-0000-000000000922",
+  },
+  {
+    id: "00000000-0000-0000-0000-000000000913",
+    org_role: "tenant_admin",
+    user_id: "00000000-0000-0000-0000-000000000923",
+  },
+];
+
+const player: CoursePlayer = {
+  course_id: course.id,
+  sections: [
+    {
+      id: "00000000-0000-0000-0000-000000000931",
+      lessons: [
+        {
+          id: "00000000-0000-0000-0000-000000000941",
+          percent_complete: 25,
+          position: 0,
+          title: "Learner Welcome",
+        },
+      ],
+      position: 0,
+      title: "Getting Started",
+    },
+  ],
+  status: "published",
+  title: "Learner Course A",
+};
+
+export default async function PermissionFixturePage({ params }: PermissionFixturePageProps) {
+  const { scenario } = await params;
+
+  if (scenario === "admin") {
+    return (
+      <AppShell branding={branding} viewerRole="tenant_admin">
+        <AdminCourseList initialCourses={[course]} loadError={null} viewerRole="tenant_admin" />
+      </AppShell>
+    );
+  }
+
+  if (scenario === "member") {
+    return (
+      <AppShell branding={branding} viewerRole="member">
+        <AdminCourseList initialCourses={[course]} loadError={null} viewerRole="member" />
+      </AppShell>
+    );
+  }
+
+  if (scenario === "member-direct-members") {
+    return (
+      <MembersView
+        initialMembers={memberships}
+        loadError={null}
+        seats={{ adminSeatsIncluded: 3, adminSeatsUsed: 3 }}
+        viewerRole="member"
+      />
+    );
+  }
+
+  if (scenario === "admin-seat-limit") {
+    return (
+      <MembersView
+        initialInviteOpen
+        initialInviteRole="tenant_admin"
+        initialMembers={memberships}
+        loadError={null}
+        seats={{ adminSeatsIncluded: 3, adminSeatsUsed: 3 }}
+        viewerRole="tenant_admin"
+      />
+    );
+  }
+
+  if (scenario === "learner-course") {
+    return <LearnerCoursePlayer courseId={course.id} initialPlayer={player} loadError={null} />;
+  }
+
+  if (scenario === "learner-builder") {
+    return <CourseBuilder course={course} courseRole="learner" />;
+  }
+
+  if (scenario === "course-owner-builder") {
+    return <CourseBuilder course={course} courseRole="course_owner" />;
+  }
+
+  notFound();
+}

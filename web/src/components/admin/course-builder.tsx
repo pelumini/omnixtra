@@ -17,6 +17,7 @@ import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import type { FormEvent } from "react";
 
+import { DeniedState } from "@/components/app/denied-state";
 import { Button } from "@/components/ui/button";
 import {
   createBlock,
@@ -26,10 +27,13 @@ import {
   publishCourse,
   updateCourse,
 } from "@/lib/api";
+import { canAuthorCourse } from "@/lib/permissions";
 import type { Block, Course, Lesson, MediaAsset, Section } from "@/lib/schemas";
+import type { CourseRole } from "@/lib/schemas";
 
 type CourseBuilderProps = {
   course: Course;
+  courseRole?: CourseRole;
 };
 
 const blockTypes = [
@@ -39,7 +43,10 @@ const blockTypes = [
   { value: "quiz", label: "Quiz", icon: ListChecks },
 ] as const;
 
-export function CourseBuilder({ course: initialCourse }: CourseBuilderProps) {
+export function CourseBuilder({
+  course: initialCourse,
+  courseRole = "course_owner",
+}: CourseBuilderProps) {
   const [course, setCourse] = useState(initialCourse);
   const [sections, setSections] = useState<Section[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -179,6 +186,15 @@ export function CourseBuilder({ course: initialCourse }: CourseBuilderProps) {
         setMessage(errorMessage(error, "Course could not be published"));
       }
     });
+  }
+
+  if (!canAuthorCourse(courseRole)) {
+    return (
+      <DeniedState
+        description="Authoring this course is available to its course owner. You can still use the learner course player for courses you are enrolled in."
+        title="This course is not yours to edit"
+      />
+    );
   }
 
   return (

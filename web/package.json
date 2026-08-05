@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "e2e": "playwright test",
+    "e2e": "node e2e/run-playwright.mjs",
     "build": "next build",
+    "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"

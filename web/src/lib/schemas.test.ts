@@ -4,17 +4,24 @@ import {
   blockCreateRequestSchema,
   blockContentSchema,
   billingPlansEnvelopeSchema,
+  billingSubscriptionEnvelopeSchema,
   courseCompletionAnalyticsEnvelopeSchema,
   courseCreateRequestSchema,
   courseCompletionEnvelopeSchema,
+  enrolmentEnvelopeSchema,
   coursePageEnvelopeSchema,
   coursePlayerEnvelopeSchema,
   healthEnvelopeSchema,
+  invitationAcceptRequestSchema,
+  invitationCreateEnvelopeSchema,
+  membershipsEnvelopeSchema,
   lessonProgressRequestSchema,
   learnerProgressReportEnvelopeSchema,
   mediaAssetCreateRequestSchema,
   mediaAssetSchema,
   quizAttemptRequestSchema,
+  tenantCreateEnvelopeSchema,
+  tenantCreateRequestSchema,
   tenantBrandingEnvelopeSchema,
   tutorEventSchema,
   tutorJobEnvelopeSchema,
@@ -75,6 +82,80 @@ describe("billingPlansEnvelopeSchema", () => {
         meta: { request_id: "req_test", timestamp: null },
       }).data[0]?.slug,
     ).toBe("starter");
+  });
+});
+
+describe("billingSubscriptionEnvelopeSchema", () => {
+  it("accepts nullable current subscription responses", () => {
+    expect(
+      billingSubscriptionEnvelopeSchema.parse({
+        data: null,
+        error: null,
+        meta: { request_id: "req_test", timestamp: null },
+      }).data,
+    ).toBeNull();
+  });
+});
+
+describe("ADR-003 identity schemas", () => {
+  it("validates tenant creation and invitation payloads", () => {
+    expect(
+      tenantCreateRequestSchema.parse({
+        email: "admin@example.com",
+        full_name: "Admin User",
+        password: "correct horse battery staple",
+        tenant_name: "Acme",
+        tenant_slug: "acme",
+      }).tenant_slug,
+    ).toBe("acme");
+
+    expect(
+      invitationAcceptRequestSchema.parse({
+        email: "member@example.com",
+        full_name: "Member User",
+        password: "correct horse battery staple",
+        token: "x".repeat(32),
+      }).email,
+    ).toBe("member@example.com");
+  });
+
+  it("accepts tenant creation, invitation, and membership envelopes", () => {
+    expect(
+      tenantCreateEnvelopeSchema.parse({
+        data: {
+          access_token: "token",
+          membership_id: "00000000-0000-0000-0000-000000000002",
+          tenant_id: "00000000-0000-0000-0000-000000000001",
+          tenant_slug: "acme",
+          token_type: "bearer",
+          user_id: "00000000-0000-0000-0000-000000000003",
+        },
+        error: null,
+        meta: { request_id: "req_test", timestamp: null },
+      }).data.tenant_slug,
+    ).toBe("acme");
+
+    expect(
+      invitationCreateEnvelopeSchema.parse({
+        data: { accepted: true, token: "raw-token" },
+        error: null,
+        meta: { request_id: "req_test", timestamp: null },
+      }).data.accepted,
+    ).toBe(true);
+
+    expect(
+      membershipsEnvelopeSchema.parse({
+        data: [
+          {
+            id: "00000000-0000-0000-0000-000000000004",
+            org_role: "tenant_admin",
+            user_id: "00000000-0000-0000-0000-000000000003",
+          },
+        ],
+        error: null,
+        meta: { request_id: "req_test", timestamp: null },
+      }).data[0]?.org_role,
+    ).toBe("tenant_admin");
   });
 });
 
@@ -271,6 +352,22 @@ describe("learning workflow schemas", () => {
         meta: { request_id: "req_test", timestamp: null },
       }).data.status,
     ).toBe("completed");
+  });
+
+  it("accepts enrolment course roles", () => {
+    expect(
+      enrolmentEnvelopeSchema.parse({
+        data: {
+          course_id: "00000000-0000-0000-0000-000000000010",
+          course_role: "learner",
+          id: "00000000-0000-0000-0000-000000000015",
+          learner_id: "00000000-0000-0000-0000-000000000014",
+          status: "active",
+        },
+        error: null,
+        meta: { request_id: "req_test", timestamp: null },
+      }).data.course_role,
+    ).toBe("learner");
   });
 });
 

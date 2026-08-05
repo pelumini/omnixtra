@@ -49,17 +49,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <Link className="hover:text-[var(--primary)]" href="/auth">
                 Access
               </Link>
-              <Link className="hover:text-[var(--primary)]" href="/admin">
-                Dashboard
-              </Link>
               <Link className="hover:text-[var(--primary)]" href="/admin/courses">
                 Courses
-              </Link>
-              <Link className="hover:text-[var(--primary)]" href="/onboarding">
-                Onboarding
-              </Link>
-              <Link className="hover:text-[var(--primary)]" href="/pricing">
-                Pricing
               </Link>
             </nav>
           </div>
