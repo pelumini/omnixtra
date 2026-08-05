@@ -74,6 +74,18 @@ class Settings(BaseSettings):
         validation_alias="RESEND_FROM_EMAIL",
     )
     web_app_url: str = Field(default="http://localhost:3000", validation_alias="WEB_APP_URL")
+    cors_allowed_origins: str = Field(
+        default="http://localhost:3000,http://localhost:3001",
+        validation_alias="CORS_ALLOWED_ORIGINS",
+    )
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [
+            origin.strip()
+            for origin in self.cors_allowed_origins.split(",")
+            if origin.strip()
+        ]
 
 
 @lru_cache

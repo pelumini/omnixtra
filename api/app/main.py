@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.admin.routes import router as admin_router
 from app.ai.routes import router as ai_router
@@ -25,6 +26,13 @@ def create_app() -> FastAPI:
     application = FastAPI(title=settings.app_name)
     application.state.settings = settings
     application.add_middleware(RequestContextMiddleware)
+    application.add_middleware(
+        CORSMiddleware,
+        allow_credentials=True,
+        allow_headers=["*"],
+        allow_methods=["*"],
+        allow_origins=settings.cors_origins,
+    )
     register_exception_handlers(application)
     application.include_router(auth_router, prefix="/api/v1")
     application.include_router(admin_router, prefix="/api/v1")
