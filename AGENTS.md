@@ -975,7 +975,30 @@ web/
 - Keep API response parsing at the boundary.
 - Keep tenant branding tokenized.
 
-### 6.3 Key MVP Pages
+### 6.3 Permission-Contract E2E Discipline
+
+Frontend permission specs are part of the product contract, not optional smoke tests.
+
+Rules:
+
+- A permission spec counts only if it fails when the checked guard is removed or bypassed.
+- Hidden permission-gated controls must be absent from the DOM, not merely visually hidden.
+- Direct navigation to a forbidden authoring or admin URL must render the denied state and must not render the protected underlying data.
+- Org-level permission specs must cover `tenant_admin` versus `member` visibility for Members, Billing, and Create Course.
+- Tenant-admin invite specs must prove admin-seat-limit feedback disables invite-as-admin while invite-as-member remains available.
+- Course-level permission specs must cover `course_owner` versus `learner` for authoring entry points and direct builder access.
+- Browser permission specs must run against the real Next app in Playwright. Deterministic E2E fixture routes are acceptable when live auth/user-state setup cannot yet reach a role state, but component-only tests do not close the contract.
+- `npm run e2e` is the canonical local and CI entry point. It must build the app, start a production Next server, run Playwright, tear down the server, and fail through internal timeouts rather than hanging indefinitely.
+- Frontend CI must install Playwright browsers and run `npm run e2e` after lint, typecheck, unit tests, and build.
+
+Current implementation:
+
+- Permission-contract specs live in `web/e2e/permission-contract.spec.ts`.
+- Deterministic browser role fixtures live under `web/src/app/e2e/permissions/[scenario]/page.tsx`.
+- The bounded E2E runner lives at `web/e2e/run-playwright.mjs`.
+- Runner timeouts are configurable with `E2E_BUILD_TIMEOUT_MS`, `E2E_SERVER_TIMEOUT_MS`, and `E2E_TEST_TIMEOUT_MS`.
+
+### 6.4 Key MVP Pages
 
 - Signup and tenant creation.
 - Login and magic link flow.
@@ -1466,7 +1489,7 @@ cd web
 npm test
 npm run lint
 npm run typecheck
-npx playwright test
+npm run e2e
 ```
 
 ### Required Backend Test Suites
@@ -1495,9 +1518,34 @@ npx playwright test
 | `web/tests/course-player.test.tsx` | Player, progress, quiz states |
 | `web/tests/tutor.test.tsx` | SSE tutor UI states |
 | `web/tests/branding.test.tsx` | Tenant theme application |
+| `web/tests/permissions.test.tsx` | Component-level org-role and course-role permission gates |
+| `web/e2e/permission-contract.spec.ts` | Browser-level permission contract for org roles, admin-seat limits, learner denial, and course-owner authoring |
 | `web/e2e/signup-to-course.spec.ts` | Signup to published course |
 | `web/e2e/learner-completion.spec.ts` | Learner completion and certificate |
 | `web/e2e/admin-reporting.spec.ts` | Progress report and CSV export |
+
+### Review 4 Permission-Contract Closure Evidence
+
+Review 4 is integrated into this source of truth as the frontend permission-contract discipline.
+
+Closure evidence:
+
+- Commit `2a274d8` closes the scoped implementation.
+- CI run `30985278700` passed backend and frontend on `main`.
+- Local frontend verification passed with `npm run lint`, `npm run typecheck`, `npm test`, targeted permission E2E, and the full Playwright matrix.
+- Full local E2E matrix after Review 4 remediation ran `33 passed`.
+- GitHub CI frontend job ran `npm ci`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npx playwright install chromium`, and `npm run e2e`.
+
+Break-test evidence:
+
+- Exposing Members/Billing navigation to `member` made `permission-contract.spec.ts` fail.
+- Exposing Create Course to `member` made `permission-contract.spec.ts` fail.
+- Bypassing the `MembersView` admin guard made direct member navigation fail the denied-state assertion.
+- Bypassing admin-seat-limit invite blocking made the seat-limit assertion fail.
+- Bypassing learner builder denial made the learner direct-builder assertion fail.
+- Denying all builders, including `course_owner`, made the owner-positive builder assertion fail.
+
+No Review 4 permission-contract rows remain uncovered.
 
 ### Manual Verification Checklist
 
