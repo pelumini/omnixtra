@@ -183,6 +183,7 @@ function InviteControl({
     reValidateMode: "onChange",
     resolver: zodResolver(inviteMemberFormSchema),
   });
+  const email = watch("email");
   const role = watch("orgRole");
 
   const atAdminLimit = seats.adminSeatsUsed >= seats.adminSeatsIncluded;
@@ -238,7 +239,11 @@ function InviteControl({
       ) : null}
 
       <div className="mt-4 flex items-center gap-2">
-        <SubmitButton className="w-auto" disabled={inviteBlocked} isSubmitting={isSubmitting}>
+        <SubmitButton
+          className="w-auto"
+          disabled={inviteBlocked || email.trim().length === 0}
+          isSubmitting={isSubmitting}
+        >
           Send invitation
         </SubmitButton>
         <button
