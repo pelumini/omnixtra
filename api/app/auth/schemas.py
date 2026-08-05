@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 BEARER_TOKEN_TYPE: Literal["bearer"] = "bearer"  # noqa: S105
 
@@ -55,3 +55,59 @@ class PasswordResetCompleteRequest(BaseModel):
 
 class TokenRequestAccepted(BaseModel):
     accepted: bool
+
+
+class SSOIdentityProviderCreateRequest(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    protocol: Literal["oidc", "saml"]
+    issuer: str | None = Field(default=None, max_length=2048)
+    authorization_url: str | None = Field(default=None, max_length=2048)
+    token_url: str | None = Field(default=None, max_length=2048)
+    jwks_url: str | None = Field(default=None, max_length=2048)
+    metadata_url: str | None = Field(default=None, max_length=2048)
+    entity_id: str | None = Field(default=None, max_length=2048)
+    sso_url: str | None = Field(default=None, max_length=2048)
+    certificate_fingerprint: str | None = Field(default=None, max_length=128)
+    client_id: str | None = Field(default=None, max_length=255)
+    client_secret_ref: str | None = Field(default=None, max_length=255)
+    attribute_mapping: dict[str, str] = Field(
+        default_factory=lambda: {
+            "email": "email",
+            "full_name": "name",
+        },
+    )
+
+    @model_validator(mode="after")
+    def validate_protocol_fields(self) -> "SSOIdentityProviderCreateRequest":
+        if self.protocol == "oidc":
+            missing = [
+                field
+                for field in ("issuer", "authorization_url", "token_url", "jwks_url", "client_id")
+                if getattr(self, field) is None
+            ]
+            if missing:
+                msg = f"OIDC provider missing required fields: {', '.join(missing)}"
+                raise ValueError(msg)
+        if self.protocol == "saml":
+            missing = [
+                field
+                for field in ("entity_id", "sso_url", "certificate_fingerprint")
+                if getattr(self, field) is None
+            ]
+            if missing:
+                msg = f"SAML provider missing required fields: {', '.join(missing)}"
+                raise ValueError(msg)
+        return self
+
+
+class SSOIdentityProviderResponse(BaseModel):
+    id: str
+    name: str
+    protocol: Literal["oidc", "saml"]
+    status: Literal["active", "disabled"]
+    issuer: str | None
+    metadata_url: str | None
+    entity_id: str | None
+    sso_url: str | None
+    client_id: str | None
+    attribute_mapping: dict[str, str]

@@ -1114,7 +1114,7 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 | MVP Readiness Remediation | Complete | 6 / 6 | AI tutor tenant/user rate limits, monthly token budget reservation, env settings, frontend MVP journey coverage, local integration rerun hardening, and recorded manual readiness evidence are complete. |
 | ADR-003 Identity, Membership, and Authorization Refactor | Complete | 14 / 14 | `/auth/signup` is retired; `/tenants` creates organizations; memberships and invitations are tenant-owned; org authorization reads membership; enrolments carry course roles; billing admin-seat counts read memberships; and Docker-backed integration verification passes against PostgreSQL 16 + pgvector with RLS. |
 | Frontend Redesign for ADR-003 Identity Model | Complete | 8 / 8 | Tenant creation, invitation acceptance, member management, conservative/role-aware navigation foundation, course-role authoring gates, learner-safe course player surface, admin-seat feedback, component permission tests, bounded Playwright runner, and browser permission-contract specs with break-test evidence are in place. |
-| Phase 2: Months 4-6 | Not started | 0 / 11 | Post-MVP expansion. |
+| Phase 2: Months 4-6 | In progress | 0 / 11 | Post-MVP expansion started with SSO storage and validation foundation. No Phase 2 top-level capability is complete yet. |
 | Phase 3: Months 7-9 | Not started | 0 / 9 | Post-MVP platform/compliance expansion. |
 
 ### Definition of Done, All Sprints
@@ -1444,6 +1444,21 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] Rework onboarding and regression tests around the new identity, membership, and course-role model. Browser permission-contract specs cover `tenant_admin`, `member`, `course_owner`, and `learner` states through deterministic E2E fixtures, and targeted break-tests prove the gates fail red when removed.
 
 ### Phase 2: Months 4-6
+
+#### Phase 2 SSO Subtask Tracker
+
+| Parent Task | Subtask | Status |
+|---|---|---|
+| SSO with SAML 2.0 and OIDC | Add tenant-owned SSO identity-provider and login-state models | Complete |
+| SSO with SAML 2.0 and OIDC | Add RLS-enabled migration and app-role grants for SSO tables | Complete |
+| SSO with SAML 2.0 and OIDC | Add protocol-specific SSO provider validation schemas | Complete |
+| SSO with SAML 2.0 and OIDC | Add tenant-admin SSO provider management API with audit logging | Not started |
+| SSO with SAML 2.0 and OIDC | Add OIDC authorization-code login initiation and callback validation | Not started |
+| SSO with SAML 2.0 and OIDC | Add SAML login initiation and assertion validation | Not started |
+| SSO with SAML 2.0 and OIDC | Add membership-safe user provisioning/linking from trusted IdP claims | Not started |
+| SSO with SAML 2.0 and OIDC | Add cross-tenant and replay-attack tests for SSO state and callbacks | Not started |
+| SSO with SAML 2.0 and OIDC | Add frontend tenant-admin SSO settings UX | Not started |
+| SSO with SAML 2.0 and OIDC | Add frontend login option and callback states | Not started |
 
 - [ ] SSO with SAML 2.0 and OIDC.
 - [ ] Audit log export.
