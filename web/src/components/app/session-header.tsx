@@ -5,17 +5,20 @@ import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 
 import { logout } from "@/lib/api";
+import { e2eAdminSession, e2eMemberSession } from "@/lib/e2e-fixtures";
 import { canManageBilling, canManageMembers } from "@/lib/permissions";
 import { sessionResponseSchema, type SessionResponse, type TenantBranding } from "@/lib/schemas";
 
 type SessionHeaderProps = {
   branding: TenantBranding;
   initialSession: SessionResponse | null;
+  fixtureMode?: boolean;
   refreshSession?: boolean;
 };
 
 export function SessionHeader({
   branding,
+  fixtureMode = false,
   initialSession,
   refreshSession = true,
 }: SessionHeaderProps) {
@@ -23,6 +26,20 @@ export function SessionHeader({
   const membership = session?.membership ?? null;
 
   useEffect(() => {
+    if (fixtureMode) {
+      const path = window.location.pathname;
+      if (
+        path === "/e2e/permissions/member" ||
+        path === "/e2e/permissions/member-direct-members" ||
+        path === "/e2e/permissions/learner-course" ||
+        path === "/e2e/permissions/learner-builder"
+      ) {
+        setSession(e2eMemberSession);
+        return undefined;
+      }
+      setSession(e2eAdminSession);
+      return undefined;
+    }
     if (!refreshSession) {
       return undefined;
     }
@@ -52,7 +69,7 @@ export function SessionHeader({
     return () => {
       cancelled = true;
     };
-  }, [refreshSession]);
+  }, [fixtureMode, refreshSession]);
 
   async function signOut() {
     try {

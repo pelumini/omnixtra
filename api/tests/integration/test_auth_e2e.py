@@ -181,6 +181,7 @@ def _cookies(headers: list[str]) -> SimpleCookie[str]:
 
 
 def _create_tenant(client: TestClient, slug: str) -> dict[str, str]:
+    client.cookies.clear()
     response = client.post(
         "/api/v1/tenants",
         json={
@@ -193,6 +194,7 @@ def _create_tenant(client: TestClient, slug: str) -> dict[str, str]:
         headers={"host": "localhost"},
     )
     assert response.status_code == 200, response.text
+    client.cookies.clear()
     data = response.json()["data"]
     return {
         "slug": slug,
@@ -208,6 +210,7 @@ def _invite(
     email: str,
     org_role: str,
 ) -> object:
+    client.cookies.clear()
     return client.post(
         "/api/v1/tenant/invitations",
         json={"email": email, "org_role": org_role},
@@ -219,6 +222,7 @@ def _invite(
 
 
 def _accept_invitation(client: TestClient, slug: str, token: str, email: str) -> object:
+    client.cookies.clear()
     return client.post(
         "/api/v1/auth/invitations/accept",
         json={

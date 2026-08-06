@@ -36,6 +36,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body style={{ "--primary": branding.primary_color } as CSSProperties}>
         <SessionHeader
           branding={branding}
+          fixtureMode={e2eFixturesEnabled()}
           initialSession={session}
           refreshSession={!e2eFixturesEnabled()}
         />

@@ -68,6 +68,7 @@ async def create_tenant(
     set_tenant_id(str(tenant.id))
     try:
         user = User(
+            tenant_id=tenant.id,
             email=str(request.email).strip().lower(),
             full_name=request.full_name,
             password_hash=hash_password(request.password),
@@ -76,12 +77,17 @@ async def create_tenant(
         )
         session.add(user)
         await session.flush()
-        membership = Membership(user_id=user.id, org_role=OrgRole.tenant_admin.value)
+        membership = Membership(
+            tenant_id=tenant.id,
+            user_id=user.id,
+            org_role=OrgRole.tenant_admin.value,
+        )
         session.add(membership)
         await session.flush()
         refresh_token = token_urlsafe(48)
         session.add(
             RefreshSession(
+                tenant_id=tenant.id,
                 user_id=user.id,
                 token_hash=hash_auth_token(refresh_token),
                 expires_at=datetime.now(UTC) + timedelta(days=30),
@@ -143,6 +149,7 @@ async def create_invitation(
             return TenantInvitationCreateResponse(accepted=True, token=None)
     raw_token = token_urlsafe(32)
     invitation = Invitation(
+        tenant_id=UUID(require_tenant_id()),
         email=normalized_email,
         org_role=request.org_role,
         token_hash=hash_auth_token(raw_token),

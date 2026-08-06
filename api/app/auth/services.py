@@ -119,7 +119,13 @@ async def accept_invitation(
             select(Membership).where(Membership.user_id == existing_user.id),
         )
         if existing_membership is None:
-            session.add(Membership(user_id=existing_user.id, org_role=invitation.org_role))
+            session.add(
+                Membership(
+                    tenant_id=tenant_id,
+                    user_id=existing_user.id,
+                    org_role=invitation.org_role,
+                ),
+            )
             await session.flush()
         response = await _auth_response(session, existing_user)
         refresh_token = await _create_refresh_session(
@@ -132,6 +138,7 @@ async def accept_invitation(
         return AuthSession(response=response, refresh_token=refresh_token)
 
     user = User(
+        tenant_id=tenant_id,
         email=_normalize_email(request.email),
         full_name=request.full_name,
         password_hash=hash_password(request.password),
@@ -140,7 +147,7 @@ async def accept_invitation(
     )
     session.add(user)
     await session.flush()
-    session.add(Membership(user_id=user.id, org_role=invitation.org_role))
+    session.add(Membership(tenant_id=tenant_id, user_id=user.id, org_role=invitation.org_role))
     response = await _auth_response(session, user)
     refresh_token = await _create_refresh_session(
         session,

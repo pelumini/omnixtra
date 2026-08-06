@@ -184,6 +184,7 @@ class TenantAccount:
 
 
 def _signup(client: TestClient, label: str) -> TenantAccount:
+    client.cookies.clear()
     slug = f"{label}-{uuid4().hex[:12]}"
     email = f"{slug}@example.com"
     response = client.post(
@@ -198,6 +199,7 @@ def _signup(client: TestClient, label: str) -> TenantAccount:
         headers={"host": "localhost"},
     )
     assert response.status_code == 200
+    client.cookies.clear()
     return TenantAccount(
         slug=slug,
         email=email,
@@ -207,6 +209,7 @@ def _signup(client: TestClient, label: str) -> TenantAccount:
 
 
 def _login(client: TestClient, slug: str, email: str) -> str:
+    client.cookies.clear()
     response = client.post(
         "/api/v1/auth/login",
         json={"email": email, "password": TEST_PASSWORD},
