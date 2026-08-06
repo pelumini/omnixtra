@@ -2,6 +2,7 @@ import { createTenant, type ApiRequestError } from "@/lib/api";
 import type { CreateAcademyInput } from "@/lib/schemas/auth";
 
 type CreateAcademyResult = {
+  accessToken: string;
   subdomain: string;
 };
 
@@ -23,7 +24,7 @@ export async function createAcademy(input: CreateAcademyInput): Promise<CreateAc
       tenant_name: input.academyName,
       tenant_slug: input.subdomain,
     });
-    return { subdomain: response.data.tenant_slug };
+    return { accessToken: response.data.access_token, subdomain: response.data.tenant_slug };
   } catch (error) {
     remapCreateAcademyErrors(error);
     throw error;

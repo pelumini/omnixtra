@@ -5,11 +5,15 @@
   "scripts": {
     "dev": "next dev",
     "e2e": "node e2e/run-playwright.mjs",
+    "e2e:spec": "npm run e2e -- e2e/my-courses-routing.spec.ts",
+    "e2e:permissions": "npm run e2e -- e2e/permission-contract.spec.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "verify": "npm run lint && npm run typecheck && npm test && npm run e2e"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",

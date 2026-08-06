@@ -24,6 +24,22 @@ Local testing URLs:
 - API docs: `http://localhost:8000/docs`
 - Web: `http://localhost:3001`
 
+Tenant-scoped local URLs use wildcard localhost subdomains, matching production
+subdomain routing:
+
+- Public entry and academy creation: `http://localhost:3001`
+- Tenant web app after signup/login: `http://{academy}.localhost:3001`
+- Tenant API calls from the browser: `http://{academy}.localhost:8000`
+
+For localhost only, the browser creates the academy through
+`http://{academy}.localhost:8000` so the API can issue host-scoped cookies that
+are accepted by browsers over local HTTP. If browser policy still refuses a
+cross-origin `Set-Cookie`, the web app completes a localhost-only first-party
+handoff on `{academy}.localhost:3001/auth/local-signup` using the signed access
+token returned by tenant creation. Production domains use Secure, parent-scoped
+cookies from `APP_BASE_DOMAIN`, for example `.omnixtra.app`. Do not replace this
+with a dev-only tenant header or bypass.
+
 Backend commands are run from `api/` with `uv`:
 
 ```bash
@@ -42,8 +58,23 @@ npm install
 npm run lint
 npm run typecheck
 npm test
+npm run e2e:spec
+npm run verify
 npm run dev -- --port 3001
 ```
+
+`npm run verify` is the frontend pre-push gate: lint, TypeScript, Vitest, and
+the full bounded Playwright matrix. For single-spec browser work, use the
+repo-owned runner rather than raw Playwright server management:
+
+```bash
+npm run e2e -- e2e/my-courses-routing.spec.ts --project=desktop-chrome
+```
+
+The local verification runbook is
+[`docs/runbooks/local-verification-workflow.md`](./docs/runbooks/local-verification-workflow.md).
+Use the documented local checks before pushing; CI re-runs them asynchronously
+as the backstop.
 
 Backend-only local infrastructure remains available for backend-focused work:
 

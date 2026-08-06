@@ -51,6 +51,7 @@ import type {
   TenantCreateRequest,
   LoginRequest,
 } from "@/lib/schemas";
+import { tenantApiUrl, tenantApiUrlForSlug } from "@/lib/tenant-host";
 
 export class ApiRequestError extends Error {
   envelope: unknown;
@@ -66,7 +67,6 @@ export class ApiRequestError extends Error {
 
 const publicApiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const serverApiUrl = process.env.API_INTERNAL_URL ?? publicApiUrl;
-const apiUrl = typeof window === "undefined" ? serverApiUrl : publicApiUrl;
 
 type RequestContext = {
   cookie?: string;
@@ -74,7 +74,7 @@ type RequestContext = {
 };
 
 export async function getHealth() {
-  const response = await fetch(`${apiUrl}/health`, { cache: "no-store" });
+  const response = await fetch(`${apiUrl()}/health`, { cache: "no-store" });
   const body: unknown = await response.json();
 
   return healthEnvelopeSchema.parse(body);
@@ -82,7 +82,12 @@ export async function getHealth() {
 
 export async function createTenant(request: TenantCreateRequest) {
   const body = tenantCreateRequestSchema.parse(request);
-  const response = await postJson("/api/v1/tenants", body);
+  const response = await postJson(
+    "/api/v1/tenants",
+    body,
+    {},
+    tenantApiUrlForSlug(publicApiUrl, body.tenant_slug),
+  );
 
   return tenantCreateEnvelopeSchema.parse(response);
 }
@@ -94,8 +99,12 @@ export async function login(request: LoginRequest) {
   return authEnvelopeSchema.parse(response);
 }
 
+export async function logout() {
+  await postJson("/api/v1/auth/logout", null);
+}
+
 export async function getAuthSession(context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl}/api/v1/auth/session`, {
+  const response = await fetch(`${apiUrl()}/api/v1/auth/session`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),
@@ -115,7 +124,7 @@ export async function acceptInvitation(request: InvitationAcceptRequest, context
 
 export async function getInvitationPreview(token: string, context: RequestContext = {}) {
   const response = await fetch(
-    `${apiUrl}/api/v1/auth/invitations/${encodeURIComponent(token)}`,
+    `${apiUrl()}/api/v1/auth/invitations/${encodeURIComponent(token)}`,
     {
       cache: "no-store",
       headers: requestHeaders(context),
@@ -131,7 +140,7 @@ export async function getInvitationPreview(token: string, context: RequestContex
 }
 
 export async function getMemberships(context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl}/api/v1/tenant/memberships`, {
+  const response = await fetch(`${apiUrl()}/api/v1/tenant/memberships`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),
@@ -150,7 +159,7 @@ export async function createInvitation(request: InvitationCreateRequest, context
 }
 
 export async function getTenantBranding(context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl}/api/v1/tenant/branding`, {
+  const response = await fetch(`${apiUrl()}/api/v1/tenant/branding`, {
     cache: "no-store",
     headers: requestHeaders(context),
   });
@@ -161,7 +170,7 @@ export async function getTenantBranding(context: RequestContext = {}) {
 }
 
 export async function getBillingPlans(context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl}/api/v1/billing/plans`, {
+  const response = await fetch(`${apiUrl()}/api/v1/billing/plans`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),
@@ -173,7 +182,7 @@ export async function getBillingPlans(context: RequestContext = {}) {
 }
 
 export async function getBillingSubscription(context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl}/api/v1/billing/subscription`, {
+  const response = await fetch(`${apiUrl()}/api/v1/billing/subscription`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),
@@ -185,7 +194,7 @@ export async function getBillingSubscription(context: RequestContext = {}) {
 }
 
 export async function getCompletionAnalytics(context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl}/api/v1/admin/analytics/completions`, {
+  const response = await fetch(`${apiUrl()}/api/v1/admin/analytics/completions`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),
@@ -197,7 +206,7 @@ export async function getCompletionAnalytics(context: RequestContext = {}) {
 }
 
 export async function getLearnerProgressReport(context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl}/api/v1/admin/reports/learner-progress`, {
+  const response = await fetch(`${apiUrl()}/api/v1/admin/reports/learner-progress`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),
@@ -209,11 +218,11 @@ export async function getLearnerProgressReport(context: RequestContext = {}) {
 }
 
 export function learnerProgressCsvUrl() {
-  return `${publicApiUrl}/api/v1/admin/reports/learner-progress.csv`;
+  return `${apiUrl()}/api/v1/admin/reports/learner-progress.csv`;
 }
 
 export async function getCourses(context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl}/api/v1/courses`, {
+  const response = await fetch(`${apiUrl()}/api/v1/courses`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),
@@ -225,7 +234,7 @@ export async function getCourses(context: RequestContext = {}) {
 }
 
 export async function getCoursePlayer(courseId: string, context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl}/api/v1/learning/courses/${courseId}/player`, {
+  const response = await fetch(`${apiUrl()}/api/v1/learning/courses/${courseId}/player`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),
@@ -237,7 +246,7 @@ export async function getCoursePlayer(courseId: string, context: RequestContext 
 }
 
 export async function getMyCourses(context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl}/api/v1/learning/my-courses`, {
+  const response = await fetch(`${apiUrl()}/api/v1/learning/my-courses`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),
@@ -263,7 +272,7 @@ export async function updateLessonProgress(
 ) {
   const body = lessonProgressRequestSchema.parse(request);
   const response = await fetch(
-    `${apiUrl}/api/v1/learning/courses/${courseId}/lessons/${lessonId}/progress`,
+    `${apiUrl()}/api/v1/learning/courses/${courseId}/lessons/${lessonId}/progress`,
     {
       body: JSON.stringify(body),
       cache: "no-store",
@@ -306,11 +315,11 @@ export async function issueCertificate(courseId: string, idempotencyKey: string)
 }
 
 export function certificateDownloadUrl(courseId: string) {
-  return `${publicApiUrl}/api/v1/learning/courses/${courseId}/certificate/download`;
+  return `${apiUrl()}/api/v1/learning/courses/${courseId}/certificate/download`;
 }
 
 export async function createTutorJob(courseId: string, question: string, idempotencyKey: string) {
-  const response = await fetch(`${apiUrl}/api/v1/ai/courses/${courseId}/tutor/jobs`, {
+  const response = await fetch(`${apiUrl()}/api/v1/ai/courses/${courseId}/tutor/jobs`, {
     body: JSON.stringify({ question }),
     cache: "no-store",
     headers: {
@@ -326,7 +335,7 @@ export async function createTutorJob(courseId: string, question: string, idempot
 }
 
 export function tutorJobEventsUrl(courseId: string, jobId: string) {
-  return `${publicApiUrl}/api/v1/ai/courses/${courseId}/tutor/jobs/${jobId}/events`;
+  return `${apiUrl()}/api/v1/ai/courses/${courseId}/tutor/jobs/${jobId}/events`;
 }
 
 export function parseTutorEventMessage(data: string) {
@@ -341,7 +350,7 @@ export async function createCourse(request: CourseCreateRequest) {
 }
 
 export async function updateCourse(courseId: string, request: CourseUpdateRequest) {
-  const response = await fetch(`${apiUrl}/api/v1/courses/${courseId}`, {
+  const response = await fetch(`${apiUrl()}/api/v1/courses/${courseId}`, {
     body: JSON.stringify(request),
     cache: "no-store",
     credentials: "include",
@@ -399,8 +408,13 @@ function requestHeaders(context: RequestContext): HeadersInit {
   return headers;
 }
 
-async function postJson(path: string, body: unknown, headers: HeadersInit = {}) {
-  const response = await fetch(`${apiUrl}${path}`, {
+async function postJson(
+  path: string,
+  body: unknown,
+  headers: HeadersInit = {},
+  baseUrl = apiUrl(),
+) {
+  const response = await fetch(`${baseUrl}${path}`, {
     body: body === null ? undefined : JSON.stringify(body),
     cache: "no-store",
     credentials: "include",
@@ -411,6 +425,13 @@ async function postJson(path: string, body: unknown, headers: HeadersInit = {}) 
   throwIfApiError(response, responseBody);
 
   return responseBody;
+}
+
+function apiUrl(): string {
+  if (typeof window === "undefined") {
+    return serverApiUrl;
+  }
+  return tenantApiUrl(publicApiUrl, window.location.host);
 }
 
 function throwIfApiError(response: Response, body: unknown) {

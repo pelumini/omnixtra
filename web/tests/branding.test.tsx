@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import RootLayout from "@/app/layout";
 
 const getTenantBranding = vi.fn();
+const getAuthSession = vi.fn();
 
 vi.mock("next/headers", () => ({
   headers: async () =>
@@ -14,11 +15,13 @@ vi.mock("next/headers", () => ({
 }));
 
 vi.mock("@/lib/api", () => ({
+  getAuthSession: (context: { cookie?: string; host?: string }) => getAuthSession(context),
   getTenantBranding: (context: { host?: string }) => getTenantBranding(context),
 }));
 
 describe("tenant branding", () => {
   beforeEach(() => {
+    getAuthSession.mockRejectedValue(new Error("unauthenticated"));
     getTenantBranding.mockResolvedValue({
       data: {
         locale: "en-GB",

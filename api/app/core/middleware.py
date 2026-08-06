@@ -18,6 +18,12 @@ from app.tenancy.models import Tenant, TenantStatus
 from app.tenancy.orm import TENANT_FILTER_BYPASS_OPTION
 from app.tenancy.resolver import resolve_tenant_slug
 
+TENANT_RESOLUTION_EXEMPT_ROUTES: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("POST", "/api/v1/tenants"),
+    }
+)
+
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
     """Bind request tenant context from Host and reject bearer tokens for other tenants."""
@@ -47,6 +53,9 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
 
 
 async def _resolve_request_tenant_id(request: Request) -> UUID | None:
+    if (request.method, request.url.path) in TENANT_RESOLUTION_EXEMPT_ROUTES:
+        return None
+
     result = resolve_tenant_slug(
         request.headers.get("host", ""),
         request.app.state.settings.app_base_domain,

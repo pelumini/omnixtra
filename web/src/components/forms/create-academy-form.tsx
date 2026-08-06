@@ -7,10 +7,11 @@ import { Field, FormError, SubmitButton } from "@/components/ui/form-controls";
 import { resolveMessage } from "@/lib/forms/messages";
 import { useFormSubmit } from "@/lib/forms/use-form-submit";
 import { createAcademySchema, type CreateAcademyInput } from "@/lib/schemas/auth";
+import { appBaseDomain } from "@/lib/tenant-host";
 
 type CreateAcademyFormProps = {
-  action: (input: CreateAcademyInput) => Promise<{ subdomain: string }>;
-  onSuccess: (result: { subdomain: string }) => void | Promise<void>;
+  action: (input: CreateAcademyInput) => Promise<{ accessToken: string; subdomain: string }>;
+  onSuccess: (result: { accessToken: string; subdomain: string }) => void | Promise<void>;
 };
 
 export function CreateAcademyForm({ action, onSuccess }: CreateAcademyFormProps) {
@@ -43,6 +44,7 @@ export function CreateAcademyForm({ action, onSuccess }: CreateAcademyFormProps)
     const message = errors[field]?.message;
     return message ? resolveMessage(field, message) : undefined;
   };
+  const domainSuffix = `.${appBaseDomain()}`;
 
   return (
     <form className="space-y-6" noValidate onSubmit={handleSubmit(submit)}>
@@ -67,11 +69,12 @@ export function CreateAcademyForm({ action, onSuccess }: CreateAcademyFormProps)
                   ? value.toLowerCase().replace(/[^a-z0-9-]/g, "")
                   : value,
             })}
-            suffix=".omnixtra.app"
+            suffix={domainSuffix}
           />
           {!errors.subdomain ? (
             <p className="mt-1 text-xs text-slate-500">
-              Your academy will live at {subdomain || "yourname"}.omnixtra.app
+              Your academy will live at {subdomain || "yourname"}
+              {domainSuffix}
             </p>
           ) : null}
         </div>

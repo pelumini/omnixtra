@@ -2,7 +2,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { AppShell } from "@/components/app/app-shell";
+import { SessionHeader } from "@/components/app/session-header";
 import { MembersView } from "@/components/admin/members-view";
 import { CourseBuilder } from "@/components/admin/course-builder";
 import { AdminCourseList } from "@/components/admin/admin-course-list";
@@ -19,24 +19,48 @@ const branding: TenantBranding = {
   time_zone: "UTC",
 };
 
+const adminSession = {
+  membership: {
+    org_role: "tenant_admin" as const,
+    tenant_id: "00000000-0000-0000-0000-000000000203",
+  },
+  user: {
+    email: "admin@example.com",
+    full_name: "Admin User",
+    id: "00000000-0000-0000-0000-000000000202",
+  },
+};
+
+const memberSession = {
+  membership: {
+    org_role: "member" as const,
+    tenant_id: "00000000-0000-0000-0000-000000000303",
+  },
+  user: {
+    email: "member@example.com",
+    full_name: "Member User",
+    id: "00000000-0000-0000-0000-000000000302",
+  },
+};
+
 describe("ADR-003 frontend permissions", () => {
   it("filters org admin navigation by membership role", () => {
     const adminHtml = renderToStaticMarkup(
-      <AppShell branding={branding} viewerRole="tenant_admin">
-        <main>Loaded</main>
-      </AppShell>,
+      <SessionHeader branding={branding} initialSession={adminSession} />,
     );
     const memberHtml = renderToStaticMarkup(
-      <AppShell branding={branding} viewerRole="member">
-        <main>Loaded</main>
-      </AppShell>,
+      <SessionHeader branding={branding} initialSession={memberSession} />,
     );
 
     expect(adminHtml).toContain("Members");
     expect(adminHtml).toContain("Billing");
+    expect(adminHtml).toContain("Admin User");
+    expect(adminHtml).not.toContain("Sign in");
     expect(memberHtml).not.toContain("Members");
     expect(memberHtml).not.toContain("Billing");
     expect(memberHtml).toContain("Courses");
+    expect(memberHtml).toContain("Member User");
+    expect(memberHtml).not.toContain("Sign in");
   });
 
   it("denies member management to non-admin memberships without rendering controls", () => {

@@ -8,6 +8,13 @@ def test_resolves_subdomain_slug() -> None:
     assert result.source == "host"
 
 
+def test_resolves_localhost_subdomain_slug() -> None:
+    result = resolve_tenant_slug("acme.localhost:3001", "localhost")
+
+    assert result.slug == "acme"
+    assert result.source == "host"
+
+
 def test_rejects_reserved_subdomain() -> None:
     result = resolve_tenant_slug("api.omnixtra.test", "omnixtra.test")
 

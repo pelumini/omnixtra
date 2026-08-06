@@ -83,6 +83,22 @@ class Settings(BaseSettings):
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.cors_allowed_origins.split(",") if origin.strip()]
 
+    @property
+    def cookie_domain(self) -> str | None:
+        normalized_base_domain = self.app_base_domain.lower().strip(".")
+        if normalized_base_domain == "localhost":
+            return None
+        return f".{normalized_base_domain}"
+
+    @property
+    def cookie_secure(self) -> bool:
+        return self.app_env.lower() != "local"
+
+    @property
+    def cors_origin_regex(self) -> str:
+        escaped_base_domain = self.app_base_domain.lower().strip(".").replace(".", r"\.")
+        return rf"^https?://([a-z0-9-]+\.)?{escaped_base_domain}(:\d+)?$"
+
 
 @lru_cache
 def get_settings() -> Settings:

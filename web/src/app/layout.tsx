@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import Link from "next/link";
 import type { CSSProperties } from "react";
 import type { ReactNode } from "react";
 
-import { getTenantBranding } from "@/lib/api";
-import type { TenantBranding } from "@/lib/schemas";
+import { SessionHeader } from "@/components/app/session-header";
+import { getAuthSession, getTenantBranding } from "@/lib/api";
+import { e2eAdminSession, e2eFixturesEnabled } from "@/lib/e2e-fixtures";
+import type { SessionResponse, TenantBranding } from "@/lib/schemas";
 
 import "./globals.css";
 
@@ -24,34 +25,20 @@ const defaultBranding: TenantBranding = {
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const requestHeaders = await headers();
-  const branding = await loadBranding(requestHeaders.get("host") ?? undefined);
+  const context = {
+    cookie: requestHeaders.get("cookie") ?? undefined,
+    host: requestHeaders.get("host") ?? undefined,
+  };
+  const [branding, session] = await Promise.all([loadBranding(context.host), loadSession(context)]);
 
   return (
     <html lang={branding.locale}>
       <body style={{ "--primary": branding.primary_color } as CSSProperties}>
-        <header className="border-b border-[var(--border)] bg-white">
-          <div className="mx-auto flex min-h-14 max-w-6xl items-center gap-3 px-4">
-            <div
-              aria-hidden="true"
-              className="grid size-8 place-items-center bg-[var(--primary)] bg-contain bg-center bg-no-repeat text-sm font-semibold text-[var(--primary-foreground)]"
-              style={
-                branding.logo_url
-                  ? ({ backgroundImage: `url(${branding.logo_url})` } as CSSProperties)
-                  : undefined
-              }
-            >
-              {branding.logo_url ? null : branding.tenant_name.slice(0, 1).toUpperCase()}
-            </div>
-            <span className="text-sm font-semibold text-[var(--foreground)]">
-              {branding.tenant_name}
-            </span>
-            <nav className="ml-auto flex items-center gap-3 text-sm text-gray-600">
-              <Link className="hover:text-[var(--primary)]" href="/login">
-                Sign in
-              </Link>
-            </nav>
-          </div>
-        </header>
+        <SessionHeader
+          branding={branding}
+          initialSession={session}
+          refreshSession={!e2eFixturesEnabled()}
+        />
         {children}
       </body>
     </html>
@@ -64,5 +51,20 @@ async function loadBranding(host: string | undefined): Promise<TenantBranding> {
     return response.data;
   } catch {
     return defaultBranding;
+  }
+}
+
+async function loadSession(context: {
+  cookie?: string;
+  host?: string;
+}): Promise<SessionResponse | null> {
+  if (e2eFixturesEnabled()) {
+    return e2eAdminSession;
+  }
+  try {
+    const response = await getAuthSession(context);
+    return response.data;
+  } catch {
+    return null;
   }
 }

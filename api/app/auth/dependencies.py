@@ -17,8 +17,8 @@ from app.core.exceptions import AuthenticationError, AuthorizationError
 from app.core.security import decode_access_token
 
 bearer_scheme = HTTPBearer(auto_error=False)
-ACCESS_TOKEN_COOKIE = "__Host-omnixtra_access"  # noqa: S105
-REFRESH_TOKEN_COOKIE = "__Host-omnixtra_refresh"  # noqa: S105
+ACCESS_TOKEN_COOKIE = "omnixtra_access"  # noqa: S105
+REFRESH_TOKEN_COOKIE = "omnixtra_refresh"  # noqa: S105
 
 
 @dataclass(frozen=True)

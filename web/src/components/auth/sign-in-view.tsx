@@ -11,7 +11,7 @@ import { useFormSubmit } from "@/lib/forms/use-form-submit";
 import { signInSchema, type SignInInput } from "@/lib/schemas/auth";
 import { AuthShell } from "./auth-shell";
 
-export function SignInView() {
+export function SignInView({ requiresAcademyHost = false }: { requiresAcademyHost?: boolean }) {
   const {
     formState: { errors },
     handleSubmit,
@@ -35,8 +35,13 @@ export function SignInView() {
 
   return (
     <AuthShell title="Sign in" subtitle="Continue to your academy.">
+      {requiresAcademyHost ? (
+        <FormError>
+          Open your academy sign-in page, for example acme.localhost:3001/login.
+        </FormError>
+      ) : null}
       <form className="space-y-4" noValidate onSubmit={handleSubmit(submit)}>
-        <FormError>{formError}</FormError>
+        <FormError>{requiresAcademyHost ? null : formError}</FormError>
         <Field
           autoComplete="email"
           error={fieldError("email")}
@@ -53,7 +58,9 @@ export function SignInView() {
           type="password"
         />
 
-        <SubmitButton isSubmitting={isSubmitting}>Sign in</SubmitButton>
+        <SubmitButton disabled={requiresAcademyHost} isSubmitting={isSubmitting}>
+          Sign in
+        </SubmitButton>
       </form>
 
       <div className="mt-6 space-y-2 border-t border-[var(--border)] pt-5 text-sm text-slate-600">

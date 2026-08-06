@@ -8,6 +8,7 @@ from app.auth.dependencies import ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE
 from app.auth.routes import _enforce_rate_limit, _rate_limit_buckets, _set_auth_cookies
 from app.auth.schemas import AuthenticatedUser, AuthResponse
 from app.auth.services import AuthSession
+from app.core.config import Settings
 from app.core.exceptions import RateLimitError
 from app.main import create_app
 
@@ -28,7 +29,7 @@ def test_auth_routes_are_registered_under_api_v1() -> None:
     assert "/api/v1/auth/session" in paths
 
 
-def test_auth_cookies_are_httponly_secure_samesite_lax() -> None:
+def test_auth_cookies_are_host_scoped_on_localhost_httponly_samesite_lax() -> None:
     response = Response()
     _set_auth_cookies(
         response,
@@ -45,15 +46,43 @@ def test_auth_cookies_are_httponly_secure_samesite_lax() -> None:
             ),
             refresh_token="refresh-token",
         ),
+        Settings(APP_BASE_DOMAIN="localhost"),
     )
 
     set_cookie_headers = response.headers.getlist("set-cookie")
 
-    assert any(ACCESS_TOKEN_COOKIE in header for header in set_cookie_headers)
-    assert any(REFRESH_TOKEN_COOKIE in header for header in set_cookie_headers)
+    assert any(header.startswith(f"{ACCESS_TOKEN_COOKIE}=") for header in set_cookie_headers)
+    assert any(header.startswith(f"{REFRESH_TOKEN_COOKIE}=") for header in set_cookie_headers)
+    assert all("Domain=" not in header for header in set_cookie_headers)
     assert all("HttpOnly" in header for header in set_cookie_headers)
-    assert all("Secure" in header for header in set_cookie_headers)
+    assert all("Secure" not in header for header in set_cookie_headers)
     assert all("SameSite=lax" in header for header in set_cookie_headers)
+
+
+def test_auth_cookies_are_parent_scoped_and_secure_for_non_local_envs() -> None:
+    response = Response()
+    _set_auth_cookies(
+        response,
+        AuthSession(
+            response=AuthResponse(
+                access_token="access-token",
+                user=AuthenticatedUser(
+                    id=str(UUID("00000000-0000-0000-0000-000000000001")),
+                    tenant_id=str(UUID("00000000-0000-0000-0000-000000000002")),
+                    email="admin@example.com",
+                    full_name="Admin User",
+                    role="tenant_admin",
+                ),
+            ),
+            refresh_token="refresh-token",
+        ),
+        Settings(APP_ENV="production", APP_BASE_DOMAIN="omnixtra.app"),
+    )
+
+    set_cookie_headers = response.headers.getlist("set-cookie")
+
+    assert all("Domain=.omnixtra.app" in header for header in set_cookie_headers)
+    assert all("Secure" in header for header in set_cookie_headers)
 
 
 def test_auth_rate_limit_blocks_excess_attempts() -> None:

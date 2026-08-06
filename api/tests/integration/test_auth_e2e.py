@@ -67,11 +67,13 @@ def test_tenant_creation_login_and_protected_route_with_tenant_host() -> None:
 
     cookies = _cookies(login_response.headers.get_list("set-cookie"))
     assert cookies[ACCESS_TOKEN_COOKIE]["httponly"] is True
-    assert cookies[ACCESS_TOKEN_COOKIE]["secure"] is True
+    assert cookies[ACCESS_TOKEN_COOKIE]["secure"] == ""
     assert cookies[ACCESS_TOKEN_COOKIE]["samesite"] == "lax"
+    assert cookies[ACCESS_TOKEN_COOKIE]["domain"] == ""
     assert cookies[REFRESH_TOKEN_COOKIE]["httponly"] is True
-    assert cookies[REFRESH_TOKEN_COOKIE]["secure"] is True
+    assert cookies[REFRESH_TOKEN_COOKIE]["secure"] == ""
     assert cookies[REFRESH_TOKEN_COOKIE]["samesite"] == "lax"
+    assert cookies[REFRESH_TOKEN_COOKIE]["domain"] == ""
 
     original_refresh_token = cookies[REFRESH_TOKEN_COOKIE].value
     refresh_response = client.post(
@@ -85,6 +87,7 @@ def test_tenant_creation_login_and_protected_route_with_tenant_host() -> None:
     assert refresh_response.status_code == 200
     rotated_cookies = _cookies(refresh_response.headers.get_list("set-cookie"))
     assert rotated_cookies[REFRESH_TOKEN_COOKIE].value != original_refresh_token
+    assert rotated_cookies[REFRESH_TOKEN_COOKIE]["domain"] == ""
 
     replay_response = client.post(
         "/api/v1/auth/refresh",

@@ -313,6 +313,7 @@ Rules:
 - All services must define health checks.
 - API and worker services must wait for database and Redis health.
 - Frontend connects to backend through `NEXT_PUBLIC_API_URL`.
+- Local tenant-authenticated flows use wildcard localhost subdomains, for example `acme.localhost:3001` for web and `acme.localhost:8000` for browser API calls. Because browsers reject `Domain=.localhost` and do not persist Secure cookies over plain HTTP subdomains, local auth cookies are host-scoped on the tenant API host and non-Secure only when `APP_ENV=local`; signup may complete through the localhost-only first-party `/auth/local-signup` handoff using the signed access token from tenant creation. Production domains use Secure, parent-scoped cookies from `APP_BASE_DOMAIN`. Do not introduce dev-only tenant bypass headers.
 
 ### 0.6 CI/CD Pipeline
 
@@ -332,6 +333,28 @@ npm test
 ```
 
 CI must include integration tests against real PostgreSQL and Redis. The tenant-isolation suite runs on every PR. A nightly extended isolation suite runs against seeded cross-tenant data.
+
+Local verification is the development loop. Verify locally with the documented backend `uv` checks and `web` `npm run verify` before pushing; CI re-runs and reports async, so do not wait on it as the normal feedback loop.
+
+Targeted local checks must stay runnable as standalone commands:
+
+```bash
+# Backend, from api/
+uv --cache-dir ../.uv-cache run ruff check .
+uv --cache-dir ../.uv-cache run ruff format --check .
+uv --cache-dir ../.uv-cache run mypy app --strict
+uv --cache-dir ../.uv-cache run pytest tests/test_auth_routes.py
+uv --cache-dir ../.uv-cache run pytest -k tenancy
+
+# Frontend, from web/
+npm run lint
+npm run typecheck
+npm test -- auth.test.tsx
+npm run e2e:spec
+npm run e2e -- e2e/my-courses-routing.spec.ts --project=desktop-chrome
+```
+
+Playwright must remain runner-managed locally. Do not use raw `npx playwright test` as the project default on Windows; it has repeatedly left stuck Next child processes. `npm run e2e -- <spec>` and `npm run e2e:spec` are the supported single-spec paths. The runner builds, starts the production Next server, checks port availability/readiness, runs Playwright with internal timeouts, tears down the process tree, exits explicitly, and honours `PLAYWRIGHT_PORT` for fresh-port testing.
 
 ### 0.7 Observability
 
@@ -1020,8 +1043,9 @@ Rules:
 - Tenant-admin invite specs must prove admin-seat-limit feedback disables invite-as-admin while invite-as-member remains available.
 - Course-level permission specs must cover `course_owner` versus `learner` for authoring entry points and direct builder access.
 - Browser permission specs must run against the real Next app in Playwright. Deterministic E2E fixture routes are acceptable when live auth/user-state setup cannot yet reach a role state, but component-only tests do not close the contract.
-- `npm run e2e` is the canonical local and CI entry point. It must build the app, start a production Next server, run Playwright, tear down the server, and fail through internal timeouts rather than hanging indefinitely.
-- Frontend CI must install Playwright browsers and run `npm run e2e` after lint, typecheck, unit tests, and build.
+- `npm run e2e` is the canonical full local entry point. It must build the app, start a production Next server, run Playwright, tear down the server, and fail through internal timeouts rather than hanging indefinitely.
+- Raw `npx playwright test <spec>` is not the supported project path on Windows. Use `npm run e2e -- <spec>` so the repo-owned runner controls server startup, readiness, teardown, and timeouts.
+- Frontend CI must install Playwright browsers and always run the header/permission browser gate even when the full frontend suite is path-filtered.
 
 Current implementation:
 
@@ -1029,6 +1053,7 @@ Current implementation:
 - Deterministic browser role fixtures live under `web/src/app/e2e/permissions/[scenario]/page.tsx`.
 - The bounded E2E runner lives at `web/e2e/run-playwright.mjs`.
 - Runner timeouts are configurable with `E2E_BUILD_TIMEOUT_MS`, `E2E_SERVER_TIMEOUT_MS`, and `E2E_TEST_TIMEOUT_MS`.
+- The measured local workflow baseline lives in `docs/runbooks/local-verification-workflow.md`.
 
 ### 6.4 Key MVP Pages
 
@@ -1059,9 +1084,9 @@ Use `.env.example` for local defaults. Production secrets must live in a secrets
 # Application
 APP_ENV=local
 APP_NAME=omnixtra
+APP_BASE_DOMAIN=localhost
 API_BASE_URL=http://localhost:8000
-WEB_BASE_URL=http://localhost:3000
-PUBLIC_ROOT_DOMAIN=omnixtra.localhost
+WEB_BASE_URL=http://localhost:3001
 
 # Database
 DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/omnixtra
@@ -1074,7 +1099,6 @@ REDIS_URL=redis://localhost:6379/0
 JWT_SECRET_KEY=change-me
 JWT_REFRESH_SECRET_KEY=change-me
 MAGIC_LINK_SECRET=change-me
-COOKIE_DOMAIN=localhost
 
 # Tenant
 RESERVED_SUBDOMAINS=www,app,api,admin,status,docs,blog,mail
@@ -1115,7 +1139,8 @@ OTEL_EXPORTER_OTLP_ENDPOINT=
 
 # Frontend
 NEXT_PUBLIC_API_URL=http://localhost:8000
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3001
+NEXT_PUBLIC_APP_BASE_DOMAIN=localhost
 ```
 
 ---
@@ -1485,6 +1510,8 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] 2026-08-05 UX Permission Contract v1.3 form-standard foundation: added React Hook Form/Zod resolver stack, shared validation primitives, shared form controls, form submit/error machinery, parsed API-error envelope throwing, backend validation normalization for client field mapping, and migrated `/get-started` to the thin page plus `CreateAcademyForm` template.
 - [x] 2026-08-05 form-standard message remediation: `/get-started` now resolves validation constraint keys into user-facing product copy, and the public signup Playwright spec asserts raw keys such as `min_length` and `required` never render.
 - [x] 2026-08-05 site-wide form-standard rollout: migrated sign-in, invitation acceptance/token entry, member invitations, course creation/details, section/lesson/block/media authoring forms, quiz attempts, and tutor questions to React Hook Form, Zod resolver schemas, shared controls, `noValidate`, and centralized message resolution.
+- [x] 2026-08-05 local tenant-resolution remediation: localhost now mirrors production subdomain tenancy with configurable `APP_BASE_DOMAIN` / `NEXT_PUBLIC_APP_BASE_DOMAIN`, production Secure parent-scoped auth cookies, localhost host-scoped non-Secure auth cookies on `{academy}.localhost:8000`, localhost-only first-party signup handoff, signup redirect to `{academy}.localhost:3001/admin`, browser API calls on `{academy}.localhost:8000`, explicit bare-localhost login guidance, and regression coverage for CORS, cookie domain, resolver behavior, tenant-host helpers, and bare-login UI.
+- [x] 2026-08-06 authenticated shell remediation: added a browser-visible `/auth/session` route, session-aware root header, account menu, sign-out flow that clears the localhost web-host handoff cookie, and Playwright coverage proving authenticated headers show the account menu instead of `Sign in`.
 
 ### Phase 2: Months 4-6
 

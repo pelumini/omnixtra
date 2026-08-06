@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import http from "node:http";
+import net from "node:net";
 
 const port = process.env.PLAYWRIGHT_PORT ?? "3100";
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${port}`;
@@ -14,7 +15,17 @@ const e2eEnv = {
   OMNIXTRA_E2E_FIXTURES: "1",
 };
 
+for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
+  process.once(signal, () => {
+    void stopServer(server).finally(() => {
+      process.exit(signal === "SIGINT" ? 130 : 143);
+    });
+  });
+}
+
 try {
+  await assertPortAvailable(port);
+
   const buildExitCode = await run(process.execPath, ["./node_modules/next/dist/bin/next", "build"], {
     env: e2eEnv,
     label: "next build",
@@ -34,7 +45,7 @@ try {
     },
   );
 
-  await waitForServer(baseURL, serverTimeoutMs);
+  await waitForServer(baseURL, serverTimeoutMs, server);
 
   const exitCode = await run(
     process.execPath,
@@ -54,6 +65,8 @@ try {
 } finally {
   await stopServer(server);
 }
+
+process.exit(process.exitCode ?? 0);
 
 function run(command, args, options = {}) {
   return new Promise((resolve, reject) => {
@@ -103,18 +116,40 @@ function run(command, args, options = {}) {
   });
 }
 
-function waitForServer(url, timeoutMs) {
+function waitForServer(url, timeoutMs, child) {
   const startedAt = Date.now();
 
   return new Promise((resolve, reject) => {
+    let settled = false;
+    const onExit = (code, signal) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      reject(new Error(`Next server exited before readiness, code=${code ?? "null"}, signal=${signal ?? "null"}.`));
+    };
+
+    child.once("exit", onExit);
+
     const check = () => {
+      if (settled) {
+        return;
+      }
       const request = http.get(url, (response) => {
+        if (settled) {
+          response.resume();
+          return;
+        }
+        settled = true;
+        child.off("exit", onExit);
         response.resume();
         resolve();
       });
 
       request.once("error", () => {
         if (Date.now() - startedAt > timeoutMs) {
+          settled = true;
+          child.off("exit", onExit);
           reject(new Error(`Timed out waiting for ${url}`));
           return;
         }
@@ -127,6 +162,32 @@ function waitForServer(url, timeoutMs) {
     };
 
     check();
+  });
+}
+
+function assertPortAvailable(portValue) {
+  const parsedPort = Number(portValue);
+  if (!Number.isInteger(parsedPort) || parsedPort < 1 || parsedPort > 65535) {
+    throw new Error(`Invalid PLAYWRIGHT_PORT value: ${portValue}`);
+  }
+
+  return new Promise((resolve, reject) => {
+    const socket = net.connect({ host: "127.0.0.1", port: parsedPort });
+    socket.once("connect", () => {
+      socket.destroy();
+      reject(
+        new Error(
+          `Port ${parsedPort} is already in use. Set PLAYWRIGHT_PORT to a free port or stop the existing server before running E2E.`,
+        ),
+      );
+    });
+    socket.once("error", () => {
+      resolve();
+    });
+    socket.setTimeout(2_000, () => {
+      socket.destroy();
+      resolve();
+    });
   });
 }
 

@@ -1,11 +1,10 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.cookies import set_auth_cookies
 from app.auth.dependencies import (
-    ACCESS_TOKEN_COOKIE,
-    REFRESH_TOKEN_COOKIE,
     AuthPrincipal,
     require_permission,
 )
@@ -40,9 +39,15 @@ async def create_tenant_route(
     request: TenantCreateRequest,
     session: SessionDep,
     response: Response,
+    http_request: Request,
 ) -> Envelope[TenantCreateResponse]:
     tenant_session = await create_tenant(session, request)
-    _set_auth_cookies(response, tenant_session.response.access_token, tenant_session.refresh_token)
+    set_auth_cookies(
+        response,
+        access_token=tenant_session.response.access_token,
+        refresh_token=tenant_session.refresh_token,
+        settings=http_request.app.state.settings,
+    )
     return Envelope(data=tenant_session.response, error=None, meta=Meta.current())
 
 
@@ -79,27 +84,6 @@ async def create_invitation_route(
 ) -> Envelope[TenantInvitationCreateResponse]:
     response = await create_invitation(session, request, actor_id=principal.user_id)
     return Envelope(data=response, error=None, meta=Meta.current())
-
-
-def _set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
-    response.set_cookie(
-        ACCESS_TOKEN_COOKIE,
-        access_token,
-        httponly=True,
-        secure=True,
-        samesite="lax",
-        max_age=15 * 60,
-        path="/",
-    )
-    response.set_cookie(
-        REFRESH_TOKEN_COOKIE,
-        refresh_token,
-        httponly=True,
-        secure=True,
-        samesite="lax",
-        max_age=30 * 24 * 60 * 60,
-        path="/",
-    )
 
 
 __all__ = ["router"]

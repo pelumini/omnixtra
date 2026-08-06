@@ -45,7 +45,13 @@ async def create_tenant(
         msg = "tenant slug is already taken"
         raise ConflictError(
             msg,
-            details=[{"field": "subdomain", "constraint": "subdomain_taken"}],
+            details=[
+                {
+                    "field": "subdomain",
+                    "constraint": "subdomain_taken",
+                    "message": "That subdomain is taken. Try another.",
+                },
+            ],
         )
     tenant = Tenant(
         slug=request.tenant_slug,

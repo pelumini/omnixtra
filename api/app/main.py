@@ -32,6 +32,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
         allow_methods=["*"],
         allow_origins=settings.cors_origins,
+        allow_origin_regex=settings.cors_origin_regex,
     )
     register_exception_handlers(application)
     application.include_router(auth_router, prefix="/api/v1")

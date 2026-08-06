@@ -3,9 +3,10 @@ from uuid import UUID
 import pytest
 
 from app.core.context import clear_tenant_id, set_tenant_id
+from app.core.exceptions import ConflictError
 from app.tenancy.models import TenancyAuditEvent, Tenant
-from app.tenancy.schemas import TenantBrandingUpdateRequest
-from app.tenancy.services import tenant_branding_response, update_tenant_branding
+from app.tenancy.schemas import TenantBrandingUpdateRequest, TenantCreateRequest
+from app.tenancy.services import create_tenant, tenant_branding_response, update_tenant_branding
 
 TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
 ACTOR_ID = UUID("00000000-0000-0000-0000-000000000002")
@@ -68,6 +69,37 @@ async def test_update_tenant_branding_writes_audit_event() -> None:
     assert audit.event_data["primary_color"] == "#aabbcc"
 
 
+@pytest.mark.anyio
+async def test_create_tenant_duplicate_slug_returns_user_facing_field_error() -> None:
+    session = _DuplicateTenantSession(
+        Tenant(
+            id=TENANT_ID,
+            slug="brendoncare",
+            name="Brendoncare",
+        ),
+    )
+
+    with pytest.raises(ConflictError) as exc_info:
+        await create_tenant(
+            session,
+            TenantCreateRequest(
+                tenant_name="Brendoncare",
+                tenant_slug="brendoncare",
+                full_name="Admin User",
+                email="admin@example.com",
+                password="correct horse battery staple",
+            ),
+        )
+
+    assert exc_info.value.details == [
+        {
+            "field": "subdomain",
+            "constraint": "subdomain_taken",
+            "message": "That subdomain is taken. Try another.",
+        },
+    ]
+
+
 class _TenantBrandingSession:
     def __init__(self, tenant: Tenant) -> None:
         self.tenant = tenant
@@ -82,3 +114,11 @@ class _TenantBrandingSession:
 
     async def commit(self) -> None:
         self.committed = True
+
+
+class _DuplicateTenantSession:
+    def __init__(self, tenant: Tenant) -> None:
+        self.tenant = tenant
+
+    async def scalar(self, _statement: object) -> Tenant:
+        return self.tenant

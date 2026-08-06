@@ -7,8 +7,9 @@ from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.cookies import clear_auth_cookies as clear_scoped_auth_cookies
+from app.auth.cookies import set_auth_cookies as set_scoped_auth_cookies
 from app.auth.dependencies import (
-    ACCESS_TOKEN_COOKIE,
     REFRESH_TOKEN_COOKIE,
     AuthenticatedPrincipal,
     require_authenticated_principal,
@@ -38,6 +39,7 @@ from app.auth.services import (
     refresh_auth_session,
     verify_magic_link,
 )
+from app.core.config import Settings, get_settings
 from app.core.database import get_session
 from app.core.email import EmailProvider, EmailTemplate, auth_token_email, get_email_provider
 from app.core.exceptions import AuthenticationError, RateLimitError
@@ -86,7 +88,7 @@ async def login_route(
         request.email,
         request.password,
     )
-    _set_auth_cookies(response, auth_session)
+    _set_auth_cookies(response, auth_session, http_request.app.state.settings)
     return Envelope(data=auth_session.response, error=None, meta=Meta.current())
 
 
@@ -119,9 +121,10 @@ async def magic_link_verify_route(
     request: MagicLinkVerifyRequest,
     session: SessionDep,
     response: Response,
+    http_request: Request,
 ) -> Envelope[AuthResponse]:
     auth_session = await verify_magic_link(session, UUID(require_tenant_id()), request.token)
-    _set_auth_cookies(response, auth_session)
+    _set_auth_cookies(response, auth_session, http_request.app.state.settings)
     return Envelope(data=auth_session.response, error=None, meta=Meta.current())
 
 
@@ -154,6 +157,7 @@ async def password_reset_complete_route(
     request: PasswordResetCompleteRequest,
     session: SessionDep,
     response: Response,
+    http_request: Request,
 ) -> Envelope[AuthResponse]:
     auth_session = await complete_password_reset(
         session,
@@ -161,7 +165,7 @@ async def password_reset_complete_route(
         request.token,
         request.password,
     )
-    _set_auth_cookies(response, auth_session)
+    _set_auth_cookies(response, auth_session, http_request.app.state.settings)
     return Envelope(data=auth_session.response, error=None, meta=Meta.current())
 
 
@@ -174,7 +178,7 @@ async def accept_invitation_route(
 ) -> Envelope[AuthResponse]:
     _enforce_rate_limit("invitation-accept", http_request, request.email)
     auth_session = await accept_invitation(session, UUID(require_tenant_id()), request)
-    _set_auth_cookies(response, auth_session)
+    _set_auth_cookies(response, auth_session, http_request.app.state.settings)
     return Envelope(data=auth_session.response, error=None, meta=Meta.current())
 
 
@@ -202,7 +206,7 @@ async def refresh_route(
         msg = "refresh token required"
         raise AuthenticationError(msg)
     auth_session = await refresh_auth_session(session, UUID(require_tenant_id()), refresh_token)
-    _set_auth_cookies(response, auth_session)
+    _set_auth_cookies(response, auth_session, http_request.app.state.settings)
     return Envelope(data=auth_session.response, error=None, meta=Meta.current())
 
 
@@ -217,7 +221,7 @@ async def logout_route(
         UUID(require_tenant_id()),
         http_request.cookies.get(REFRESH_TOKEN_COOKIE),
     )
-    _clear_auth_cookies(response)
+    _clear_auth_cookies(response, http_request.app.state.settings)
     return Envelope(data=TokenRequestAccepted(accepted=True), error=None, meta=Meta.current())
 
 
@@ -234,30 +238,21 @@ async def session_route(
     return Envelope(data=response, error=None, meta=Meta.current())
 
 
-def _set_auth_cookies(response: Response, auth_session: AuthSession) -> None:
-    response.set_cookie(
-        ACCESS_TOKEN_COOKIE,
-        auth_session.response.access_token,
-        httponly=True,
-        secure=True,
-        samesite="lax",
-        max_age=15 * 60,
-        path="/",
-    )
-    response.set_cookie(
-        REFRESH_TOKEN_COOKIE,
-        auth_session.refresh_token,
-        httponly=True,
-        secure=True,
-        samesite="lax",
-        max_age=30 * 24 * 60 * 60,
-        path="/",
+def _set_auth_cookies(
+    response: Response,
+    auth_session: AuthSession,
+    settings: Settings | None = None,
+) -> None:
+    set_scoped_auth_cookies(
+        response,
+        access_token=auth_session.response.access_token,
+        refresh_token=auth_session.refresh_token,
+        settings=settings or get_settings(),
     )
 
 
-def _clear_auth_cookies(response: Response) -> None:
-    response.delete_cookie(ACCESS_TOKEN_COOKIE, path="/")
-    response.delete_cookie(REFRESH_TOKEN_COOKIE, path="/")
+def _clear_auth_cookies(response: Response, settings: Settings | None = None) -> None:
+    clear_scoped_auth_cookies(response, settings=settings or get_settings())
 
 
 def _enforce_rate_limit(kind: str, request: Request, email: str) -> None:

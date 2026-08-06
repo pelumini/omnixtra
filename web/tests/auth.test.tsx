@@ -23,8 +23,14 @@ describe("auth UI", () => {
 
   it("renders separate login, academy creation, and invitation surfaces", () => {
     expect(renderToStaticMarkup(<SignInView />)).toContain("Continue to your academy");
+    expect(renderToStaticMarkup(<SignInView requiresAcademyHost />)).toContain(
+      "Open your academy sign-in page",
+    );
     const createAcademyHtml = renderToStaticMarkup(
-      <CreateAcademyForm action={async () => ({ subdomain: "acme" })} onSuccess={() => {}} />,
+      <CreateAcademyForm
+        action={async () => ({ accessToken: "token", subdomain: "acme" })}
+        onSuccess={() => {}}
+      />,
     );
     expect(createAcademyHtml).toContain("Your academy");
     expect(createAcademyHtml).toContain("Your admin account");

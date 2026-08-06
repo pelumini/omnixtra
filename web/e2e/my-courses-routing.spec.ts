@@ -7,7 +7,26 @@ test("unauthenticated root renders the public landing page", async ({ page }) =>
   await expect(page.getByRole("heading", { name: /Launch your fully branded academy/ })).toBeVisible();
   await expect(page.getByRole("link", { name: "Create your academy" })).toBeVisible();
   await expect(page.getByRole("link", { name: /Have an invitation/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Sign in/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /sign in/i })).toBeVisible();
+});
+
+test("bare localhost login asks for an academy host", async ({ page }) => {
+  await page.goto("/login");
+
+  await expect(
+    page.getByText("Open your academy sign-in page, for example acme.localhost:3001/login."),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sign in" })).toBeDisabled();
+});
+
+test("authenticated header shows account menu and hides sign in", async ({ page }) => {
+  await page.goto("/e2e/session-header");
+
+  await expect(page.locator("summary", { hasText: "Admin User" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Sign in" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Sign out" })).toHaveCount(0);
+  await page.locator("summary", { hasText: "Admin User" }).click();
+  await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
 });
 
 test("server root router sends admins to admin and members to my courses", async ({ page }) => {
