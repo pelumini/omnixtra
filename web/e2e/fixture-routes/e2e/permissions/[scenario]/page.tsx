@@ -5,6 +5,7 @@ import { CourseBuilder } from "@/components/admin/course-builder";
 import { MembersView } from "@/components/admin/members-view";
 import { AppShell } from "@/components/app/app-shell";
 import { LearnerCoursePlayer } from "@/components/learning/learner-course-player";
+import { e2eFixturesEnabled } from "@/lib/e2e-fixtures";
 import type { Course, CoursePlayer, Membership, TenantBranding } from "@/lib/schemas";
 
 type PermissionFixturePageProps = {
@@ -24,6 +25,7 @@ const branding: TenantBranding = {
 const course: Course = {
   description: "Role-gated onboarding course",
   id: "00000000-0000-0000-0000-000000000901",
+  lesson_count: 1,
   slug: "role-gated-onboarding",
   status: "draft",
   title: "Role Gated Onboarding",
@@ -31,18 +33,30 @@ const course: Course = {
 
 const memberships: Membership[] = [
   {
+    email: "admin-one@example.com",
+    full_name: "Admin One",
     id: "00000000-0000-0000-0000-000000000911",
+    invitation_token: null,
     org_role: "tenant_admin",
+    status: "active",
     user_id: "00000000-0000-0000-0000-000000000921",
   },
   {
+    email: "admin-two@example.com",
+    full_name: "Admin Two",
     id: "00000000-0000-0000-0000-000000000912",
+    invitation_token: null,
     org_role: "tenant_admin",
+    status: "active",
     user_id: "00000000-0000-0000-0000-000000000922",
   },
   {
+    email: "admin-three@example.com",
+    full_name: "Admin Three",
     id: "00000000-0000-0000-0000-000000000913",
+    invitation_token: null,
     org_role: "tenant_admin",
+    status: "active",
     user_id: "00000000-0000-0000-0000-000000000923",
   },
 ];
@@ -69,6 +83,10 @@ const player: CoursePlayer = {
 };
 
 export default async function PermissionFixturePage({ params }: PermissionFixturePageProps) {
+  if (!e2eFixturesEnabled()) {
+    notFound();
+  }
+
   const { scenario } = await params;
 
   if (scenario === "admin") {

@@ -224,3 +224,8 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Header and permission specs always run
         run: npm run e2e -- e2e/my-courses-routing.spec.ts e2e/permission-contract.spec.ts
+      - name: E2E fixture bypass remains disabled when fixture build flag is off
+        env:
+          NEXT_PUBLIC_OMNIXTRA_E2E_FIXTURES: "0"
+          OMNIXTRA_E2E_FIXTURES: "0"
+        run: npm run e2e -- e2e/fixtures-disabled.spec.ts

@@ -7,22 +7,22 @@ export const NAME_MAX = 200;
 export const SUBDOMAIN_MIN = 2;
 export const SUBDOMAIN_MAX = 63;
 
-export const emailSchema = z.string().min(1, "required").email("email");
+export const requiredText = z.string().trim().min(1, "required");
+export const textSchema = (min: number, max: number) =>
+  z.string().trim().min(min, "min_length").max(max, "max_length");
+export const optionalTextSchema = (max: number) => z.string().trim().max(max, "max_length");
 
-export const passwordSchema = z
+export const emailSchema = z
   .string()
-  .min(PASSWORD_MIN, "min_length")
-  .max(PASSWORD_MAX, "max_length");
+  .trim()
+  .min(1, "required")
+  .refine((value) => value.length === 0 || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), "email");
 
-export const fullNameSchema = z
-  .string()
-  .min(NAME_MIN, "min_length")
-  .max(NAME_MAX, "max_length");
+export const passwordSchema = textSchema(PASSWORD_MIN, PASSWORD_MAX);
 
-export const academyNameSchema = z
-  .string()
-  .min(NAME_MIN, "min_length")
-  .max(NAME_MAX, "max_length");
+export const fullNameSchema = textSchema(NAME_MIN, NAME_MAX);
+
+export const academyNameSchema = textSchema(NAME_MIN, NAME_MAX);
 
 export const subdomainSchema = z
   .string()

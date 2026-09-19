@@ -68,8 +68,12 @@ describe("ADR-003 frontend permissions", () => {
       <MembersView
         initialMembers={[
           {
+            email: "admin@example.com",
+            full_name: "Admin User",
             id: "00000000-0000-0000-0000-000000000111",
+            invitation_token: null,
             org_role: "tenant_admin",
+            status: "active",
             user_id: "00000000-0000-0000-0000-000000000112",
           },
         ]}
@@ -82,6 +86,44 @@ describe("ADR-003 frontend permissions", () => {
     expect(html).toContain("This area is for admins");
     expect(html).not.toContain("Invite member");
     expect(html).not.toContain("00000000-0000-0000-0000-000000000112");
+  });
+
+  it("renders member identity and pending invite copy action without exposing ids", () => {
+    const html = renderToStaticMarkup(
+      <MembersView
+        initialMembers={[
+          {
+            email: "active@example.com",
+            full_name: "Active Member",
+            id: "00000000-0000-0000-0000-000000000121",
+            invitation_token: null,
+            org_role: "member",
+            status: "active",
+            user_id: "00000000-0000-0000-0000-000000000122",
+          },
+          {
+            email: "pending@example.com",
+            full_name: null,
+            id: "00000000-0000-0000-0000-000000000131",
+            invitation_token: "pending-token",
+            org_role: "tenant_admin",
+            status: "invited",
+            user_id: null,
+          },
+        ]}
+        loadError={null}
+        seats={{ adminSeatsIncluded: 3, adminSeatsUsed: 1 }}
+        viewerRole="tenant_admin"
+      />,
+    );
+
+    expect(html).toContain("Active Member");
+    expect(html).toContain("active@example.com");
+    expect(html).toContain("pending@example.com");
+    expect(html).toContain("Invited");
+    expect(html).toContain("Copy invite link");
+    expect(html).not.toContain("00000000-0000-0000-0000-000000000122");
+    expect(html).not.toContain("00000000-0000-0000-0000-000000000131");
   });
 
   it("renders admin-seat limit feedback while still allowing member invitations", () => {

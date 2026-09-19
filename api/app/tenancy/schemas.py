@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import AnyUrl, BaseModel, EmailStr, Field
 
 
@@ -25,17 +27,25 @@ class TenantCreateResponse(BaseModel):
 
 class MembershipResponse(BaseModel):
     id: str
-    user_id: str
-    org_role: str
+    user_id: str | None
+    full_name: str | None
+    email: EmailStr
+    org_role: Literal["tenant_admin", "member"]
+    status: Literal["active", "invited"]
+    invitation_token: str | None = None
 
 
 class TenantInvitationCreateRequest(BaseModel):
     email: EmailStr
-    org_role: str = Field(default="member", pattern=r"^(tenant_admin|member)$")
+    org_role: Literal["tenant_admin", "member"] = "member"
 
 
 class TenantInvitationCreateResponse(BaseModel):
     accepted: bool
+    invitation_id: str | None = None
+    email: EmailStr | None = None
+    org_role: Literal["tenant_admin", "member"] | None = None
+    status: Literal["invited"] | None = None
     token: str | None = None
 
 

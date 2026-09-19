@@ -17,10 +17,12 @@ TEST_PASSWORD = "correct horse battery staple"  # noqa: S105
 @pytest.mark.integration
 @covers_isolation("POST", "/api/v1/courses")
 @covers_isolation("GET", "/api/v1/courses")
+@covers_isolation("GET", "/api/v1/courses/{course_id}")
 @covers_isolation("PATCH", "/api/v1/courses/{course_id}")
 @covers_isolation("DELETE", "/api/v1/courses/{course_id}")
 @covers_isolation("POST", "/api/v1/courses/{course_id}/sections")
 @covers_isolation("POST", "/api/v1/courses/{course_id}/lessons")
+@covers_isolation("GET", "/api/v1/courses/{course_id}/lessons")
 @covers_isolation("POST", "/api/v1/courses/{course_id}/blocks")
 @covers_isolation("POST", "/api/v1/courses/{course_id}/media")
 @covers_isolation("PUT", "/api/v1/courses/{course_id}/sections/order")
@@ -42,7 +44,6 @@ def test_tenant_b_cannot_attack_tenant_a_course_routes() -> None:
         "/api/v1/courses",
         json={
             "title": "Tenant A Security",
-            "slug": f"tenant-a-security-{uuid4().hex[:8]}",
             "description": "Tenant A private course",
         },
         headers=headers_a,
@@ -62,15 +63,44 @@ def test_tenant_b_cannot_attack_tenant_a_course_routes() -> None:
     lesson_response = isolation_client.post(
         "/api/v1/courses/{course_id}/lessons",
         f"/api/v1/courses/{course_id}/lessons",
-        json={"section_id": section_id, "title": "Private Lesson", "position": 0},
+        json={
+            "body": "Tenant A private lesson body",
+            "section_id": section_id,
+            "title": "Private Lesson",
+            "position": 0,
+        },
         headers=headers_a,
     )
     assert lesson_response.status_code == 200
     lesson_id = lesson_response.json()["data"]["id"]
 
+    detail_response = isolation_client.get(
+        "/api/v1/courses/{course_id}",
+        f"/api/v1/courses/{course_id}",
+        headers=headers_a,
+    )
+    assert detail_response.status_code == 200
+    assert detail_response.json()["data"]["lessons"][0]["body"] == "Tenant A private lesson body"
+
+    lessons_response = isolation_client.get(
+        "/api/v1/courses/{course_id}/lessons",
+        f"/api/v1/courses/{course_id}/lessons",
+        headers=headers_a,
+    )
+    assert lessons_response.status_code == 200
+    assert [lesson["title"] for lesson in lessons_response.json()["data"]] == ["Private Lesson"]
+
     list_response = isolation_client.get("/api/v1/courses", headers=headers_b)
     assert list_response.status_code == 200
     assert list_response.json()["data"] == {"items": [], "next_cursor": None}
+
+    _assert_not_found(
+        isolation_client.get(
+            "/api/v1/courses/{course_id}",
+            f"/api/v1/courses/{course_id}",
+            headers=headers_b,
+        ),
+    )
 
     patch_response = isolation_client.patch(
         "/api/v1/courses/{course_id}",
@@ -102,6 +132,13 @@ def test_tenant_b_cannot_attack_tenant_a_course_routes() -> None:
             "/api/v1/courses/{course_id}/lessons",
             f"/api/v1/courses/{course_id}/lessons",
             json={"section_id": section_id, "title": "Tenant B Lesson", "position": 1},
+            headers=headers_b,
+        ),
+    )
+    _assert_not_found(
+        isolation_client.get(
+            "/api/v1/courses/{course_id}/lessons",
+            f"/api/v1/courses/{course_id}/lessons",
             headers=headers_b,
         ),
     )
@@ -173,6 +210,71 @@ def test_course_role_is_per_enrolment_through_publish_route() -> None:
         headers=headers,
     )
     assert owner_publish.status_code == 200
+
+
+@pytest.mark.integration
+def test_course_authoring_slice_creates_owner_and_text_lessons() -> None:
+    if os.getenv(APP_DATABASE_URL_ENV) is None:
+        pytest.skip(f"{APP_DATABASE_URL_ENV} is not set")
+
+    client = TestClient(create_app())
+    tenant = _signup(client, "authoring-slice")
+    token = _login(client, tenant.slug, tenant.email)
+    headers = _headers(tenant.slug, token)
+
+    missing_title_response = client.post(
+        "/api/v1/courses",
+        json={"description": "No title"},
+        headers=headers,
+    )
+    assert missing_title_response.status_code == 422
+    assert missing_title_response.json()["error"]["details"][0] == {
+        "constraint": "required",
+        "field": "title",
+        "message": None,
+    }
+
+    course_response = client.post(
+        "/api/v1/courses",
+        json={"title": "First Authoring Course", "description": "Created from the v1 flow"},
+        headers=headers,
+    )
+    assert course_response.status_code == 200
+    course = course_response.json()["data"]
+    assert course["status"] == "draft"
+    assert course["slug"] == "first-authoring-course"
+    assert course["lesson_count"] == 0
+    _assert_course_role(tenant.tenant_id, tenant.user_id, course["id"], "course_owner")
+
+    lesson_a_response = client.post(
+        f"/api/v1/courses/{course['id']}/lessons",
+        json={"title": "Welcome", "body": "Welcome to the first lesson."},
+        headers=headers,
+    )
+    assert lesson_a_response.status_code == 200
+    assert lesson_a_response.json()["data"]["position"] == 0
+    assert lesson_a_response.json()["data"]["body"] == "Welcome to the first lesson."
+
+    lesson_b_response = client.post(
+        f"/api/v1/courses/{course['id']}/lessons",
+        json={"title": "Next Step", "body": "This is the second lesson."},
+        headers=headers,
+    )
+    assert lesson_b_response.status_code == 200
+    assert lesson_b_response.json()["data"]["position"] == 1
+
+    lessons_response = client.get(f"/api/v1/courses/{course['id']}/lessons", headers=headers)
+    assert lessons_response.status_code == 200
+    assert [lesson["title"] for lesson in lessons_response.json()["data"]] == [
+        "Welcome",
+        "Next Step",
+    ]
+
+    detail_response = client.get(f"/api/v1/courses/{course['id']}", headers=headers)
+    assert detail_response.status_code == 200
+    detail = detail_response.json()["data"]
+    assert detail["lesson_count"] == 2
+    assert detail["lessons"][0]["body"] == "Welcome to the first lesson."
 
 
 class TenantAccount:
@@ -275,6 +377,23 @@ def _set_course_role(tenant_id: str, user_id: str, course_id: str, course_role: 
             """,
             (course_role, tenant_id, user_id, course_id),
         )
+
+
+def _assert_course_role(tenant_id: str, user_id: str, course_id: str, course_role: str) -> None:
+    database_url = os.environ[APP_DATABASE_URL_ENV]
+    with psycopg.connect(database_url) as connection, connection.cursor() as cursor:
+        cursor.execute("SELECT set_config('app.current_tenant_id', %s, true)", (tenant_id,))
+        cursor.execute(
+            """
+            SELECT course_role
+            FROM enrolments
+            WHERE tenant_id = %s
+              AND learner_id = %s
+              AND course_id = %s
+            """,
+            (tenant_id, user_id, course_id),
+        )
+        assert cursor.fetchone() == (course_role,)
 
 
 def _assert_not_found(response: Response) -> None:

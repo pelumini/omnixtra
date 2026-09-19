@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 
 import { FormError, SubmitButton, TextareaField } from "@/components/ui/form-controls";
 import { createTutorJob, parseTutorEventMessage, tutorJobEventsUrl } from "@/lib/api";
+import { feedbackToast } from "@/lib/feedback/toast";
 import { resolveMessage } from "@/lib/forms/messages";
 import type { TutorJob } from "@/lib/schemas";
 import { tutorQuestionFormSchema, type TutorQuestionFormInput } from "@/lib/schemas/learning-forms";
@@ -92,8 +93,10 @@ export function TutorPanel({ courseId }: TutorPanelProps) {
         const response = await createTutorJob(courseId, question, `tutor-${crypto.randomUUID()}`);
         setActiveJob(response.data);
         reset();
+        feedbackToast.success("Tutor question sent.");
       } catch (error) {
         setStatus("failed");
+        feedbackToast.error("Tutor question could not be sent.");
         setMessages((current) => [
           ...current,
           {
@@ -133,12 +136,16 @@ export function TutorPanel({ courseId }: TutorPanelProps) {
 
       <form className="grid gap-2" noValidate onSubmit={handleSubmit(handleAsk)}>
         <FormError>{null}</FormError>
-        <TextareaField
-          error={errors.question?.message ? resolveMessage("question", errors.question.message) : undefined}
-          label="Question"
-          registration={register("question")}
-        />
-        <SubmitButton className="gap-2" isSubmitting={isPending}>
+        <fieldset disabled={isPending}>
+          <TextareaField
+            error={
+              errors.question?.message ? resolveMessage("question", errors.question.message) : undefined
+            }
+            label="Question"
+            registration={register("question")}
+          />
+        </fieldset>
+        <SubmitButton className="gap-2" isSubmitting={isPending} pendingLabel="Sending...">
           <Send aria-hidden="true" className="size-4" />
           Ask
         </SubmitButton>

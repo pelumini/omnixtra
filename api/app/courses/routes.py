@@ -10,6 +10,7 @@ from app.courses.schemas import (
     BlockCreateRequest,
     BlockResponse,
     CourseCreateRequest,
+    CourseDetailResponse,
     CourseResponse,
     CourseUpdateRequest,
     CursorPage,
@@ -28,7 +29,9 @@ from app.courses.services import (
     create_media_asset,
     create_section,
     delete_course,
+    get_course_detail,
     list_courses,
+    list_lessons,
     publish_course,
     reorder_sections,
     update_course,
@@ -65,6 +68,16 @@ async def list_courses_route(
     limit: LimitQuery = 20,
 ) -> Envelope[CursorPage]:
     response = await list_courses(session, after=after, limit=limit)
+    return Envelope(data=response, error=None, meta=Meta.current())
+
+
+@router.get("/{course_id}")
+async def get_course_route(
+    course_id: UUID,
+    session: SessionDep,
+    _principal: CourseMember,
+) -> Envelope[CourseDetailResponse]:
+    response = await get_course_detail(session, course_id)
     return Envelope(data=response, error=None, meta=Meta.current())
 
 
@@ -120,6 +133,16 @@ async def create_lesson_route(
         session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
     )
     response = await create_lesson(session, course_id, request, actor_id=principal.user_id)
+    return Envelope(data=response, error=None, meta=Meta.current())
+
+
+@router.get("/{course_id}/lessons")
+async def list_lessons_route(
+    course_id: UUID,
+    session: SessionDep,
+    _principal: CourseMember,
+) -> Envelope[list[LessonResponse]]:
+    response = await list_lessons(session, course_id)
     return Envelope(data=response, error=None, meta=Meta.current())
 
 

@@ -6,6 +6,7 @@ import {
   Boxes,
   CircleAlert,
   FileText,
+  Globe,
   Image,
   Layers3,
   ListChecks,
@@ -60,10 +61,36 @@ type CourseBuilderProps = {
 };
 
 const blockTypes = [
-  { value: "text", label: "Text", icon: FileText },
-  { value: "video", label: "Video", icon: PlaySquare },
-  { value: "image", label: "Image", icon: Image },
-  { value: "quiz", label: "Quiz", icon: ListChecks },
+  {
+    value: "content",
+    label: "Content",
+    hint: "Write lesson text, notes, or instructions.",
+    icon: FileText,
+  },
+  {
+    value: "web_content",
+    label: "Web content",
+    hint: "Add a useful link or embedded-resource URL.",
+    icon: Globe,
+  },
+  {
+    value: "video",
+    label: "Video",
+    hint: "Paste a video URL for the lesson.",
+    icon: PlaySquare,
+  },
+  {
+    value: "image",
+    label: "Image",
+    hint: "Add an image URL or reference.",
+    icon: Image,
+  },
+  {
+    value: "quiz",
+    label: "Quiz",
+    hint: "Add a quick check question.",
+    icon: ListChecks,
+  },
 ] as const;
 
 export function CourseBuilder({
@@ -118,7 +145,12 @@ export function CourseBuilder({
         </div>
         <div className="flex items-center gap-2">
           <CourseStatus status={course.status} />
-          <Button className="gap-2" disabled={isPending} onClick={handlePublish}>
+          <Button
+            className="gap-2"
+            isProcessing={isPending}
+            onClick={handlePublish}
+            processingLabel="Publishing..."
+          >
             <BadgeCheck aria-hidden="true" className="size-4" />
             Publish
           </Button>
@@ -289,8 +321,10 @@ function CourseDetailsForm({
         description: input.description === "" ? null : input.description,
         title: input.title,
       }),
+    errorMessage: "Course details could not be saved.",
     onSuccess: (response) => onSaved(response.data),
     setError,
+    successMessage: "Course details saved.",
   });
   const fieldError = formFieldError(errors);
 
@@ -301,13 +335,15 @@ function CourseDetailsForm({
         <h2 className="text-sm font-semibold">Details</h2>
       </div>
       <FormError>{formError}</FormError>
-      <Field error={fieldError("title")} label="Title" registration={register("title")} />
-      <TextareaField
-        error={fieldError("description")}
-        label="Description"
-        registration={register("description")}
-      />
-      <SubmitButton isSubmitting={isSubmitting}>Save</SubmitButton>
+      <fieldset className="grid gap-3" disabled={isSubmitting}>
+        <Field error={fieldError("title")} label="Title" registration={register("title")} />
+        <TextareaField
+          error={fieldError("description")}
+          label="Description"
+          registration={register("description")}
+        />
+      </fieldset>
+      <SubmitButton isSubmitting={isSubmitting} pendingLabel="Saving...">Save</SubmitButton>
     </form>
   );
 }
@@ -340,11 +376,13 @@ function MediaForm({
         file_name: input.fileName,
         object_key: `tenants/current/courses/${courseId}/${input.fileName}`,
       }),
+    errorMessage: "Media metadata could not be saved.",
     onSuccess: (response) => {
       onCreated(response.data);
       reset();
     },
     setError,
+    successMessage: "Media metadata saved.",
   });
   const fieldError = formFieldError(errors);
 
@@ -355,19 +393,21 @@ function MediaForm({
         <h2 className="text-sm font-semibold">Media</h2>
       </div>
       <FormError>{formError}</FormError>
-      <Field error={fieldError("fileName")} label="File" registration={register("fileName")} />
-      <SelectField label="Content type" registration={register("contentType")}>
-        <option value="image/png">image/png</option>
-        <option value="image/jpeg">image/jpeg</option>
-        <option value="video/mp4">video/mp4</option>
-      </SelectField>
-      <Field
-        error={fieldError("byteSize")}
-        label="Bytes"
-        registration={register("byteSize", { valueAsNumber: true })}
-        type="number"
-      />
-      <SubmitButton className="gap-2" isSubmitting={isSubmitting}>
+      <fieldset className="grid gap-3" disabled={isSubmitting}>
+        <Field error={fieldError("fileName")} label="File" registration={register("fileName")} />
+        <SelectField label="Content type" registration={register("contentType")}>
+          <option value="image/png">image/png</option>
+          <option value="image/jpeg">image/jpeg</option>
+          <option value="video/mp4">video/mp4</option>
+        </SelectField>
+        <Field
+          error={fieldError("byteSize")}
+          label="Bytes"
+          registration={register("byteSize", { valueAsNumber: true })}
+          type="number"
+        />
+      </fieldset>
+      <SubmitButton className="gap-2" isSubmitting={isSubmitting} pendingLabel="Saving...">
         <Upload aria-hidden="true" className="size-4" />
         Save
       </SubmitButton>
@@ -398,11 +438,13 @@ function SectionForm({
   });
   const { formError, isSubmitting, submit } = useFormSubmit({
     action: (input: SectionFormInput) => createSection(courseId, { position, title: input.title }),
+    errorMessage: "Section could not be added.",
     onSuccess: (response) => {
       onCreated(response.data);
       reset();
     },
     setError,
+    successMessage: "Section added.",
   });
   const fieldError = formFieldError(errors);
 
@@ -410,9 +452,11 @@ function SectionForm({
     <form className="flex flex-wrap items-end gap-3 border border-[var(--border)] bg-white p-4" noValidate onSubmit={handleSubmit(submit)}>
       <div className="min-w-56 flex-1">
         <FormError>{formError}</FormError>
-        <Field error={fieldError("title")} label="Section" registration={register("title")} />
+        <fieldset disabled={isSubmitting}>
+          <Field error={fieldError("title")} label="Section" registration={register("title")} />
+        </fieldset>
       </div>
-      <SubmitButton className="w-auto gap-2" isSubmitting={isSubmitting}>
+      <SubmitButton className="w-auto gap-2" isSubmitting={isSubmitting} pendingLabel="Adding...">
         <Plus aria-hidden="true" className="size-4" />
         Add
       </SubmitButton>
@@ -456,11 +500,13 @@ function LessonForm({
         section_id: input.sectionId,
         title: input.title,
       }),
+    errorMessage: "Lesson could not be added.",
     onSuccess: (response) => {
       onCreated(response.data);
       reset({ sectionId: selectedSectionId, title: "" });
     },
     setError,
+    successMessage: "Lesson added.",
   });
   const fieldError = formFieldError(errors);
 
@@ -471,26 +517,28 @@ function LessonForm({
         <h2 className="text-sm font-semibold">Lesson</h2>
       </div>
       <FormError>{formError}</FormError>
-      <SelectField
-        error={fieldError("sectionId")}
-        label="Section"
-        registration={register("sectionId", {
-          onChange: (event) => onSectionChange(event.target.value),
-        })}
-      >
-        <option value="">Select section</option>
-        {sections.map((section) => (
-          <option key={section.id} value={section.id}>
-            {section.title}
-          </option>
-        ))}
-      </SelectField>
-      <Field
-        error={fieldError("title")}
-        label="Lesson title"
-        registration={register("title")}
-      />
-      <SubmitButton className="gap-2" disabled={disabled} isSubmitting={isSubmitting}>
+      <fieldset className="grid gap-3" disabled={isSubmitting || disabled}>
+        <SelectField
+          error={fieldError("sectionId")}
+          label="Section"
+          registration={register("sectionId", {
+            onChange: (event) => onSectionChange(event.target.value),
+          })}
+        >
+          <option value="">Select section</option>
+          {sections.map((section) => (
+            <option key={section.id} value={section.id}>
+              {section.title}
+            </option>
+          ))}
+        </SelectField>
+        <Field
+          error={fieldError("title")}
+          label="Lesson title"
+          registration={register("title")}
+        />
+      </fieldset>
+      <SubmitButton className="gap-2" disabled={disabled} isSubmitting={isSubmitting} pendingLabel="Adding...">
         <Plus aria-hidden="true" className="size-4" />
         Add
       </SubmitButton>
@@ -521,25 +569,31 @@ function BlockForm({
     register,
     reset,
     setError,
+    watch,
   } = useForm<BlockFormInput>({
-    defaultValues: { blockType: "text", body: "", lessonId: selectedLessonId },
+    defaultValues: { blockType: "content", body: "", lessonId: selectedLessonId },
     mode: "onTouched",
     reValidateMode: "onChange",
     resolver: zodResolver(blockFormSchema),
   });
+  const selectedBlockType = watch("blockType");
+  const selectedBlockOption =
+    blockTypes.find((blockType) => blockType.value === selectedBlockType) ?? blockTypes[0];
   const { formError, isSubmitting, submit } = useFormSubmit({
     action: (input: BlockFormInput) =>
       createBlock(courseId, {
-        block_type: input.blockType,
+        block_type: backendBlockType(input.blockType),
         content: blockContent(input.blockType, input.body),
         lesson_id: input.lessonId,
         position: blocks.filter((block) => block.lesson_id === input.lessonId).length,
       }),
+    errorMessage: "Content could not be added.",
     onSuccess: (response) => {
       onCreated(response.data);
-      reset({ blockType: "text", body: "", lessonId: selectedLessonId });
+      reset({ blockType: "content", body: "", lessonId: selectedLessonId });
     },
     setError,
+    successMessage: "Content added.",
   });
   const fieldError = formFieldError(errors);
 
@@ -547,45 +601,62 @@ function BlockForm({
     <form className="grid gap-3 border border-[var(--border)] bg-white p-4" noValidate onSubmit={handleSubmit(submit)}>
       <div className="flex items-center gap-2">
         <Boxes aria-hidden="true" className="size-4 text-gray-500" />
-        <h2 className="text-sm font-semibold">Block</h2>
+        <h2 className="text-sm font-semibold">Add standard content</h2>
       </div>
+      <p className="text-xs leading-5 text-slate-500">
+        Choose the exact content type you want to add. OmniXtra does not group these behind
+        separate course categories.
+      </p>
       <FormError>{formError}</FormError>
-      <SelectField
-        error={fieldError("lessonId")}
-        label="Lesson"
-        registration={register("lessonId", {
-          onChange: (event) => onLessonChange(event.target.value),
-        })}
-      >
-        <option value="">Select lesson</option>
-        {lessons.map((lesson) => (
-          <option key={lesson.id} value={lesson.id}>
-            {lesson.title}
-          </option>
-        ))}
-      </SelectField>
-      <fieldset className="grid grid-cols-2 gap-2">
-        <legend className="sr-only">Block type</legend>
-        {blockTypes.map((blockType) => {
-          const Icon = blockType.icon;
+      <fieldset className="grid gap-3" disabled={isSubmitting || disabled}>
+        <SelectField
+          error={fieldError("lessonId")}
+          label="Lesson"
+          registration={register("lessonId", {
+            onChange: (event) => onLessonChange(event.target.value),
+          })}
+        >
+          <option value="">Select lesson</option>
+          {lessons.map((lesson) => (
+            <option key={lesson.id} value={lesson.id}>
+              {lesson.title}
+            </option>
+          ))}
+        </SelectField>
+        <fieldset className="grid gap-2">
+          <legend className="text-xs font-medium text-slate-600">Content type</legend>
+          {blockTypes.map((blockType) => {
+            const Icon = blockType.icon;
 
-          return (
-            <label
-              className="flex h-10 items-center gap-2 border border-[var(--border)] bg-white px-3 text-sm"
-              key={blockType.value}
-            >
-              <input {...register("blockType")} type="radio" value={blockType.value} />
-              <Icon aria-hidden="true" className="size-4 text-gray-500" />
-              {blockType.label}
-            </label>
-          );
-        })}
+            return (
+              <label
+                className="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-md border border-[var(--border)] bg-white px-3 py-3 text-sm hover:border-[var(--primary)] hover:bg-emerald-50"
+                key={blockType.value}
+              >
+                <input className="mt-1" {...register("blockType")} type="radio" value={blockType.value} />
+                <span className="min-w-0">
+                  <span className="flex items-center gap-2 font-medium text-[var(--foreground)]">
+                    <Icon aria-hidden="true" className="size-4 text-[var(--primary)]" />
+                    {blockType.label}
+                  </span>
+                  <span className="mt-1 block text-xs leading-5 text-slate-500">
+                    {blockType.hint}
+                  </span>
+                </span>
+              </label>
+            );
+          })}
+        </fieldset>
+        {fieldError("blockType") ? <FieldError>{fieldError("blockType")}</FieldError> : null}
+        <TextareaField
+          error={fieldError("body")}
+          label={contentBodyLabel(selectedBlockOption.value)}
+          registration={register("body")}
+        />
       </fieldset>
-      {fieldError("blockType") ? <FieldError>{fieldError("blockType")}</FieldError> : null}
-      <TextareaField error={fieldError("body")} label="Content" registration={register("body")} />
-      <SubmitButton className="gap-2" disabled={disabled} isSubmitting={isSubmitting}>
+      <SubmitButton className="gap-2" disabled={disabled} isSubmitting={isSubmitting} pendingLabel="Adding...">
         <Plus aria-hidden="true" className="size-4" />
-        Add
+        Add content
       </SubmitButton>
     </form>
   );
@@ -595,12 +666,40 @@ function BookIcon() {
   return <FileText aria-hidden="true" className="size-4 text-gray-500" />;
 }
 
-function blockContent(blockType: string, body: string) {
+type StandardContentType = BlockFormInput["blockType"];
+
+function backendBlockType(blockType: StandardContentType) {
+  if (blockType === "content" || blockType === "web_content") {
+    return "text";
+  }
+  return blockType;
+}
+
+function contentBodyLabel(blockType: StandardContentType) {
+  if (blockType === "web_content") {
+    return "Web content URL";
+  }
+  if (blockType === "video") {
+    return "Video URL";
+  }
+  if (blockType === "image") {
+    return "Image URL or description";
+  }
+  if (blockType === "quiz") {
+    return "Quiz question";
+  }
+  return "Content";
+}
+
+function blockContent(blockType: StandardContentType, body: string) {
+  if (blockType === "web_content") {
+    return { markdown: `[Open web content](${body})`, type: "text" };
+  }
   if (blockType === "video") {
     return { caption: null, type: "video", url: body };
   }
   if (blockType === "image") {
-    return { alt_text: body, type: "image", url: "https://example.com/image.png" };
+    return { alt_text: "Course image", type: "image", url: body };
   }
   if (blockType === "quiz") {
     return {

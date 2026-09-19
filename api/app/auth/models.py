@@ -64,6 +64,7 @@ class Invitation(TenantOwnedMixin, TimestampMixin, Base):
     email: Mapped[str] = mapped_column(String(320), nullable=False)
     org_role: Mapped[str] = mapped_column(String(32), nullable=False, default=OrgRole.member.value)
     token_hash: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
+    raw_token: Mapped[str | None] = mapped_column(String(256), nullable=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 

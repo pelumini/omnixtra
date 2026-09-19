@@ -19,14 +19,17 @@ from app.courses.repositories import (
     course_by_slug,
     courses_page,
     lesson_by_id,
+    lessons_for_course,
     media_asset_by_object_key,
     section_by_id,
     sections_for_course,
+    text_blocks_for_course,
 )
 from app.courses.schemas import (
     BlockCreateRequest,
     BlockResponse,
     CourseCreateRequest,
+    CourseDetailResponse,
     CourseResponse,
     CourseUpdateRequest,
     CursorPage,
@@ -42,6 +45,7 @@ from app.shared.models import utc_now
 from app.tenancy.context import require_tenant_id
 
 DEFAULT_PAGE_SIZE = 20
+DEFAULT_SECTION_TITLE = "Start here"
 
 
 async def create_course(
@@ -49,13 +53,14 @@ async def create_course(
     request: CourseCreateRequest,
     actor_id: UUID | None = None,
 ) -> CourseResponse:
-    existing = await session.scalar(course_by_slug(request.slug))
+    slug = request.slug or _slugify(request.title)
+    existing = await session.scalar(course_by_slug(slug))
     if existing is not None:
         msg = "course slug is already taken"
         raise ConflictError(msg)
     course = Course(
         title=request.title,
-        slug=request.slug,
+        slug=slug,
         description=request.description,
         status=CourseStatus.draft.value,
     )
@@ -74,6 +79,15 @@ async def create_course(
     _audit(session, course.id, actor_id, "course.created", f"Created course {course.slug}")
     await session.commit()
     return course_response(course)
+
+
+async def get_course_detail(session: AsyncSession, course_id: UUID) -> CourseDetailResponse:
+    course = await require_course(session, course_id)
+    lessons = await list_lessons(session, course_id)
+    return CourseDetailResponse(
+        **course_response(course, lesson_count=len(lessons)).model_dump(),
+        lessons=lessons,
+    )
 
 
 async def update_course(
@@ -101,9 +115,28 @@ async def list_courses(
     courses = list((await session.scalars(courses_page(after=after, limit=limit))).all())
     page_items = courses[:limit]
     next_cursor = str(courses[limit].id) if len(courses) > limit else None
+    lesson_counts = await count_lessons_for_courses(session, [course.id for course in page_items])
     return CursorPage(
-        items=[course_response(course) for course in page_items], next_cursor=next_cursor
+        items=[
+            course_response(course, lesson_count=lesson_counts.get(course.id, 0))
+            for course in page_items
+        ],
+        next_cursor=next_cursor,
     )
+
+
+async def list_lessons(session: AsyncSession, course_id: UUID) -> list[LessonResponse]:
+    await require_course(session, course_id)
+    lessons = list((await session.scalars(lessons_for_course(course_id))).all())
+    text_blocks = list((await session.scalars(text_blocks_for_course(course_id))).all())
+    body_by_lesson_id: dict[UUID, str] = {}
+    for block in text_blocks:
+        if block.lesson_id in body_by_lesson_id:
+            continue
+        markdown = block.content.get("markdown")
+        if isinstance(markdown, str):
+            body_by_lesson_id[block.lesson_id] = markdown
+    return [lesson_response(lesson, body=body_by_lesson_id.get(lesson.id)) for lesson in lessons]
 
 
 async def create_section(
@@ -128,18 +161,34 @@ async def create_lesson(
     actor_id: UUID | None = None,
 ) -> LessonResponse:
     await require_course(session, course_id)
-    await require_section(session, request.section_id, course_id=course_id)
+    section_id = request.section_id
+    if section_id is None:
+        section_id = await ensure_default_section(session, course_id)
+    await require_section(session, section_id, course_id=course_id)
+    position = request.position
+    if position is None:
+        position = await next_lesson_position(session, course_id)
     lesson = Lesson(
         course_id=course_id,
-        section_id=request.section_id,
+        section_id=section_id,
         title=request.title,
-        position=request.position,
+        position=position,
     )
     session.add(lesson)
     await session.flush()
+    if request.body is not None:
+        session.add(
+            CourseBlock(
+                course_id=course_id,
+                lesson_id=lesson.id,
+                block_type="text",
+                content={"type": "text", "markdown": request.body},
+                position=0,
+            ),
+        )
     _audit(session, course_id, actor_id, "lesson.created", f"Created lesson {lesson.title}")
     await session.commit()
-    return lesson_response(lesson)
+    return lesson_response(lesson, body=request.body)
 
 
 async def create_block(
@@ -293,13 +342,14 @@ async def require_lesson(
     return lesson
 
 
-def course_response(course: Course) -> CourseResponse:
+def course_response(course: Course, *, lesson_count: int = 0) -> CourseResponse:
     return CourseResponse(
         id=course.id,
         title=course.title,
         slug=course.slug,
         description=course.description,
         status=course.status,
+        lesson_count=lesson_count,
     )
 
 
@@ -312,13 +362,14 @@ def section_response(section: CourseSection) -> SectionResponse:
     )
 
 
-def lesson_response(lesson: Lesson) -> LessonResponse:
+def lesson_response(lesson: Lesson, *, body: str | None = None) -> LessonResponse:
     return LessonResponse(
         id=lesson.id,
         course_id=lesson.course_id,
         section_id=lesson.section_id,
         title=lesson.title,
         position=lesson.position,
+        body=body,
     )
 
 
@@ -360,3 +411,52 @@ def _audit(
             summary=summary,
         ),
     )
+
+
+async def ensure_default_section(session: AsyncSession, course_id: UUID) -> UUID:
+    section = await session.scalar(sections_for_course(course_id))
+    if section is not None:
+        return section.id
+    section = CourseSection(course_id=course_id, title=DEFAULT_SECTION_TITLE, position=0)
+    session.add(section)
+    await session.flush()
+    return section.id
+
+
+async def next_lesson_position(session: AsyncSession, course_id: UUID) -> int:
+    current_max = await session.scalar(
+        select(func.max(Lesson.position)).where(
+            Lesson.course_id == course_id,
+            Lesson.deleted_at.is_(None),
+        ),
+    )
+    return 0 if current_max is None else int(current_max) + 1
+
+
+def _slugify(value: str) -> str:
+    slug = []
+    previous_dash = False
+    for character in value.lower():
+        if ("a" <= character <= "z") or ("0" <= character <= "9"):
+            slug.append(character)
+            previous_dash = False
+            continue
+        if not previous_dash:
+            slug.append("-")
+            previous_dash = True
+    normalized = "".join(slug).strip("-")
+    return normalized[:120].strip("-") or "course"
+
+
+async def count_lessons_for_courses(
+    session: AsyncSession,
+    course_ids: list[UUID],
+) -> dict[UUID, int]:
+    if not course_ids:
+        return {}
+    rows = await session.execute(
+        select(Lesson.course_id, func.count(Lesson.id))
+        .where(Lesson.course_id.in_(course_ids), Lesson.deleted_at.is_(None))
+        .group_by(Lesson.course_id),
+    )
+    return {course_id: int(count) for course_id, count in rows.all()}

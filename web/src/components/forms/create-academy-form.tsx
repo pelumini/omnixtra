@@ -36,8 +36,11 @@ export function CreateAcademyForm({ action, onSuccess }: CreateAcademyFormProps)
 
   const { formError, isSubmitting, submit } = useFormSubmit({
     action,
+    errorMessage: "Academy could not be created.",
     onSuccess,
+    resetOnSuccess: false,
     setError,
+    successMessage: "Academy created.",
   });
   const subdomain = watch("subdomain");
   const fieldError = (field: keyof CreateAcademyInput) => {
@@ -112,7 +115,9 @@ export function CreateAcademyForm({ action, onSuccess }: CreateAcademyFormProps)
         />
       </fieldset>
 
-      <SubmitButton isSubmitting={isSubmitting}>Create academy</SubmitButton>
+      <SubmitButton isSubmitting={isSubmitting} pendingLabel="Creating academy...">
+        Create academy
+      </SubmitButton>
     </form>
   );
 }

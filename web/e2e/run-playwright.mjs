@@ -1,19 +1,35 @@
 import { spawn } from "node:child_process";
+import { cp, rm } from "node:fs/promises";
 import http from "node:http";
 import net from "node:net";
+import path from "node:path";
 
-const port = process.env.PLAYWRIGHT_PORT ?? "3100";
+const port = process.env.PLAYWRIGHT_PORT ?? "3001";
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${port}`;
 const isWindows = process.platform === "win32";
 const buildTimeoutMs = numberFromEnv("E2E_BUILD_TIMEOUT_MS", 240_000);
 const serverTimeoutMs = numberFromEnv("E2E_SERVER_TIMEOUT_MS", 60_000);
 const testTimeoutMs = numberFromEnv("E2E_TEST_TIMEOUT_MS", 180_000);
+const fixtureFlag =
+  process.env.OMNIXTRA_E2E_FIXTURES ?? process.env.NEXT_PUBLIC_OMNIXTRA_E2E_FIXTURES ?? "1";
+const e2eAllowed = process.env.CI === "true" || process.env.PLAYWRIGHT_ALLOW_LOCAL_E2E === "1";
+
+if (!e2eAllowed) {
+  console.error(
+    "Playwright is CI-only for this project. Run fast local checks with npm run verify; " +
+      "use GitHub Actions for browser E2E.",
+  );
+  process.exit(1);
+}
 
 let server;
 const e2eEnv = {
   ...process.env,
-  OMNIXTRA_E2E_FIXTURES: "1",
+  NEXT_PUBLIC_OMNIXTRA_E2E_FIXTURES: fixtureFlag,
+  OMNIXTRA_E2E_FIXTURES: fixtureFlag,
 };
+const fixtureRouteSource = path.resolve("e2e", "fixture-routes", "e2e");
+const fixtureRouteTarget = path.resolve("src", "app", "e2e");
 
 for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
   process.once(signal, () => {
@@ -25,12 +41,17 @@ for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
 
 try {
   await assertPortAvailable(port);
+  await removeFixtureRoutes();
+  if (fixtureFlag === "1") {
+    await cp(fixtureRouteSource, fixtureRouteTarget, { recursive: true });
+  }
 
   const buildExitCode = await run(process.execPath, ["./node_modules/next/dist/bin/next", "build"], {
     env: e2eEnv,
     label: "next build",
     timeoutMs: buildTimeoutMs,
   });
+  await removeFixtureRoutes();
   if (buildExitCode !== 0) {
     process.exitCode = buildExitCode;
     throw new Error(`next build failed with exit code ${buildExitCode}`);
@@ -63,6 +84,7 @@ try {
 
   process.exitCode = exitCode;
 } finally {
+  await removeFixtureRoutes();
   await stopServer(server);
 }
 
@@ -253,4 +275,8 @@ function numberFromEnv(name, fallback) {
 
   const value = Number(rawValue);
   return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+async function removeFixtureRoutes() {
+  await rm(fixtureRouteTarget, { force: true, recursive: true });
 }

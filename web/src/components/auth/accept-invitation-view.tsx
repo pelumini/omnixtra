@@ -51,8 +51,11 @@ function AcceptForm({ preview, token }: { preview: InvitationPreview; token: str
         password: input.password,
         token,
       }),
+    errorMessage: "Invitation could not be accepted.",
     onSuccess: () => window.location.assign("/"),
+    resetOnSuccess: false,
     setError,
+    successMessage: "Invitation accepted.",
   });
   const fieldError = (field: keyof AcceptInvitationInput) => {
     const message = errors[field]?.message;
@@ -66,28 +69,32 @@ function AcceptForm({ preview, token }: { preview: InvitationPreview; token: str
     >
       <form className="space-y-4" noValidate onSubmit={handleSubmit(submit)}>
         <FormError>{formError}</FormError>
-        <div>
-          <span className="block text-xs font-medium text-slate-600">Invited email</span>
-          <p className="mt-1 flex h-10 items-center truncate rounded-md border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-slate-700">
-            {preview.email}
-          </p>
-        </div>
-        <Field
-          autoComplete="name"
-          error={fieldError("fullName")}
-          label="Full name"
-          registration={register("fullName")}
-        />
-        <Field
-          autoComplete="new-password"
-          error={fieldError("password")}
-          hint="At least 12 characters."
-          label="Create a password"
-          registration={register("password")}
-          type="password"
-        />
+        <fieldset className="space-y-4" disabled={isSubmitting}>
+          <div>
+            <span className="block text-xs font-medium text-slate-600">Invited email</span>
+            <p className="mt-1 flex h-10 items-center truncate rounded-md border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-slate-700">
+              {preview.email}
+            </p>
+          </div>
+          <Field
+            autoComplete="name"
+            error={fieldError("fullName")}
+            label="Full name"
+            registration={register("fullName")}
+          />
+          <Field
+            autoComplete="new-password"
+            error={fieldError("password")}
+            hint="At least 12 characters."
+            label="Create a password"
+            registration={register("password")}
+            type="password"
+          />
+        </fieldset>
 
-        <SubmitButton isSubmitting={isSubmitting}>Accept invitation and join</SubmitButton>
+        <SubmitButton isSubmitting={isSubmitting} pendingLabel="Joining...">
+          Accept invitation and join
+        </SubmitButton>
       </form>
     </AuthShell>
   );
@@ -110,7 +117,7 @@ function TokenFallback() {
   const tokenFallbackSchema = z.object({ token: invitationTokenSchema });
   type TokenFallbackInput = z.infer<typeof tokenFallbackSchema>;
   const {
-    formState: { errors },
+    formState: { errors, isSubmitting },
     handleSubmit,
     register,
     watch,
@@ -137,13 +144,15 @@ function TokenFallback() {
           window.location.assign(`/join?token=${encodeURIComponent(token.trim())}`);
         })}
       >
-        <Field
-          error={tokenError}
-          label="Invitation code"
-          placeholder="Paste your invitation code"
-          registration={register("token")}
-        />
-        <SubmitButton disabled={token.trim().length === 0} isSubmitting={false}>
+        <fieldset disabled={isSubmitting}>
+          <Field
+            error={tokenError}
+            label="Invitation code"
+            placeholder="Paste your invitation code"
+            registration={register("token")}
+          />
+        </fieldset>
+        <SubmitButton disabled={token.trim().length === 0} isSubmitting={isSubmitting} pendingLabel="Checking...">
           Continue
         </SubmitButton>
       </form>

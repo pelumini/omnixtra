@@ -1,4 +1,5 @@
 import type { MyCourse, SessionResponse, TenantBranding } from "@/lib/schemas";
+import { e2eFixturesEnabled } from "@/lib/e2e-enabled";
 
 export const e2eBranding: TenantBranding = {
   locale: "en",
@@ -76,6 +77,4 @@ export const e2eMyCourses: MyCourse[] = [
   },
 ];
 
-export function e2eFixturesEnabled() {
-  return process.env.OMNIXTRA_E2E_FIXTURES === "1";
-}
+export { e2eFixturesEnabled };

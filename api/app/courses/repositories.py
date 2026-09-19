@@ -2,7 +2,7 @@ from uuid import UUID
 
 from sqlalchemy import Select, select
 
-from app.courses.models import Course, CourseMediaAsset, CourseSection, Lesson
+from app.courses.models import Course, CourseBlock, CourseMediaAsset, CourseSection, Lesson
 
 
 def course_by_id(course_id: UUID) -> Select[tuple[Course]]:
@@ -37,9 +37,33 @@ def section_by_id(
 
 
 def sections_for_course(course_id: UUID) -> Select[tuple[CourseSection]]:
-    return select(CourseSection).where(
-        CourseSection.course_id == course_id,
-        CourseSection.deleted_at.is_(None),
+    return (
+        select(CourseSection)
+        .where(
+            CourseSection.course_id == course_id,
+            CourseSection.deleted_at.is_(None),
+        )
+        .order_by(CourseSection.position, CourseSection.id)
+    )
+
+
+def lessons_for_course(course_id: UUID) -> Select[tuple[Lesson]]:
+    return (
+        select(Lesson)
+        .where(Lesson.course_id == course_id, Lesson.deleted_at.is_(None))
+        .order_by(Lesson.position, Lesson.id)
+    )
+
+
+def text_blocks_for_course(course_id: UUID) -> Select[tuple[CourseBlock]]:
+    return (
+        select(CourseBlock)
+        .where(
+            CourseBlock.course_id == course_id,
+            CourseBlock.block_type == "text",
+            CourseBlock.deleted_at.is_(None),
+        )
+        .order_by(CourseBlock.position, CourseBlock.id)
     )
 
 
@@ -66,7 +90,9 @@ __all__ = [
     "course_by_slug",
     "courses_page",
     "lesson_by_id",
+    "lessons_for_course",
     "media_asset_by_object_key",
     "section_by_id",
     "sections_for_course",
+    "text_blocks_for_course",
 ]

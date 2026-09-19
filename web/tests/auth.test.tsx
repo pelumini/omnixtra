@@ -4,17 +4,20 @@ import { describe, expect, it } from "vitest";
 
 import { PublicLanding } from "@/components/app/public-landing";
 import { AcceptInvitationView } from "@/components/auth/accept-invitation-view";
+import { BareHostLoginView } from "@/components/auth/bare-host-login-view";
 import { SignInView } from "@/components/auth/sign-in-view";
 import { CreateAcademyForm } from "@/components/forms/create-academy-form";
 
 describe("auth UI", () => {
-  it("keeps public landing focused on academy creation with quiet auth links", () => {
+  it("keeps public landing focused on academy creation with marketing CTAs", () => {
     const html = renderToStaticMarkup(<PublicLanding />);
 
+    expect(html).toContain("AI-native LMS for branded academies");
     expect(html).toContain("Create your academy");
     expect(html).toContain('href="/get-started"');
-    expect(html).toContain('href="/login"');
+    expect(html).not.toContain('href="/login"');
     expect(html).toContain('href="/join"');
+    expect(html).toContain("Course-grounded AI");
     expect(html).not.toContain("Create Organization");
     expect(html).not.toContain("Accept Invitation");
     expect(html).not.toContain("organization");
@@ -23,9 +26,18 @@ describe("auth UI", () => {
 
   it("renders separate login, academy creation, and invitation surfaces", () => {
     expect(renderToStaticMarkup(<SignInView />)).toContain("Continue to your academy");
-    expect(renderToStaticMarkup(<SignInView requiresAcademyHost />)).toContain(
-      "Open your academy sign-in page",
+    expect(renderToStaticMarkup(<SignInView academyName="Eap Academy" />)).toContain(
+      "Sign in to Eap Academy",
     );
+    expect(renderToStaticMarkup(<SignInView />)).not.toContain("This field is required.");
+    expect(renderToStaticMarkup(<SignInView />)).not.toContain("Enter your email address.");
+    expect(renderToStaticMarkup(<SignInView />)).not.toContain("Enter your password.");
+    const bareHostHtml = renderToStaticMarkup(<BareHostLoginView />);
+    expect(bareHostHtml).toContain("Open your academy");
+    expect(bareHostHtml).toContain("your-academy.localhost:3001/login");
+    expect(bareHostHtml).toContain('href="/get-started"');
+    expect(bareHostHtml).toContain('href="/join"');
+    expect(bareHostHtml).not.toContain("Password");
     const createAcademyHtml = renderToStaticMarkup(
       <CreateAcademyForm
         action={async () => ({ accessToken: "token", subdomain: "acme" })}

@@ -49,7 +49,7 @@ BlockContent = TextBlockContent | VideoBlockContent | ImageBlockContent | QuizBl
 
 class CourseCreateRequest(BaseModel):
     title: str = Field(min_length=3, max_length=200)
-    slug: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{1,118}[a-z0-9]$")
+    slug: str | None = Field(default=None, pattern=r"^[a-z0-9][a-z0-9-]{1,118}[a-z0-9]$")
     description: str | None = Field(default=None, max_length=2_000)
 
 
@@ -64,9 +64,10 @@ class SectionCreateRequest(BaseModel):
 
 
 class LessonCreateRequest(BaseModel):
-    section_id: UUID
+    section_id: UUID | None = None
     title: str = Field(min_length=1, max_length=200)
-    position: int = Field(ge=0)
+    position: int | None = Field(default=None, ge=0)
+    body: str | None = Field(default=None, min_length=1, max_length=20_000)
 
 
 class BlockCreateRequest(BaseModel):
@@ -101,6 +102,7 @@ class CourseResponse(BaseModel):
     slug: str
     description: str | None
     status: str
+    lesson_count: int = 0
 
 
 class SectionResponse(BaseModel):
@@ -116,6 +118,7 @@ class LessonResponse(BaseModel):
     section_id: UUID
     title: str
     position: int
+    body: str | None = None
 
 
 class BlockResponse(BaseModel):
@@ -140,3 +143,7 @@ class MediaAssetResponse(BaseModel):
 class CursorPage(BaseModel):
     items: list[CourseResponse]
     next_cursor: str | None
+
+
+class CourseDetailResponse(CourseResponse):
+    lessons: list[LessonResponse]

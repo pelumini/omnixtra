@@ -101,6 +101,56 @@ def test_tenant_creation_login_and_protected_route_with_tenant_host() -> None:
 
 
 @pytest.mark.integration
+def test_tenant_creation_sets_session_cookies_and_session_endpoint_returns_identity() -> None:
+    if os.getenv(APP_DATABASE_URL_ENV) is None:
+        pytest.skip(f"{APP_DATABASE_URL_ENV} is not set")
+
+    tenant_slug = f"signup-session-{uuid4().hex[:12]}"
+    email = f"admin-{tenant_slug}@example.com"
+    client = TestClient(create_app())
+
+    signup_response = client.post(
+        "/api/v1/tenants",
+        json={
+            "tenant_name": "Signup Session Tenant",
+            "tenant_slug": tenant_slug,
+            "full_name": "Signup Session Admin",
+            "email": email,
+            "password": TEST_PASSWORD,
+        },
+        headers={"host": "localhost"},
+    )
+
+    assert signup_response.status_code == 200, signup_response.text
+    cookies = _cookies(signup_response.headers.get_list("set-cookie"))
+    assert ACCESS_TOKEN_COOKIE in cookies
+    assert REFRESH_TOKEN_COOKIE in cookies
+
+    session_response = client.get(
+        "/api/v1/auth/session",
+        headers={
+            "cookie": f"{ACCESS_TOKEN_COOKIE}={cookies[ACCESS_TOKEN_COOKIE].value}",
+            "host": f"{tenant_slug}.localhost",
+        },
+    )
+
+    assert session_response.status_code == 200, session_response.text
+    data = session_response.json()["data"]
+    assert data["user"]["email"] == email
+    assert data["user"]["full_name"] == "Signup Session Admin"
+    assert data["membership"]["org_role"] == "tenant_admin"
+    assert data["membership"]["tenant_id"] == signup_response.json()["data"]["tenant_id"]
+
+    client.cookies.clear()
+    unauthenticated_response = client.get(
+        "/api/v1/auth/session",
+        headers={"host": f"{tenant_slug}.localhost"},
+    )
+
+    assert unauthenticated_response.status_code == 401
+
+
+@pytest.mark.integration
 @covers_isolation("POST", "/api/v1/tenant/invitations")
 def test_invitation_accept_uses_token_role_not_body_role() -> None:
     if os.getenv(APP_DATABASE_URL_ENV) is None:

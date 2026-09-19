@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { FieldValues, Path, UseFormSetError } from "react-hook-form";
 
+import { feedbackToast } from "@/lib/feedback/toast";
 import { resolveMessage } from "@/lib/forms/messages";
 import {
   isApiErrorEnvelope,
@@ -15,14 +16,20 @@ type SubmitState = "idle" | "submitting" | "error";
 
 type UseFormSubmitArgs<TInput extends FieldValues, TResult> = {
   action: (input: TInput) => Promise<TResult>;
+  errorMessage?: string;
   onSuccess: (result: TResult) => void | Promise<void>;
+  resetOnSuccess?: boolean;
   setError: UseFormSetError<TInput>;
+  successMessage?: string;
 };
 
 export function useFormSubmit<TInput extends FieldValues, TResult>({
   action,
+  errorMessage,
   onSuccess,
+  resetOnSuccess = true,
   setError,
+  successMessage,
 }: UseFormSubmitArgs<TInput, TResult>) {
   const [state, setState] = useState<SubmitState>("idle");
   const [formError, setFormError] = useState<string | null>(null);
@@ -33,9 +40,15 @@ export function useFormSubmit<TInput extends FieldValues, TResult>({
     try {
       const result = await action(input);
       await onSuccess(result);
-      setState("idle");
+      if (successMessage) {
+        feedbackToast.success(successMessage);
+      }
+      if (resetOnSuccess) {
+        setState("idle");
+      }
     } catch (error) {
       applyError(error);
+      feedbackToast.error(errorMessage ?? "Something went wrong. Please try again.");
       setState("error");
     }
   }

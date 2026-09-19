@@ -1,27 +1,42 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { AdminDashboard } from "@/components/admin/admin-dashboard";
+import { AdminHome } from "@/components/admin/admin-home";
+import { AdminShell } from "@/components/admin/admin-shell";
 import { DeniedState } from "@/components/app/denied-state";
 import { InvitationPending } from "@/components/app/invitation-pending";
 import {
+  getCourses,
   getCompletionAnalytics,
   getAuthSession,
   getLearnerProgressReport,
+  getTenantBranding,
   learnerProgressCsvUrl,
 } from "@/lib/api";
-import { e2eFixturesEnabled } from "@/lib/e2e-fixtures";
-import type { CourseCompletionAnalytics, LearnerProgressReportRow } from "@/lib/schemas";
+import { e2eFixturesEnabled } from "@/lib/e2e-enabled";
+import type { CourseCompletionAnalytics, LearnerProgressReportRow, TenantBranding } from "@/lib/schemas";
+
+const fallbackBranding: TenantBranding = {
+  locale: "en",
+  logo_url: null,
+  primary_color: "#116149",
+  tenant_name: "Academy",
+  time_zone: "UTC",
+};
 
 export default async function AdminDashboardPage() {
   if (e2eFixturesEnabled()) {
     return (
-      <AdminDashboard
-        analytics={[]}
-        csvUrl={learnerProgressCsvUrl()}
-        learnerProgress={[]}
-        loadError={null}
-      />
+      <AdminShell branding={fallbackBranding} viewerRole="tenant_admin">
+        <AdminHome
+          adminName="Admin"
+          analytics={[]}
+          courseCount={1}
+          csvUrl={learnerProgressCsvUrl()}
+          learnerProgress={[]}
+          loadError={null}
+        />
+      </AdminShell>
     );
   }
 
@@ -47,27 +62,35 @@ export default async function AdminDashboardPage() {
   }
 
   let analytics: CourseCompletionAnalytics[] = [];
+  let courseCount = 0;
   let learnerProgress: LearnerProgressReportRow[] = [];
   let loadError: string | null = null;
+  const branding = await loadBranding(context);
 
   try {
-    const [analyticsResponse, progressResponse] = await Promise.all([
+    const [analyticsResponse, progressResponse, coursesResponse] = await Promise.all([
       getCompletionAnalytics(context),
       getLearnerProgressReport(context),
+      getCourses(context),
     ]);
     analytics = analyticsResponse.data;
     learnerProgress = progressResponse.data;
+    courseCount = coursesResponse.data.items.length;
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Dashboard data could not be loaded";
   }
 
   return (
-    <AdminDashboard
-      analytics={analytics}
-      csvUrl={learnerProgressCsvUrl()}
-      learnerProgress={learnerProgress}
-      loadError={loadError}
-    />
+    <AdminShell branding={branding} viewerRole={authSession.data.membership.org_role}>
+      <AdminHome
+        adminName={authSession.data.user.full_name}
+        analytics={analytics}
+        courseCount={courseCount}
+        csvUrl={learnerProgressCsvUrl()}
+        learnerProgress={learnerProgress}
+        loadError={loadError}
+      />
+    </AdminShell>
   );
 }
 
@@ -76,5 +99,14 @@ async function loadSession(context: { cookie?: string; host?: string }) {
     return await getAuthSession(context);
   } catch {
     return null;
+  }
+}
+
+async function loadBranding(context: { cookie?: string; host?: string }) {
+  try {
+    const response = await getTenantBranding(context);
+    return response.data;
+  } catch {
+    return fallbackBranding;
   }
 }

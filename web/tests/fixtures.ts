@@ -14,6 +14,7 @@ export const learnerId = "00000000-0000-0000-0000-000000000401";
 export const draftCourse: Course = {
   description: "New hire onboarding",
   id: courseId,
+  lesson_count: 1,
   slug: "onboarding",
   status: "draft",
   title: "Onboarding Essentials",

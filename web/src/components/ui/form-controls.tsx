@@ -1,5 +1,6 @@
 "use client";
 
+import { useFormStatus } from "react-dom";
 import type { ReactNode } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
 
@@ -203,36 +204,28 @@ export function SubmitButton({
   children,
   className,
   disabled,
-  isSubmitting,
+  isSubmitting = false,
+  pendingLabel = "Working...",
 }: {
   children: ReactNode;
   className?: string;
   disabled?: boolean;
-  isSubmitting: boolean;
+  isSubmitting?: boolean;
+  pendingLabel?: string;
 }) {
-  return (
-    <Button className={cn("h-11 w-full", className)} disabled={isSubmitting || disabled} type="submit">
-      {isSubmitting ? (
-        <span className="inline-flex items-center gap-2">
-          <Spinner />
-          Working...
-        </span>
-      ) : (
-        children
-      )}
-    </Button>
-  );
-}
+  const { pending } = useFormStatus();
+  const isPending = pending || isSubmitting;
 
-export function Spinner({ className }: { className?: string }) {
   return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        "inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white",
-        className,
-      )}
-    />
+    <Button
+      className={cn("h-11 w-full", className)}
+      disabled={disabled}
+      isProcessing={isPending}
+      processingLabel={pendingLabel}
+      type="submit"
+    >
+      {children}
+    </Button>
   );
 }
 

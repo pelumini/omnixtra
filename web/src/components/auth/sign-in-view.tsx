@@ -11,7 +11,11 @@ import { useFormSubmit } from "@/lib/forms/use-form-submit";
 import { signInSchema, type SignInInput } from "@/lib/schemas/auth";
 import { AuthShell } from "./auth-shell";
 
-export function SignInView({ requiresAcademyHost = false }: { requiresAcademyHost?: boolean }) {
+type SignInViewProps = {
+  academyName?: string;
+};
+
+export function SignInView({ academyName }: SignInViewProps = {}) {
   const {
     formState: { errors },
     handleSubmit,
@@ -25,8 +29,11 @@ export function SignInView({ requiresAcademyHost = false }: { requiresAcademyHos
   });
   const { formError, isSubmitting, submit } = useFormSubmit({
     action: login,
+    errorMessage: "Sign in failed.",
     onSuccess: () => window.location.assign("/"),
+    resetOnSuccess: false,
     setError,
+    successMessage: "Signed in.",
   });
   const fieldError = (field: keyof SignInInput) => {
     const message = errors[field]?.message;
@@ -34,31 +41,31 @@ export function SignInView({ requiresAcademyHost = false }: { requiresAcademyHos
   };
 
   return (
-    <AuthShell title="Sign in" subtitle="Continue to your academy.">
-      {requiresAcademyHost ? (
-        <FormError>
-          Open your academy sign-in page, for example acme.localhost:3001/login.
-        </FormError>
-      ) : null}
+    <AuthShell
+      title={academyName ? `Sign in to ${academyName}` : "Sign in"}
+      subtitle="Continue to your academy."
+    >
       <form className="space-y-4" noValidate onSubmit={handleSubmit(submit)}>
-        <FormError>{requiresAcademyHost ? null : formError}</FormError>
-        <Field
-          autoComplete="email"
-          error={fieldError("email")}
-          label="Email"
-          placeholder="you@company.com"
-          registration={register("email")}
-          type="email"
-        />
-        <Field
-          autoComplete="current-password"
-          error={fieldError("password")}
-          label="Password"
-          registration={register("password")}
-          type="password"
-        />
+        <FormError>{formError}</FormError>
+        <fieldset className="space-y-4" disabled={isSubmitting}>
+          <Field
+            autoComplete="email"
+            error={fieldError("email")}
+            label="Email"
+            placeholder="you@company.com"
+            registration={register("email")}
+            type="email"
+          />
+          <Field
+            autoComplete="current-password"
+            error={fieldError("password")}
+            label="Password"
+            registration={register("password")}
+            type="password"
+          />
+        </fieldset>
 
-        <SubmitButton disabled={requiresAcademyHost} isSubmitting={isSubmitting}>
+        <SubmitButton isSubmitting={isSubmitting} pendingLabel="Signing in...">
           Sign in
         </SubmitButton>
       </form>

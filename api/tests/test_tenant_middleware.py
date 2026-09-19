@@ -60,6 +60,21 @@ def test_root_domain_does_not_bind_tenant(monkeypatch: pytest.MonkeyPatch) -> No
     assert asyncio.run(_resolve_request_tenant_id(_request("localhost"))) is None
 
 
+def test_forwarded_host_binds_tenant_for_internal_ssr_calls(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tenant_id = UUID("00000000-0000-0000-0000-000000000001")
+    _patch_tenant_lookup(monkeypatch, _tenant(tenant_id, status=TenantStatus.active.value))
+
+    resolved = asyncio.run(
+        _resolve_request_tenant_id(
+            _request("api:8000", forwarded_host="acme.localhost:3001"),
+        ),
+    )
+
+    assert resolved == tenant_id
+
+
 def test_bearer_token_for_different_tenant_is_rejected(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -112,11 +127,19 @@ def test_access_cookie_for_different_tenant_is_rejected(
     assert called is False
 
 
-def _request(host: str, *, authorization: str | None = None, cookie: str | None = None) -> Request:
+def _request(
+    host: str,
+    *,
+    authorization: str | None = None,
+    cookie: str | None = None,
+    forwarded_host: str | None = None,
+) -> Request:
     app = SimpleNamespace(
         state=SimpleNamespace(settings=SimpleNamespace(app_base_domain="localhost")),
     )
     headers = [(b"host", host.encode())]
+    if forwarded_host is not None:
+        headers.append((b"x-forwarded-host", forwarded_host.encode()))
     if authorization is not None:
         headers.append((b"authorization", authorization.encode()))
     if cookie is not None:

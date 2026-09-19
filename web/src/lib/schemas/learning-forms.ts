@@ -1,14 +1,16 @@
 import { z } from "zod";
 
+import { requiredText, textSchema } from "@/lib/validation/primitives";
+
 export const quizAttemptFormSchema = z.object({
-  blockId: z.string().trim().min(1, "required"),
-  selectedOptionId: z.string().trim().min(1, "required"),
+  blockId: requiredText,
+  selectedOptionId: requiredText,
 });
 
 export type QuizAttemptFormInput = z.infer<typeof quizAttemptFormSchema>;
 
 export const tutorQuestionFormSchema = z.object({
-  question: z.string().trim().min(3, "min_length").max(2000, "max_length"),
+  question: textSchema(3, 2000),
 });
 
 export type TutorQuestionFormInput = z.infer<typeof tutorQuestionFormSchema>;

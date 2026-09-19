@@ -16,7 +16,7 @@ describe("admin reporting UI", () => {
       />,
     );
 
-    expect(html).toContain("Dashboard");
+    expect(html).toContain("Admin dashboard");
     expect(html).toContain("Course Completion");
     expect(html).toContain("Learner Progress");
     expect(html).toContain("CSV");

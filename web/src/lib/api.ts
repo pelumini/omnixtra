@@ -7,6 +7,7 @@ import {
   courseCompletionAnalyticsEnvelopeSchema,
   courseCompletionEnvelopeSchema,
   courseCreateRequestSchema,
+  courseDetailEnvelopeSchema,
   courseEnvelopeSchema,
   coursePageEnvelopeSchema,
   coursePlayerEnvelopeSchema,
@@ -24,6 +25,7 @@ import {
   lessonEnvelopeSchema,
   lessonProgressEnvelopeSchema,
   lessonProgressRequestSchema,
+  lessonsEnvelopeSchema,
   learnerProgressReportEnvelopeSchema,
   mediaAssetCreateRequestSchema,
   mediaAssetEnvelopeSchema,
@@ -233,6 +235,30 @@ export async function getCourses(context: RequestContext = {}) {
   return coursePageEnvelopeSchema.parse(body);
 }
 
+export async function getCourse(courseId: string, context: RequestContext = {}) {
+  const response = await fetch(`${apiUrl()}/api/v1/courses/${courseId}`, {
+    cache: "no-store",
+    credentials: "include",
+    headers: requestHeaders(context),
+  });
+  const body: unknown = await response.json();
+  throwIfApiError(response, body);
+
+  return courseDetailEnvelopeSchema.parse(body);
+}
+
+export async function getCourseLessons(courseId: string, context: RequestContext = {}) {
+  const response = await fetch(`${apiUrl()}/api/v1/courses/${courseId}/lessons`, {
+    cache: "no-store",
+    credentials: "include",
+    headers: requestHeaders(context),
+  });
+  const body: unknown = await response.json();
+  throwIfApiError(response, body);
+
+  return lessonsEnvelopeSchema.parse(body);
+}
+
 export async function getCoursePlayer(courseId: string, context: RequestContext = {}) {
   const response = await fetch(`${apiUrl()}/api/v1/learning/courses/${courseId}/player`, {
     cache: "no-store",
@@ -342,9 +368,9 @@ export function parseTutorEventMessage(data: string) {
   return tutorEventSchema.parse(JSON.parse(data));
 }
 
-export async function createCourse(request: CourseCreateRequest) {
+export async function createCourse(request: CourseCreateRequest, context: RequestContext = {}) {
   const body = courseCreateRequestSchema.parse(request);
-  const response = await postJson("/api/v1/courses", body);
+  const response = await postJson("/api/v1/courses", body, requestHeaders(context));
 
   return courseEnvelopeSchema.parse(response);
 }
@@ -376,9 +402,17 @@ export async function createSection(courseId: string, request: SectionCreateRequ
   return sectionEnvelopeSchema.parse(response);
 }
 
-export async function createLesson(courseId: string, request: LessonCreateRequest) {
+export async function createLesson(
+  courseId: string,
+  request: LessonCreateRequest,
+  context: RequestContext = {},
+) {
   const body = lessonCreateRequestSchema.parse(request);
-  const response = await postJson(`/api/v1/courses/${courseId}/lessons`, body);
+  const response = await postJson(
+    `/api/v1/courses/${courseId}/lessons`,
+    body,
+    requestHeaders(context),
+  );
 
   return lessonEnvelopeSchema.parse(response);
 }
@@ -404,6 +438,7 @@ function requestHeaders(context: RequestContext): HeadersInit {
   }
   if (context.host) {
     headers.host = context.host;
+    headers["x-forwarded-host"] = context.host;
   }
   return headers;
 }

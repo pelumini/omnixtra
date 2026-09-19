@@ -7,6 +7,7 @@ import {
   billingSubscriptionEnvelopeSchema,
   courseCompletionAnalyticsEnvelopeSchema,
   courseCreateRequestSchema,
+  courseDetailEnvelopeSchema,
   courseCompletionEnvelopeSchema,
   enrolmentEnvelopeSchema,
   coursePageEnvelopeSchema,
@@ -16,6 +17,7 @@ import {
   invitationCreateEnvelopeSchema,
   invitationPreviewEnvelopeSchema,
   membershipsEnvelopeSchema,
+  lessonCreateRequestSchema,
   lessonProgressRequestSchema,
   learnerProgressReportEnvelopeSchema,
   mediaAssetCreateRequestSchema,
@@ -140,7 +142,14 @@ describe("ADR-003 identity schemas", () => {
 
     expect(
       invitationCreateEnvelopeSchema.parse({
-        data: { accepted: true, token: "raw-token" },
+        data: {
+          accepted: true,
+          email: "member@example.com",
+          invitation_id: "00000000-0000-0000-0000-000000000005",
+          org_role: "member",
+          status: "invited",
+          token: "raw-token",
+        },
         error: null,
         meta: { request_id: "req_test", timestamp: null },
       }).data.accepted,
@@ -164,9 +173,22 @@ describe("ADR-003 identity schemas", () => {
       membershipsEnvelopeSchema.parse({
         data: [
           {
+            email: "admin@example.com",
+            full_name: "Admin User",
             id: "00000000-0000-0000-0000-000000000004",
+            invitation_token: null,
             org_role: "tenant_admin",
+            status: "active",
             user_id: "00000000-0000-0000-0000-000000000003",
+          },
+          {
+            email: "pending@example.com",
+            full_name: null,
+            id: "00000000-0000-0000-0000-000000000006",
+            invitation_token: "raw-token",
+            org_role: "member",
+            status: "invited",
+            user_id: null,
           },
         ],
         error: null,
@@ -264,6 +286,7 @@ describe("coursePageEnvelopeSchema", () => {
               slug: "security-basics",
               description: "Required onboarding",
               status: "draft",
+              lesson_count: 1,
             },
           ],
           next_cursor: null,
@@ -301,6 +324,55 @@ describe("courseCreateRequestSchema", () => {
         title: "Security Basics",
       }).slug,
     ).toBe("security-basics");
+  });
+
+  it("allows slugless course creation so the backend can generate one", () => {
+    expect(
+      courseCreateRequestSchema.parse({
+        description: "Created from the first-run authoring flow",
+        title: "Security Basics",
+      }).slug,
+    ).toBeUndefined();
+  });
+});
+
+describe("lessonCreateRequestSchema", () => {
+  it("accepts a first text lesson without requiring a section from the UI", () => {
+    expect(
+      lessonCreateRequestSchema.parse({
+        body: "Start here with the required training.",
+        title: "Welcome",
+      }).body,
+    ).toBe("Start here with the required training.");
+  });
+});
+
+describe("courseDetailEnvelopeSchema", () => {
+  it("accepts a course with ordered readable lessons", () => {
+    expect(
+      courseDetailEnvelopeSchema.parse({
+        data: {
+          description: "Required onboarding",
+          id: "00000000-0000-0000-0000-000000000001",
+          lesson_count: 1,
+          lessons: [
+            {
+              body: "Welcome to the academy.",
+              course_id: "00000000-0000-0000-0000-000000000001",
+              id: "00000000-0000-0000-0000-000000000002",
+              position: 0,
+              section_id: "00000000-0000-0000-0000-000000000003",
+              title: "Welcome",
+            },
+          ],
+          slug: "security-basics",
+          status: "draft",
+          title: "Security Basics",
+        },
+        error: null,
+        meta: { request_id: "req_test", timestamp: null },
+      }).data.lessons[0]?.body,
+    ).toBe("Welcome to the academy.");
   });
 });
 

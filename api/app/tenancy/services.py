@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from secrets import token_urlsafe
+from typing import Literal, cast
 from uuid import UUID
 
 from sqlalchemy import select
@@ -24,6 +25,8 @@ from app.tenancy.schemas import (
     TenantInvitationCreateRequest,
     TenantInvitationCreateResponse,
 )
+
+OrgRoleValue = Literal["tenant_admin", "member"]
 
 
 @dataclass(frozen=True)
@@ -114,20 +117,51 @@ async def create_tenant(
 
 
 async def list_memberships(session: AsyncSession) -> list[MembershipResponse]:
-    memberships = list(
+    membership_rows = list(
         (
-            await session.scalars(
-                select(Membership).where(Membership.deleted_at.is_(None)).order_by(Membership.id),
+            await session.execute(
+                select(Membership, User)
+                .join(User, User.id == Membership.user_id)
+                .where(Membership.deleted_at.is_(None), User.deleted_at.is_(None))
+                .order_by(User.email),
             )
         ).all(),
     )
+    invitation_rows = list(
+        (
+            await session.scalars(
+                select(Invitation)
+                .where(
+                    Invitation.used_at.is_(None),
+                    Invitation.expires_at > datetime.now(UTC),
+                )
+                .order_by(Invitation.email),
+            )
+        ).all(),
+    )
+    active_emails = {user.email for _, user in membership_rows}
     return [
         MembershipResponse(
             id=str(membership.id),
             user_id=str(membership.user_id),
-            org_role=membership.org_role,
+            org_role=cast("OrgRoleValue", membership.org_role),
+            full_name=user.full_name,
+            email=user.email,
+            status="active",
         )
-        for membership in memberships
+        for membership, user in membership_rows
+    ] + [
+        MembershipResponse(
+            id=str(invitation.id),
+            user_id=None,
+            org_role=cast("OrgRoleValue", invitation.org_role),
+            full_name=None,
+            email=invitation.email,
+            status="invited",
+            invitation_token=invitation.raw_token,
+        )
+        for invitation in invitation_rows
+        if invitation.email not in active_emails
     ]
 
 
@@ -153,9 +187,11 @@ async def create_invitation(
         email=normalized_email,
         org_role=request.org_role,
         token_hash=hash_auth_token(raw_token),
+        raw_token=raw_token,
         expires_at=datetime.now(UTC) + timedelta(minutes=15),
     )
     session.add(invitation)
+    await session.flush()
     session.add(
         TenancyAuditEvent(
             actor_id=actor_id,
@@ -165,7 +201,14 @@ async def create_invitation(
         ),
     )
     await session.commit()
-    return TenantInvitationCreateResponse(accepted=True, token=raw_token)
+    return TenantInvitationCreateResponse(
+        accepted=True,
+        invitation_id=str(invitation.id),
+        email=normalized_email,
+        org_role=request.org_role,
+        status="invited",
+        token=raw_token,
+    )
 
 
 async def get_tenant_branding(session: AsyncSession) -> TenantBrandingResponse:

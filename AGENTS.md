@@ -336,6 +336,13 @@ CI must include integration tests against real PostgreSQL and Redis. The tenant-
 
 Local verification is the development loop. Verify locally with the documented backend `uv` checks and `web` `npm run verify` before pushing; CI re-runs and reports async, so do not wait on it as the normal feedback loop.
 
+Standing verification policy:
+
+- Agents do not run Playwright locally. Playwright is CI-only on Linux.
+- An agent's local definition of done is green fast verification: lint, typecheck, unit tests, and backend integration tests where the required local database URL is configured.
+- Frontend/backend contracts are verified locally through fast backend integration tests and frontend unit/schema tests, not browser harness loops.
+- If a browser check would help, stop and either add a fast test or leave explicit "verify by eye in the browser" notes for the human tester.
+
 Targeted local checks must stay runnable as standalone commands:
 
 ```bash
@@ -350,11 +357,10 @@ uv --cache-dir ../.uv-cache run pytest -k tenancy
 npm run lint
 npm run typecheck
 npm test -- auth.test.tsx
-npm run e2e:spec
-npm run e2e -- e2e/my-courses-routing.spec.ts --project=desktop-chrome
+npm run verify
 ```
 
-Playwright must remain runner-managed locally. Do not use raw `npx playwright test` as the project default on Windows; it has repeatedly left stuck Next child processes. `npm run e2e -- <spec>` and `npm run e2e:spec` are the supported single-spec paths. The runner builds, starts the production Next server, checks port availability/readiness, runs Playwright with internal timeouts, tears down the process tree, exits explicitly, and honours `PLAYWRIGHT_PORT` for fresh-port testing.
+Playwright is not a local agent verification tool. `npm run e2e`, `npm run e2e:spec`, and raw `npx playwright test` intentionally refuse local execution unless a human deliberately sets `PLAYWRIGHT_ALLOW_LOCAL_E2E=1`. CI runs the browser specs on Linux.
 
 ### 0.7 Observability
 
@@ -1042,15 +1048,15 @@ Rules:
 - Org-level permission specs must cover `tenant_admin` versus `member` visibility for Members, Billing, and Create Course.
 - Tenant-admin invite specs must prove admin-seat-limit feedback disables invite-as-admin while invite-as-member remains available.
 - Course-level permission specs must cover `course_owner` versus `learner` for authoring entry points and direct builder access.
-- Browser permission specs must run against the real Next app in Playwright. Deterministic E2E fixture routes are acceptable when live auth/user-state setup cannot yet reach a role state, but component-only tests do not close the contract.
-- `npm run e2e` is the canonical full local entry point. It must build the app, start a production Next server, run Playwright, tear down the server, and fail through internal timeouts rather than hanging indefinitely.
-- Raw `npx playwright test <spec>` is not the supported project path on Windows. Use `npm run e2e -- <spec>` so the repo-owned runner controls server startup, readiness, teardown, and timeouts.
+- Browser permission specs run in CI on Linux against the real Next app. Deterministic E2E fixture routes are acceptable when live auth/user-state setup cannot yet reach a role state, but component-only tests do not close the contract.
+- Local Playwright execution is not part of agent verification. Agents use fast tests locally and leave browser verification to CI or human eyes.
+- Raw `npx playwright test <spec>` is not supported locally. The config fails fast outside CI unless `PLAYWRIGHT_ALLOW_LOCAL_E2E=1` is explicitly set by a human.
 - Frontend CI must install Playwright browsers and always run the header/permission browser gate even when the full frontend suite is path-filtered.
 
 Current implementation:
 
 - Permission-contract specs live in `web/e2e/permission-contract.spec.ts`.
-- Deterministic browser role fixtures live under `web/src/app/e2e/permissions/[scenario]/page.tsx`.
+- Deterministic browser role fixture source lives under `web/e2e/fixture-routes/` and is copied into `web/src/app/e2e/` only during the CI E2E build.
 - The bounded E2E runner lives at `web/e2e/run-playwright.mjs`.
 - Runner timeouts are configurable with `E2E_BUILD_TIMEOUT_MS`, `E2E_SERVER_TIMEOUT_MS`, and `E2E_TEST_TIMEOUT_MS`.
 - The measured local workflow baseline lives in `docs/runbooks/local-verification-workflow.md`.
@@ -1512,6 +1518,27 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] 2026-08-05 site-wide form-standard rollout: migrated sign-in, invitation acceptance/token entry, member invitations, course creation/details, section/lesson/block/media authoring forms, quiz attempts, and tutor questions to React Hook Form, Zod resolver schemas, shared controls, `noValidate`, and centralized message resolution.
 - [x] 2026-08-05 local tenant-resolution remediation: localhost now mirrors production subdomain tenancy with configurable `APP_BASE_DOMAIN` / `NEXT_PUBLIC_APP_BASE_DOMAIN`, production Secure parent-scoped auth cookies, localhost host-scoped non-Secure auth cookies on `{academy}.localhost:8000`, localhost-only first-party signup handoff, signup redirect to `{academy}.localhost:3001/admin`, browser API calls on `{academy}.localhost:8000`, explicit bare-localhost login guidance, and regression coverage for CORS, cookie domain, resolver behavior, tenant-host helpers, and bare-login UI.
 - [x] 2026-08-06 authenticated shell remediation: added a browser-visible `/auth/session` route, session-aware root header, account menu, sign-out flow that clears the localhost web-host handoff cookie, and Playwright coverage proving authenticated headers show the account menu instead of `Sign in`.
+- [x] 2026-08-10 admin landing remediation: added the tenant-branded admin shell with collapsible role-filtered sidebar navigation and made `/admin` adaptive, showing a first-run setup checklist while `GET /api/v1/courses` returns zero courses and preserving the existing analytics dashboard once courses exist.
+- [x] 2026-08-10 authoring slice 1: made "Create your first course" real with slugless draft course creation, automatic `course_owner` enrolment for the creator, first text lesson creation through existing lesson/text-block storage, tenant-scoped `GET /api/v1/courses/{course_id}` and `GET /api/v1/courses/{course_id}/lessons`, ordered lesson responses with readable text content, admin course list lesson counts, `/admin/courses/{id}` detail inside `AdminShell`, and fast backend/frontend verification without local Playwright.
+- [x] 2026-08-10 loading and feedback standard slice: documented the Loading & Feedback Standard, added Sonner with a shared toast wrapper and root toaster, introduced shared content skeleton primitives, upgraded `SubmitButton` with form-pending support and contextual pending copy, applied skeleton loading/toast/pending/disabled-fieldset behavior to course create and course detail, and verified the context-aware admin logo links to `/admin`.
+- [x] 2026-08-10 form standard conformance slice: inventoried every web form, moved remaining form schemas onto shared validation primitives, fixed login required-field messages so email/password no longer share a generic fallback, added central per-field message coverage, applied disabled pending fieldsets/contextual submit labels/toast feedback across auth, invitation, member invite, course authoring, quiz, and tutor forms, and verified untouched fields remain quiet while server envelope mapping stays centralized.
+- [x] 2026-08-10 context-aware logo/root-routing fix: centralized authenticated home resolution, made the admin shell logo link to `/admin` for tenant admins and `/my-courses` for members, kept the global header logo on the same role-home contract, and confirmed the academy root uses the same server-side authenticated redirect decision so signed-in users do not see the public marketing landing.
+- [x] 2026-08-10 bare-host login cleanup: replaced the disabled login form on bare `localhost:3001/login` with an academy access guide that explains tenant-scoped sign-in and links to academy creation or invitation join, while preserving the normal login form only on academy subdomains.
+- [x] 2026-08-10 member invitation copy-link slice: changed the tenant memberships contract to return member name, email, org role, status, and pending invitation token for admin-only copy-link testing; rendered active and invited members without UUIDs; added "Copy invite link" feedback; and covered active plus pending member isolation in backend and frontend contract tests.
+- [x] 2026-08-10 join preview SSR tenant-context fix: diagnosed `/join?token=...` as an unauthenticated server-rendered preview call through `API_INTERNAL_URL`, added explicit `x-forwarded-host` propagation from web SSR fetches, taught API tenant middleware to resolve tenant context from that forwarded academy host before falling back to `Host`, and covered the invite preview/middleware path without weakening RLS or token invalid-state responses.
+- [x] 2026-08-10 shared authenticated app shell: moved the collapsible role-filtered sidebar into the shared `AppShell`, kept admin routes on that shell through a compatibility wrapper, applied the same shell to `/my-courses`, restricted member sidebar navigation to My Courses and Courses, and preserved role-aware logo home links for tenant admins and members.
+- [x] 2026-08-10 shared button state polish: updated the shared button to show pointer and disabled cursors, expose `isProcessing` / `processingLabel` with spinner and `aria-busy`, routed submit buttons through the shared processing state, and applied stateful labels to publish, completion, and certificate actions.
+- [x] 2026-08-10 fixed navigation polish: made the global session header fixed at the top with reserved page offset, added scroll-aware subtle bottom shadow when content moves beneath it, and made the shared authenticated sidebar sticky below the fixed header while main page content scrolls independently.
+- [x] 2026-08-10 auth redirect feedback polish: kept redirecting auth forms in their processing state after successful submit so login, academy creation, and invitation acceptance buttons remain disabled with reassuring progress copy until navigation completes; tightened academy creation pending copy to "Creating academy...".
+- [x] 2026-08-23 local database browser fix: added Adminer to the OmniXtra Docker Compose stack on configurable port `8082`, wired it to the Compose PostgreSQL service, added a health check, documented local login settings, and confirmed `omnixtra-adminer-1` starts healthy with the rest of the stack.
+- [x] 2026-08-23 apex-versus-academy entry funnel pullback: kept apex `/` as pure OmniXtra marketing with no member sign-in CTA, hid the logged-out apex header sign-in link, changed academy subdomain `/` to show the branded working academy sign-in form when logged out, and preserved server-side role-home redirects for authenticated academy users.
+- [x] 2026-08-23 aggressive apex marketing homepage: rebuilt bare `localhost:3001/` as a high-intent marketing page with a bold hero, academy creation and invite CTAs, product-style dashboard visual, platform/AI/pricing sections, and apex-only marketing header navigation while preserving academy subdomain sign-in and authenticated role-home routing.
+- [x] 2026-08-23 admin dashboard visual standard pass: upgraded the authenticated app shell to a professional OmniXtra green LMS-style navigation rail, rebuilt the tenant admin dashboard with welcome, portal activity, quick actions, overview, timeline, user and course widgets, and gave the first-run admin setup state the same polished widget layout while preserving existing route permissions and CSV/reporting contracts.
+- [x] 2026-08-23 admin courses and members visual standard pass: restored OmniXtra green as the admin brand accent, differentiated the shell/dashboard from the reference design, rebuilt Courses as a searchable operations table with green status/action treatment and a side course composer, and rebuilt Members as an access-management dashboard with seat usage, invite controls, directory rows, role/status badges, and copy-link behavior preserved.
+- [x] 2026-08-23 typography standardization: set Inter as the site-wide primary font and Geist as the secondary font through the Next.js root layout, exposed matching CSS/Tailwind font tokens, and updated the layout test font mock so tenant branding coverage still renders under Vitest.
+- [x] 2026-08-23 course authoring content taxonomy fix: changed the course builder add flow away from reference-style course categories and toward OmniXtra standard content choices, exposing direct Content, Web content, Video, Image, and Quiz options while mapping them into the current backend-safe text/video/image/quiz block contract and adding regression coverage that category labels do not render.
+- [x] 2026-08-23 add-course content chooser fix: moved OmniXtra standard content choices into the `/admin/courses` Add course path, made the chooser visible by default for empty course lists, kept existing course lists table-first until Add course is clicked, and covered Content, Web content, Video, Image, and Quiz visibility in frontend tests.
+- [x] 2026-08-23 latest PRD refresh: added `docs/product/OMNIXTRA_PRD_LATEST.md` as the current MVP product requirements snapshot, aligned to ADR-003 identity/membership/authorization, academy-first routing, admin/member UX, OmniXtra green branding, Inter/Geist typography, standard content authoring, AI tutor guardrails, billing, local development, and MVP acceptance criteria.
 
 ### Phase 2: Months 4-6
 

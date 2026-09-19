@@ -21,6 +21,7 @@ test-results/
 playwright-report/
 *.tsbuildinfo
 .next-dev*.log
+web/src/app/e2e/
 
 # Environment
 .env

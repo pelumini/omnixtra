@@ -126,7 +126,13 @@ export function LearnerCoursePlayer({
             <RotateCcw aria-hidden="true" className="size-4" />
             Enrol
           </Button>
-          <Button className="gap-2" disabled={isPending || lessons.length === 0} onClick={handleCompletion}>
+          <Button
+            className="gap-2"
+            disabled={lessons.length === 0}
+            isProcessing={isPending}
+            onClick={handleCompletion}
+            processingLabel="Completing..."
+          >
             <BadgeCheck aria-hidden="true" className="size-4" />
             Complete
           </Button>
@@ -215,7 +221,12 @@ export function LearnerCoursePlayer({
             <p className="text-sm text-gray-600">
               {completion ? `Completed ${new Date(completion.completed_at).toLocaleDateString()}` : "Complete every lesson first"}
             </p>
-            <Button className="gap-2" disabled={isPending} onClick={handleCertificate}>
+            <Button
+              className="gap-2"
+              isProcessing={isPending}
+              onClick={handleCertificate}
+              processingLabel="Issuing..."
+            >
               <Award aria-hidden="true" className="size-4" />
               Issue
             </Button>
@@ -280,11 +291,13 @@ function QuizAttemptForm({
   const { formError, isSubmitting, submit } = useFormSubmit({
     action: (input: QuizAttemptFormInput) =>
       submitQuizAttempt(courseId, input.blockId, input.selectedOptionId),
+    errorMessage: "Quiz answer could not be submitted.",
     onSuccess: (response) => {
       onSubmitted(response.data.passed);
       reset();
     },
     setError,
+    successMessage: "Quiz answer submitted.",
   });
   const fieldError = (field: keyof QuizAttemptFormInput) => {
     const message = errors[field]?.message;
@@ -298,17 +311,19 @@ function QuizAttemptForm({
         <h2 className="text-sm font-semibold">Quiz</h2>
       </div>
       <FormError>{formError}</FormError>
-      <Field
-        error={fieldError("blockId")}
-        label="Quiz block ID"
-        registration={register("blockId")}
-      />
-      <Field
-        error={fieldError("selectedOptionId")}
-        label="Selected option ID"
-        registration={register("selectedOptionId")}
-      />
-      <SubmitButton className="gap-2" isSubmitting={isSubmitting}>
+      <fieldset className="grid gap-3" disabled={isSubmitting}>
+        <Field
+          error={fieldError("blockId")}
+          label="Quiz block ID"
+          registration={register("blockId")}
+        />
+        <Field
+          error={fieldError("selectedOptionId")}
+          label="Selected option ID"
+          registration={register("selectedOptionId")}
+        />
+      </fieldset>
+      <SubmitButton className="gap-2" isSubmitting={isSubmitting} pendingLabel="Submitting...">
         <ListChecks aria-hidden="true" className="size-4" />
         Submit
       </SubmitButton>

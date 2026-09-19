@@ -36,9 +36,13 @@ dev = [
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+extend-exclude = [".pytest-tmp", ".tmp"]
 
 [tool.uv]
 package = false
+
+[tool.omnixtra.scripts]
+verify = "uv run python -m scripts.verify"
 
 [tool.ruff.lint]
 select = ["ALL"]

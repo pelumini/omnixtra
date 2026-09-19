@@ -5,13 +5,7 @@ import { InvitationPending } from "@/components/app/invitation-pending";
 import { AppShell } from "@/components/app/app-shell";
 import { MyCoursesDashboard } from "@/components/learning/my-courses-dashboard";
 import { getAuthSession, getMyCourses, getTenantBranding } from "@/lib/api";
-import {
-  e2eAdminSession,
-  e2eBranding,
-  e2eFixturesEnabled,
-  e2eMemberSession,
-  e2eMyCourses,
-} from "@/lib/e2e-fixtures";
+import { E2E_FIXTURES_ENABLED } from "@/lib/e2e-enabled";
 import type { MyCourse, TenantBranding } from "@/lib/schemas";
 
 type MyCoursesPageProps = {
@@ -29,9 +23,11 @@ const fallbackBranding: TenantBranding = {
 };
 
 export default async function MyCoursesPage({ searchParams }: MyCoursesPageProps) {
-  const e2eState = e2eFixturesEnabled() ? (await searchParams)?.e2e : undefined;
-  if (e2eState) {
-    return e2eMyCoursesPage(e2eState);
+  if (E2E_FIXTURES_ENABLED) {
+    const e2eState = (await searchParams)?.e2e;
+    if (e2eState) {
+      return e2eMyCoursesPage(e2eState);
+    }
   }
 
   const requestHeaders = await headers();
@@ -70,7 +66,10 @@ export default async function MyCoursesPage({ searchParams }: MyCoursesPageProps
   );
 }
 
-function e2eMyCoursesPage(state: string) {
+async function e2eMyCoursesPage(state: string) {
+  const { e2eAdminSession, e2eBranding, e2eMemberSession, e2eMyCourses } = await import(
+    "@/lib/e2e-fixtures"
+  );
   const session = state === "admin" ? e2eAdminSession : e2eMemberSession;
   const courses =
     state === "empty"

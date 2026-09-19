@@ -58,17 +58,16 @@ npm install
 npm run lint
 npm run typecheck
 npm test
-npm run e2e:spec
 npm run verify
 npm run dev -- --port 3001
 ```
 
-`npm run verify` is the frontend pre-push gate: lint, TypeScript, Vitest, and
-the full bounded Playwright matrix. For single-spec browser work, use the
-repo-owned runner rather than raw Playwright server management:
+`npm run verify` is the frontend pre-push gate: lint, TypeScript, and Vitest.
+Playwright is CI-only on Linux and is not part of local agent verification.
+Local browser checks should be performed manually by the human tester when needed.
 
 ```bash
-npm run e2e -- e2e/my-courses-routing.spec.ts --project=desktop-chrome
+npm run verify
 ```
 
 The local verification runbook is
@@ -86,13 +85,17 @@ Fresh-clone Docker flow:
 
 1. Copy `.env.example` values or create a compatible local `.env` if you need overrides.
 2. Run `docker compose up --build --wait`.
-3. Compose starts PostgreSQL and Redis, runs the one-shot `migrate` service with Alembic, then starts the API, worker, and web app after dependencies are healthy.
-4. Verify the API and web endpoints:
+3. Compose starts PostgreSQL, Redis, Adminer, runs the one-shot `migrate` service with Alembic, then starts the API, worker, and web app after dependencies are healthy.
+4. Verify the API, web, and database browser endpoints:
 
 ```bash
 curl http://localhost:8000/health
 curl http://localhost:3001
+curl http://localhost:8082
 ```
+
+Adminer is available at `http://localhost:8082` for local database inspection.
+Use `System: PostgreSQL`, `Server: postgres`, `Username: omnixtra_app`, `Password: omnixtra_app_password`, and `Database: omnixtra`.
 
 If an older local Docker volume was created with different database role passwords, recreate that local development volume before retrying Compose.
 
@@ -113,4 +116,4 @@ DevContainer flow:
 4. From the container terminal, run backend commands from `/workspaces/omnixtra/api`.
 
 The API health endpoint is available at `http://localhost:8000/health`.
-PostgreSQL is exposed locally on port `15432` and Redis on `16379` by default to avoid common local-service collisions.
+PostgreSQL is exposed locally on port `15432`, Redis on `16379`, and Adminer on `8082` by default to avoid common local-service collisions.

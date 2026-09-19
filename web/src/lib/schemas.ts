@@ -194,6 +194,10 @@ export const invitationCreateRequestSchema = z.object({
 
 export const invitationCreateResponseSchema = z.object({
   accepted: z.boolean(),
+  invitation_id: z.string().uuid().nullable().default(null),
+  email: z.string().email().nullable().default(null),
+  org_role: orgRoleSchema.nullable().default(null),
+  status: z.literal("invited").nullable().default(null),
   token: z.string().nullable(),
 });
 
@@ -223,8 +227,12 @@ export const invitationPreviewEnvelopeSchema = z.object({
 
 export const membershipSchema = z.object({
   id: z.string().uuid(),
-  user_id: z.string().uuid(),
+  user_id: z.string().uuid().nullable(),
+  full_name: z.string().nullable(),
+  email: z.string().email(),
   org_role: orgRoleSchema,
+  status: z.enum(["active", "invited"]),
+  invitation_token: z.string().nullable().default(null),
 });
 
 export const membershipsEnvelopeSchema = z.object({
@@ -241,11 +249,12 @@ export const courseSchema = z.object({
   slug: z.string(),
   description: z.string().nullable(),
   status: courseStatusSchema,
+  lesson_count: z.number().int().nonnegative().default(0),
 });
 
 export const courseCreateRequestSchema = z.object({
   title: z.string().min(3).max(200),
-  slug: z.string().regex(/^[a-z0-9][a-z0-9-]{1,118}[a-z0-9]$/),
+  slug: z.string().regex(/^[a-z0-9][a-z0-9-]{1,118}[a-z0-9]$/).optional(),
   description: z.string().max(2000).nullable(),
 });
 
@@ -267,9 +276,10 @@ export const sectionSchema = z.object({
 });
 
 export const lessonCreateRequestSchema = z.object({
-  section_id: z.string().uuid(),
+  section_id: z.string().uuid().optional(),
   title: z.string().min(1).max(200),
-  position: z.number().int().nonnegative(),
+  position: z.number().int().nonnegative().optional(),
+  body: z.string().min(1).max(20000).optional(),
 });
 
 export const lessonSchema = z.object({
@@ -278,6 +288,11 @@ export const lessonSchema = z.object({
   section_id: z.string().uuid(),
   title: z.string(),
   position: z.number().int().nonnegative(),
+  body: z.string().nullable().default(null),
+});
+
+export const courseDetailSchema = courseSchema.extend({
+  lessons: z.array(lessonSchema),
 });
 
 export const coursePageSchema = z.object({
@@ -297,6 +312,12 @@ export const courseEnvelopeSchema = z.object({
   meta: metaSchema,
 });
 
+export const courseDetailEnvelopeSchema = z.object({
+  data: courseDetailSchema,
+  error: z.null(),
+  meta: metaSchema,
+});
+
 export const sectionEnvelopeSchema = z.object({
   data: sectionSchema,
   error: z.null(),
@@ -305,6 +326,12 @@ export const sectionEnvelopeSchema = z.object({
 
 export const lessonEnvelopeSchema = z.object({
   data: lessonSchema,
+  error: z.null(),
+  meta: metaSchema,
+});
+
+export const lessonsEnvelopeSchema = z.object({
+  data: z.array(lessonSchema),
   error: z.null(),
   meta: metaSchema,
 });
@@ -562,6 +589,7 @@ export type Course = z.infer<typeof courseSchema>;
 export type CourseCompletionAnalytics = z.infer<typeof courseCompletionAnalyticsSchema>;
 export type CourseCompletion = z.infer<typeof courseCompletionSchema>;
 export type CourseCreateRequest = z.infer<typeof courseCreateRequestSchema>;
+export type CourseDetail = z.infer<typeof courseDetailSchema>;
 export type CoursePlayer = z.infer<typeof coursePlayerSchema>;
 export type CourseRole = z.infer<typeof courseRoleSchema>;
 export type CourseUpdateRequest = z.infer<typeof courseUpdateRequestSchema>;

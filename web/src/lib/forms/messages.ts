@@ -29,9 +29,15 @@ const genericMessages: Record<ConstraintKey, string> = {
 
 const fieldOverrides: Record<string, string> = {
   "academyName.min_length": "Give your academy a name.",
+  "courseTitle.min_length": "Enter a course title.",
+  "email.required": "Enter your email address.",
   "fullName.min_length": "Enter your full name.",
+  "lessonBody.min_length": "Enter the first lesson text.",
+  "lessonTitle.min_length": "Enter the first lesson title.",
+  "password.required": "Enter your password.",
   "password.min_length": "Use at least 12 characters.",
   "subdomain.min_length": "Pick a subdomain of at least 2 characters.",
+  "token.required": "Enter your invitation code.",
   "title.min_length": "Enter a title.",
   "slug.min_length": "Pick a slug of at least 2 characters.",
   "description.max_length": "Keep the description under 2,000 characters.",

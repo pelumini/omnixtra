@@ -31,6 +31,27 @@ services:
     volumes:
       - redis-data:/data
 
+  adminer:
+    image: adminer:latest
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    ports:
+      - "${ADMINER_PORT:-8082}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "php",
+          "-r",
+          "$$connection = @fsockopen('127.0.0.1', 8080); if ($$connection) { fclose($$connection); exit(0); } exit(1);",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   api:
     build:
       context: ./api

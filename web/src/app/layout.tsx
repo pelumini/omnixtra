@@ -1,14 +1,27 @@
 import type { Metadata } from "next";
+import { Geist, Inter } from "next/font/google";
 import { headers } from "next/headers";
 import type { CSSProperties } from "react";
 import type { ReactNode } from "react";
 
+import { AppToaster } from "@/components/app/app-toaster";
 import { SessionHeader } from "@/components/app/session-header";
 import { getAuthSession, getTenantBranding } from "@/lib/api";
-import { e2eAdminSession, e2eFixturesEnabled } from "@/lib/e2e-fixtures";
+import { e2eFixturesEnabled } from "@/lib/e2e-enabled";
 import type { SessionResponse, TenantBranding } from "@/lib/schemas";
+import { tenantSlugFromHost } from "@/lib/tenant-host";
 
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
+
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist",
+});
 
 export const metadata: Metadata = {
   title: "OmniXtra",
@@ -30,17 +43,23 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     host: requestHeaders.get("host") ?? undefined,
   };
   const [branding, session] = await Promise.all([loadBranding(context.host), loadSession(context)]);
+  const showAuthLink = tenantSlugFromHost(context.host ?? "") !== null;
 
   return (
     <html lang={branding.locale}>
-      <body style={{ "--primary": branding.primary_color } as CSSProperties}>
+      <body
+        className={`${inter.variable} ${geist.variable} font-sans`}
+        style={{ "--primary": branding.primary_color } as CSSProperties}
+      >
         <SessionHeader
           branding={branding}
           fixtureMode={e2eFixturesEnabled()}
           initialSession={session}
           refreshSession={!e2eFixturesEnabled()}
+          showAuthLink={showAuthLink}
         />
-        {children}
+        <div className="pt-14">{children}</div>
+        <AppToaster />
       </body>
     </html>
   );
@@ -59,9 +78,6 @@ async function loadSession(context: {
   cookie?: string;
   host?: string;
 }): Promise<SessionResponse | null> {
-  if (e2eFixturesEnabled()) {
-    return e2eAdminSession;
-  }
   try {
     const response = await getAuthSession(context);
     return response.data;
