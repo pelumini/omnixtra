@@ -66,7 +66,7 @@ export function AppShell({
     <div className="min-h-[calc(100vh-3.5rem)] bg-[#f6f8fb]">
       <div className="grid grid-cols-1 md:grid-cols-[auto_minmax(0,1fr)]">
         <aside
-          className={`border-b border-[#0b5a44] bg-[#116149] text-white md:sticky md:top-14 md:flex md:h-[calc(100vh-3.5rem)] md:self-start md:flex-col md:border-b-0 md:border-r ${
+          className={`border-b border-[var(--color-primary-dark)] bg-[var(--primary)] text-white md:sticky md:top-14 md:flex md:h-[calc(100vh-3.5rem)] md:self-start md:flex-col md:border-b-0 md:border-r ${
             collapsed ? "md:w-24" : "md:w-72"
           }`}
         >
@@ -78,7 +78,7 @@ export function AppShell({
             >
               <span
                 aria-hidden="true"
-                className="grid size-10 shrink-0 place-items-center rounded-md bg-white bg-contain bg-center bg-no-repeat text-sm font-bold text-[#116149]"
+                className="grid size-10 shrink-0 place-items-center rounded-md bg-white bg-contain bg-center bg-no-repeat text-sm font-bold text-[var(--primary)]"
                 style={
                   branding.logo_url
                     ? ({ backgroundImage: `url(${branding.logo_url})` } as CSSProperties)

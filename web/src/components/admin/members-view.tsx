@@ -59,7 +59,7 @@ export function MembersView({
     <main className="mx-auto grid min-h-screen max-w-[104rem] content-start gap-5 px-5 py-6 lg:px-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#116149]">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--primary)]">
             Access management
           </p>
           <h1 className="mt-2 text-3xl font-bold text-[#0c1726]">Members</h1>
@@ -103,7 +103,7 @@ export function MembersView({
 function SummaryCard({ icon, label, value }: { icon: ReactNode; label: string; value: ReactNode }) {
   return (
     <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 rounded-lg border border-[#cbd5e1] bg-white p-5 shadow-sm">
-      <span className="grid size-11 place-items-center rounded-md bg-[#e8f5ef] text-[#116149]">
+      <span className="grid size-11 place-items-center rounded-md bg-[var(--color-primary-lighter)] text-[var(--primary)]">
         {icon}
       </span>
       <span>
@@ -131,7 +131,7 @@ function MemberTable({ members }: { members: Membership[] }) {
             <tr className="hover:bg-[#f8fbf9]" key={member.id}>
               <td className="px-5 py-4">
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-md bg-[#e8f5ef] text-sm font-bold text-[#116149]">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-md bg-[var(--color-primary-lighter)] text-sm font-bold text-[var(--primary)]">
                     {(member.full_name ?? member.email).slice(0, 1).toUpperCase()}
                   </span>
                   <span className="min-w-0">
@@ -167,7 +167,7 @@ function RoleBadge({ role }: { role: OrgRole }) {
       className={cn(
         "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
         role === "tenant_admin"
-          ? "bg-[#e8f5ef] text-[#116149]"
+          ? "bg-[var(--color-primary-lighter)] text-[var(--primary)]"
           : "bg-slate-100 text-slate-600",
       )}
     >
@@ -181,7 +181,12 @@ function StatusBadge({ status }: { status: Membership["status"] }) {
 
   return (
     <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#52657a]">
-      <span className={cn("h-2 w-2 rounded-full", active ? "bg-[#116149]" : "bg-[#e4b622]")} />
+      <span
+        className={cn(
+          "h-2 w-2 rounded-full",
+          active ? "bg-[var(--primary)]" : "bg-[var(--color-state-warning)]",
+        )}
+      />
       {active ? "Active" : "Invited"}
     </span>
   );
@@ -194,7 +199,7 @@ function CopyInviteLink({ member }: { member: Membership }) {
 
   return (
     <button
-      className="inline-flex items-center gap-2 text-sm font-semibold text-[#116149] hover:underline"
+      className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--primary)] hover:underline"
       onClick={async () => {
         await navigator.clipboard.writeText(invitationLink(member.invitation_token ?? ""));
         feedbackToast.success("Invite link copied");
@@ -351,7 +356,7 @@ function InviteControl({
 function EmptyState() {
   return (
     <div className="px-6 py-16 text-center">
-      <div className="mx-auto grid size-14 place-items-center rounded-md bg-[#e8f5ef] text-[#116149]">
+      <div className="mx-auto grid size-14 place-items-center rounded-md bg-[var(--color-primary-lighter)] text-[var(--primary)]">
         <Users aria-hidden="true" className="size-7" />
       </div>
       <h2 className="mt-5 text-base font-bold text-[#0c1726]">No members yet</h2>

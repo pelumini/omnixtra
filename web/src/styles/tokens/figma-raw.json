@@ -1,0 +1,1567 @@
+{
+  "$meta": {
+    "file": "OmniXtra",
+    "fileKey": "jyrYS7IC3Vz0LrQQMpjqwv",
+    "page": "Design System (0:1)",
+    "extracted_via": "Figma MCP get_variable_defs (current mode only)",
+    "provenance": {
+      "extracted": "figma_name, raw_value, resolved_value (current mode), type",
+      "inferred": "figma_collection names, figma_mode label, alias_reference, semantic_category, suggested_code_token",
+      "not_available_via_mcp": [
+        "authoritative collection",
+        "mode list / per-mode values",
+        "real alias bindings",
+        "scopes"
+      ],
+      "authoritative_source": "GET /v1/files/{key}/variables/local (Enterprise REST)"
+    },
+    "rules": [
+      "No tokens invented.",
+      "Foreign (Simple Design System / Inter) tokens flagged, not adopted.",
+      "Aliases only asserted where identical resolved value gives strong evidence; otherwise inferred-unresolved."
+    ],
+    "counts": {
+      "primitive": 28,
+      "semantic": 26,
+      "component": 10,
+      "typography": 23,
+      "effect": 6
+    }
+  },
+  "reference_tree": {
+    "color": {
+      "primitive": {
+        "red": {
+          "lighter": "#fdedf0",
+          "light": "#f8c9d2",
+          "base": "#df1c41",
+          "dark": "#af1d38"
+        },
+        "green": {
+          "lighter": "#effaf6",
+          "base": "#38c793"
+        },
+        "orange": {
+          "lighter": "#fef3eb",
+          "base": "#f17b2c"
+        },
+        "blue": {
+          "light": "#c2d6ff",
+          "base": "#375dfb"
+        },
+        "yellow": {
+          "light": "#fbdfb1"
+        },
+        "teal": {
+          "light": "#c2efff"
+        },
+        "purple": {
+          "light": "#cac2ff"
+        },
+        "light-indigo": {
+          "50": "#eeedfc",
+          "500": "#584ce1",
+          "600": "#4b41bf",
+          "700": "#3e359e",
+          "800": "#302a7c",
+          "900": "#231e5a"
+        },
+        "_legacy": {
+          "Red Error/100": "#E1004B",
+          "Red Error/200": "#D80027"
+        },
+        "_neutral_note": "Neutral primitives (used by bg/text/icon/stroke) were NOT surfaced by MCP; raw values seen: #ffffff #f6f8fa #e2e4e9 #cdd0d5 #868c98 #525866 #20232d #0a0d14"
+      },
+      "semantic": {
+        "bg": {
+          "white-0": "#ffffff",
+          "weak-100": "#f6f8fa",
+          "soft-200": "#e2e4e9",
+          "surface-700": "#20232d",
+          "strong-900": "#0a0d14"
+        },
+        "text": {
+          "white-0": "#ffffff",
+          "disabled-300": "#cdd0d5",
+          "soft-400": "#868c98",
+          "sub-500": "#525866",
+          "main-900": "#0a0d14"
+        },
+        "icon": {
+          "white-0": "#ffffff",
+          "disabled-300": "#cdd0d5",
+          "soft-400": "#868c98",
+          "sub-500": "#525866",
+          "strong-900": "#0a0d14"
+        },
+        "stroke": {
+          "white-0": "#ffffff",
+          "soft-200": "#e2e4e9",
+          "sub-300": "#cdd0d5",
+          "strong-900": "#0a0d14"
+        },
+        "primary": {
+          "lighter": "#ebf1ff",
+          "base": "{color.primitive.blue.base}",
+          "dark": "#253ea7"
+        },
+        "status": {
+          "success": "{color.primitive.green.base}",
+          "warning": "{color.primitive.orange.base}",
+          "error": "{color.primitive.red.base}",
+          "neutral": "#868c98"
+        }
+      }
+    }
+  },
+  "tokens": {
+    "primitive": [
+      {
+        "figma_name": "red/lighter",
+        "figma_collection": "Primitive - Color ramps (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#fdedf0",
+        "resolved_value": "#fdedf0",
+        "alias_reference": null,
+        "semantic_category": "color/primitive",
+        "suggested_code_token": "color.red.lighter",
+        "notes": "Extracted. Raw brand-ramp primitive; no alias."
+      },
+      {
+        "figma_name": "red/light",
+        "figma_collection": "Primitive - Color ramps (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#f8c9d2",
+        "resolved_value": "#f8c9d2",
+        "alias_reference": null,
+        "semantic_category": "color/primitive",
+        "suggested_code_token": "color.red.light",
+        "notes": "Extracted. Raw brand-ramp primitive; no alias."
+      },
+      {
+        "figma_name": "red/base",
+        "figma_collection": "Primitive - Color ramps (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#df1c41",
+        "resolved_value": "#df1c41",
+        "alias_reference": null,
+        "semantic_category": "color/primitive",
+        "suggested_code_token": "color.red.base",
+        "notes": "Extracted. Raw brand-ramp primitive; no alias."
+      },
+      {
+        "figma_name": "red/dark",
+        "figma_collection": "Primitive - Color ramps (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#af1d38",
+        "resolved_value": "#af1d38",
+        "alias_reference": null,
+        "semantic_category": "color/primitive",
+        "suggested_code_token": "color.red.dark",
+        "notes": "Extracted. Raw brand-ramp primitive; no alias."
+      },
+      {
+        "figma_name": "green/lighter",
+        "figma_collection": "Primitive - Color ramps (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#effaf6",
+        "resolved_value": "#effaf6",
+        "alias_reference": null,
+        "semantic_category": "color/primitive",
+        "suggested_code_token": "color.green.lighter",
+        "notes": "Extracted. Raw brand-ramp primitive; no alias."
+      },
+      {
+        "figma_name": "green/base",
+        "figma_collection": "Primitive - Color ramps (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#38c793",
+        "resolved_value": "#38c793",
+        "alias_reference": null,
+        "semantic_category": "color/primitive",
+        "suggested_code_token": "color.green.base",
+        "notes": "Extracted. Raw brand-ramp primitive; no alias."
+      },
+      {
+        "figma_name": "orange/lighter",
+        "figma_collection": "Primitive - Color ramps (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#fef3eb",
+        "resolved_value": "#fef3eb",
+        "alias_reference": null,
+        "semantic_category": "color/primitive",
+        "suggested_code_token": "color.orange.lighter",
+        "notes": "Extracted. Raw brand-ramp primitive; no alias."
+      },
+      {
+        "figma_name": "orange/base",
+        "figma_collection": "Primitive - Color ramps (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#f17b2c",
+        "resolved_value": "#f17b2c",
+        "alias_reference": null,
+        "semantic_category": "color/primitive",
+        "suggested_code_token": "color.orange.base",
+        "notes": "Extracted. Raw brand-ramp primitive; no alias."
+      },
+      {
+        "figma_name": "blue/light",
+        "figma_collection": "Primitive - Color ramps (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#c2d6ff",
+        "resolved_value": "#c2d6ff",
+        "alias_reference": null,
+        "semantic_category": "color/primitive",
+        "suggested_code_token": "color.blue.light",
+        "notes": "Extracted. Raw brand-ramp primitive; no alias."
+      },
+      {
+        "figma_name": "blue/base",
+        "figma_collection": "Primitive - Color ramps (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#375dfb",
+        "resolved_value": "#375dfb",
+        "alias_reference": null,
+        "semantic_category": "color/primitive",
+        "suggested_code_token": "color.blue.base",
+        "notes": "Extracted. Raw brand-ramp primitive; no alias."
+      },
+      {
+        "figma_name": "yellow/light",
+        "figma_collection": "Primitive - Color ramps (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#fbdfb1",
+        "resolved_value": "#fbdfb1",
+        "alias_reference": null,
+        "semantic_category": "color/primitive",
+        "suggested_code_token": "color.yellow.light",
+        "notes": "Extracted. Raw brand-ramp primitive; no alias."
+      },
+      {
+        "figma_name": "teal/light",
+        "figma_collection": "Primitive - Color ramps (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#c2efff",
+        "resolved_value": "#c2efff",
+        "alias_reference": null,
+        "semantic_category": "color/primitive",
+        "suggested_code_token": "color.teal.light",
+        "notes": "Extracted. Raw brand-ramp primitive; no alias."
+      },
+      {
+        "figma_name": "purple/light",
+        "figma_collection": "Primitive - Color ramps (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#cac2ff",
+        "resolved_value": "#cac2ff",
+        "alias_reference": null,
+        "semantic_category": "color/primitive",
+        "suggested_code_token": "color.purple.light",
+        "notes": "Extracted. Raw brand-ramp primitive; no alias."
+      },
+      {
+        "figma_name": "primitive/light-indigo/50",
+        "figma_collection": "Primitive - light-indigo (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#eeedfc",
+        "resolved_value": "#eeedfc",
+        "alias_reference": null,
+        "semantic_category": "color/primitive",
+        "suggested_code_token": "color.light-indigo.50",
+        "notes": "Extracted. Raw brand-ramp primitive; no alias."
+      },
+      {
+        "figma_name": "primitive/light-indigo/500",
+        "figma_collection": "Primitive - light-indigo (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#584ce1",
+        "resolved_value": "#584ce1",
+        "alias_reference": null,
+        "semantic_category": "color/primitive",
+        "suggested_code_token": "color.light-indigo.500",
+        "notes": "Extracted. Raw brand-ramp primitive; no alias."
+      },
+      {
+        "figma_name": "primitive/light-indigo/600",
+        "figma_collection": "Primitive - light-indigo (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#4b41bf",
+        "resolved_value": "#4b41bf",
+        "alias_reference": null,
+        "semantic_category": "color/primitive",
+        "suggested_code_token": "color.light-indigo.600",
+        "notes": "Extracted. Raw brand-ramp primitive; no alias."
+      },
+      {
+        "figma_name": "primitive/light-indigo/700",
+        "figma_collection": "Primitive - light-indigo (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#3e359e",
+        "resolved_value": "#3e359e",
+        "alias_reference": null,
+        "semantic_category": "color/primitive",
+        "suggested_code_token": "color.light-indigo.700",
+        "notes": "Extracted. Raw brand-ramp primitive; no alias."
+      },
+      {
+        "figma_name": "primitive/light-indigo/800",
+        "figma_collection": "Primitive - light-indigo (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#302a7c",
+        "resolved_value": "#302a7c",
+        "alias_reference": null,
+        "semantic_category": "color/primitive",
+        "suggested_code_token": "color.light-indigo.800",
+        "notes": "Extracted. Raw brand-ramp primitive; no alias."
+      },
+      {
+        "figma_name": "primitive/light-indigo/900",
+        "figma_collection": "Primitive - light-indigo (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#231e5a",
+        "resolved_value": "#231e5a",
+        "alias_reference": null,
+        "semantic_category": "color/primitive",
+        "suggested_code_token": "color.light-indigo.900",
+        "notes": "Extracted. Raw brand-ramp primitive; no alias."
+      },
+      {
+        "figma_name": "Red Error/100",
+        "figma_collection": "Legacy (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#E1004B",
+        "resolved_value": "#E1004B",
+        "alias_reference": null,
+        "semantic_category": "color/primitive-legacy",
+        "suggested_code_token": "color.legacy.red-error.100",
+        "notes": "Extracted. Legacy red; superseded by red/* ramp."
+      },
+      {
+        "figma_name": "Red Error/200",
+        "figma_collection": "Legacy (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#D80027",
+        "resolved_value": "#D80027",
+        "alias_reference": null,
+        "semantic_category": "color/primitive-legacy",
+        "suggested_code_token": "color.legacy.red-error.200",
+        "notes": "Extracted. Legacy red; superseded by red/* ramp."
+      },
+      {
+        "figma_name": "Grey/100",
+        "figma_collection": "FOREIGN - Simple Design System lib (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#EAEAEB",
+        "resolved_value": "#EAEAEB",
+        "alias_reference": null,
+        "semantic_category": "color/foreign",
+        "suggested_code_token": "(do-not-adopt)",
+        "notes": "Extracted but FOREIGN - leaked from Simple Design System component; exclude from OmniXtra tokens."
+      },
+      {
+        "figma_name": "Grey/200",
+        "figma_collection": "FOREIGN - Simple Design System lib (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#D5D6D7",
+        "resolved_value": "#D5D6D7",
+        "alias_reference": null,
+        "semantic_category": "color/foreign",
+        "suggested_code_token": "(do-not-adopt)",
+        "notes": "Extracted but FOREIGN - leaked from Simple Design System component; exclude from OmniXtra tokens."
+      },
+      {
+        "figma_name": "Grey/300",
+        "figma_collection": "FOREIGN - Simple Design System lib (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#BBBCBD",
+        "resolved_value": "#BBBCBD",
+        "alias_reference": null,
+        "semantic_category": "color/foreign",
+        "suggested_code_token": "(do-not-adopt)",
+        "notes": "Extracted but FOREIGN - leaked from Simple Design System component; exclude from OmniXtra tokens."
+      },
+      {
+        "figma_name": "Grey/400",
+        "figma_collection": "FOREIGN - Simple Design System lib (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#A1A2A4",
+        "resolved_value": "#A1A2A4",
+        "alias_reference": null,
+        "semantic_category": "color/foreign",
+        "suggested_code_token": "(do-not-adopt)",
+        "notes": "Extracted but FOREIGN - leaked from Simple Design System component; exclude from OmniXtra tokens."
+      },
+      {
+        "figma_name": "Grey/600",
+        "figma_collection": "FOREIGN - Simple Design System lib (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#838587",
+        "resolved_value": "#838587",
+        "alias_reference": null,
+        "semantic_category": "color/foreign",
+        "suggested_code_token": "(do-not-adopt)",
+        "notes": "Extracted but FOREIGN - leaked from Simple Design System component; exclude from OmniXtra tokens."
+      },
+      {
+        "figma_name": "Shades/Black",
+        "figma_collection": "FOREIGN - Simple Design System lib (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#222222",
+        "resolved_value": "#222222",
+        "alias_reference": null,
+        "semantic_category": "color/foreign",
+        "suggested_code_token": "(do-not-adopt)",
+        "notes": "Extracted but FOREIGN - leaked from Simple Design System component; exclude from OmniXtra tokens."
+      },
+      {
+        "figma_name": "radius-8",
+        "figma_collection": "Primitive - Radius/Number (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "FLOAT",
+        "raw_value": "8",
+        "resolved_value": "8px",
+        "alias_reference": null,
+        "semantic_category": "radius/primitive",
+        "suggested_code_token": "radius.8",
+        "notes": "Extracted. Only numeric variable bound. px assumed (Figma FLOAT is unitless)."
+      }
+    ],
+    "semantic": [
+      {
+        "figma_name": "bg/white-0",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#ffffff",
+        "resolved_value": "#ffffff",
+        "alias_reference": "{inferred: neutral primitive not surfaced}",
+        "semantic_category": "color/semantic/bg",
+        "suggested_code_token": "color.bg.white-0",
+        "notes": "Extracted. Resolves to raw neutral hex; underlying neutral/gray PRIMITIVE not surfaced by MCP (likely aliases a neutral ramp in the full variable set). alias marked inferred-unresolved."
+      },
+      {
+        "figma_name": "bg/weak-100",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#f6f8fa",
+        "resolved_value": "#f6f8fa",
+        "alias_reference": "{inferred: neutral primitive not surfaced}",
+        "semantic_category": "color/semantic/bg",
+        "suggested_code_token": "color.bg.weak-100",
+        "notes": "Extracted. Resolves to raw neutral hex; underlying neutral/gray PRIMITIVE not surfaced by MCP (likely aliases a neutral ramp in the full variable set). alias marked inferred-unresolved."
+      },
+      {
+        "figma_name": "bg/soft-200",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#e2e4e9",
+        "resolved_value": "#e2e4e9",
+        "alias_reference": "{inferred: neutral primitive not surfaced}",
+        "semantic_category": "color/semantic/bg",
+        "suggested_code_token": "color.bg.soft-200",
+        "notes": "Extracted. Resolves to raw neutral hex; underlying neutral/gray PRIMITIVE not surfaced by MCP (likely aliases a neutral ramp in the full variable set). alias marked inferred-unresolved."
+      },
+      {
+        "figma_name": "bg/surface-700",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#20232d",
+        "resolved_value": "#20232d",
+        "alias_reference": "{inferred: neutral primitive not surfaced}",
+        "semantic_category": "color/semantic/bg",
+        "suggested_code_token": "color.bg.surface-700",
+        "notes": "Extracted. Resolves to raw neutral hex; underlying neutral/gray PRIMITIVE not surfaced by MCP (likely aliases a neutral ramp in the full variable set). alias marked inferred-unresolved."
+      },
+      {
+        "figma_name": "bg/strong-900",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#0a0d14",
+        "resolved_value": "#0a0d14",
+        "alias_reference": "{inferred: neutral primitive not surfaced}",
+        "semantic_category": "color/semantic/bg",
+        "suggested_code_token": "color.bg.strong-900",
+        "notes": "Extracted. Resolves to raw neutral hex; underlying neutral/gray PRIMITIVE not surfaced by MCP (likely aliases a neutral ramp in the full variable set). alias marked inferred-unresolved."
+      },
+      {
+        "figma_name": "text/white-0",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#ffffff",
+        "resolved_value": "#ffffff",
+        "alias_reference": "{inferred: neutral primitive not surfaced}",
+        "semantic_category": "color/semantic/text",
+        "suggested_code_token": "color.text.white-0",
+        "notes": "Extracted. Resolves to raw neutral hex; underlying neutral/gray PRIMITIVE not surfaced by MCP (likely aliases a neutral ramp in the full variable set). alias marked inferred-unresolved."
+      },
+      {
+        "figma_name": "text/disabled-300",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#cdd0d5",
+        "resolved_value": "#cdd0d5",
+        "alias_reference": "{inferred: neutral primitive not surfaced}",
+        "semantic_category": "color/semantic/text",
+        "suggested_code_token": "color.text.disabled-300",
+        "notes": "Extracted. Resolves to raw neutral hex; underlying neutral/gray PRIMITIVE not surfaced by MCP (likely aliases a neutral ramp in the full variable set). alias marked inferred-unresolved."
+      },
+      {
+        "figma_name": "text/soft-400",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#868c98",
+        "resolved_value": "#868c98",
+        "alias_reference": "{inferred: neutral primitive not surfaced}",
+        "semantic_category": "color/semantic/text",
+        "suggested_code_token": "color.text.soft-400",
+        "notes": "Extracted. Resolves to raw neutral hex; underlying neutral/gray PRIMITIVE not surfaced by MCP (likely aliases a neutral ramp in the full variable set). alias marked inferred-unresolved."
+      },
+      {
+        "figma_name": "text/sub-500",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#525866",
+        "resolved_value": "#525866",
+        "alias_reference": "{inferred: neutral primitive not surfaced}",
+        "semantic_category": "color/semantic/text",
+        "suggested_code_token": "color.text.sub-500",
+        "notes": "Extracted. Resolves to raw neutral hex; underlying neutral/gray PRIMITIVE not surfaced by MCP (likely aliases a neutral ramp in the full variable set). alias marked inferred-unresolved."
+      },
+      {
+        "figma_name": "text/main-900",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#0a0d14",
+        "resolved_value": "#0a0d14",
+        "alias_reference": "{inferred: neutral primitive not surfaced}",
+        "semantic_category": "color/semantic/text",
+        "suggested_code_token": "color.text.main-900",
+        "notes": "Extracted. Resolves to raw neutral hex; underlying neutral/gray PRIMITIVE not surfaced by MCP (likely aliases a neutral ramp in the full variable set). alias marked inferred-unresolved."
+      },
+      {
+        "figma_name": "icon/white-0",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#ffffff",
+        "resolved_value": "#ffffff",
+        "alias_reference": "{inferred: neutral primitive not surfaced}",
+        "semantic_category": "color/semantic/icon",
+        "suggested_code_token": "color.icon.white-0",
+        "notes": "Extracted. Resolves to raw neutral hex; underlying neutral/gray PRIMITIVE not surfaced by MCP (likely aliases a neutral ramp in the full variable set). alias marked inferred-unresolved."
+      },
+      {
+        "figma_name": "icon/disabled-300",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#cdd0d5",
+        "resolved_value": "#cdd0d5",
+        "alias_reference": "{inferred: neutral primitive not surfaced}",
+        "semantic_category": "color/semantic/icon",
+        "suggested_code_token": "color.icon.disabled-300",
+        "notes": "Extracted. Resolves to raw neutral hex; underlying neutral/gray PRIMITIVE not surfaced by MCP (likely aliases a neutral ramp in the full variable set). alias marked inferred-unresolved."
+      },
+      {
+        "figma_name": "icon/soft-400",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#868c98",
+        "resolved_value": "#868c98",
+        "alias_reference": "{inferred: neutral primitive not surfaced}",
+        "semantic_category": "color/semantic/icon",
+        "suggested_code_token": "color.icon.soft-400",
+        "notes": "Extracted. Resolves to raw neutral hex; underlying neutral/gray PRIMITIVE not surfaced by MCP (likely aliases a neutral ramp in the full variable set). alias marked inferred-unresolved."
+      },
+      {
+        "figma_name": "icon/sub-500",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#525866",
+        "resolved_value": "#525866",
+        "alias_reference": "{inferred: neutral primitive not surfaced}",
+        "semantic_category": "color/semantic/icon",
+        "suggested_code_token": "color.icon.sub-500",
+        "notes": "Extracted. Resolves to raw neutral hex; underlying neutral/gray PRIMITIVE not surfaced by MCP (likely aliases a neutral ramp in the full variable set). alias marked inferred-unresolved."
+      },
+      {
+        "figma_name": "icon/strong-900",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#0a0d14",
+        "resolved_value": "#0a0d14",
+        "alias_reference": "{inferred: neutral primitive not surfaced}",
+        "semantic_category": "color/semantic/icon",
+        "suggested_code_token": "color.icon.strong-900",
+        "notes": "Extracted. Resolves to raw neutral hex; underlying neutral/gray PRIMITIVE not surfaced by MCP (likely aliases a neutral ramp in the full variable set). alias marked inferred-unresolved."
+      },
+      {
+        "figma_name": "stroke/white-0",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#ffffff",
+        "resolved_value": "#ffffff",
+        "alias_reference": "{inferred: neutral primitive not surfaced}",
+        "semantic_category": "color/semantic/stroke",
+        "suggested_code_token": "color.stroke.white-0",
+        "notes": "Extracted. Resolves to raw neutral hex; underlying neutral/gray PRIMITIVE not surfaced by MCP (likely aliases a neutral ramp in the full variable set). alias marked inferred-unresolved."
+      },
+      {
+        "figma_name": "stroke/soft-200",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#e2e4e9",
+        "resolved_value": "#e2e4e9",
+        "alias_reference": "{inferred: neutral primitive not surfaced}",
+        "semantic_category": "color/semantic/stroke",
+        "suggested_code_token": "color.stroke.soft-200",
+        "notes": "Extracted. Resolves to raw neutral hex; underlying neutral/gray PRIMITIVE not surfaced by MCP (likely aliases a neutral ramp in the full variable set). alias marked inferred-unresolved."
+      },
+      {
+        "figma_name": "stroke/sub-300",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#cdd0d5",
+        "resolved_value": "#cdd0d5",
+        "alias_reference": "{inferred: neutral primitive not surfaced}",
+        "semantic_category": "color/semantic/stroke",
+        "suggested_code_token": "color.stroke.sub-300",
+        "notes": "Extracted. Resolves to raw neutral hex; underlying neutral/gray PRIMITIVE not surfaced by MCP (likely aliases a neutral ramp in the full variable set). alias marked inferred-unresolved."
+      },
+      {
+        "figma_name": "stroke/strong-900",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#0a0d14",
+        "resolved_value": "#0a0d14",
+        "alias_reference": "{inferred: neutral primitive not surfaced}",
+        "semantic_category": "color/semantic/stroke",
+        "suggested_code_token": "color.stroke.strong-900",
+        "notes": "Extracted. Resolves to raw neutral hex; underlying neutral/gray PRIMITIVE not surfaced by MCP (likely aliases a neutral ramp in the full variable set). alias marked inferred-unresolved."
+      },
+      {
+        "figma_name": "primary-lighter",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#ebf1ff",
+        "resolved_value": "#ebf1ff",
+        "alias_reference": "{inferred: blue/lighter not surfaced}",
+        "semantic_category": "color/semantic/primary",
+        "suggested_code_token": "color.primary.lighter",
+        "notes": "Extracted. Primitive parent (blue/lighter) not surfaced; alias inferred-unresolved."
+      },
+      {
+        "figma_name": "primary-base",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#375dfb",
+        "resolved_value": "#375dfb",
+        "alias_reference": "{color.primitive.blue.base}",
+        "semantic_category": "color/semantic/primary",
+        "suggested_code_token": "color.primary.base",
+        "notes": "Extracted. Alias INFERRED from identical value to blue/base (#375dfb)."
+      },
+      {
+        "figma_name": "primary-dark",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#253ea7",
+        "resolved_value": "#253ea7",
+        "alias_reference": "{inferred: blue/dark not surfaced}",
+        "semantic_category": "color/semantic/primary",
+        "suggested_code_token": "color.primary.dark",
+        "notes": "Extracted. Primitive parent (blue/dark) not surfaced; alias inferred-unresolved."
+      },
+      {
+        "figma_name": "state/success",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#38c793",
+        "resolved_value": "#38c793",
+        "alias_reference": "{color.primitive.green.base}",
+        "semantic_category": "color/semantic/status",
+        "suggested_code_token": "color.state.success",
+        "notes": "Extracted. Alias INFERRED from identical value."
+      },
+      {
+        "figma_name": "state/warning",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#f17b2c",
+        "resolved_value": "#f17b2c",
+        "alias_reference": "{color.primitive.orange.base}",
+        "semantic_category": "color/semantic/status",
+        "suggested_code_token": "color.state.warning",
+        "notes": "Extracted. Alias INFERRED from identical value."
+      },
+      {
+        "figma_name": "state/error",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#df1c41",
+        "resolved_value": "#df1c41",
+        "alias_reference": "{color.primitive.red.base}",
+        "semantic_category": "color/semantic/status",
+        "suggested_code_token": "color.state.error",
+        "notes": "Extracted. Alias INFERRED from identical value."
+      },
+      {
+        "figma_name": "state/neutral",
+        "figma_collection": "Semantic - Colors (inferred name)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "COLOR",
+        "raw_value": "#868c98",
+        "resolved_value": "#868c98",
+        "alias_reference": "{inferred: neutral primitive not surfaced}",
+        "semantic_category": "color/semantic/status",
+        "suggested_code_token": "color.state.neutral",
+        "notes": "Extracted. Alias INFERRED from identical value."
+      }
+    ],
+    "component": [
+      {
+        "figma_name": "button-shadow/stroke/primary",
+        "figma_collection": "Effect style - component-scoped (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "EFFECT",
+        "raw_value": "DROP_SHADOW #375DFB14 offset(0,1) blur2 spread0",
+        "resolved_value": "DROP_SHADOW #375DFB14 offset(0,1) blur2 spread0",
+        "alias_reference": null,
+        "semantic_category": "effect/component/button",
+        "suggested_code_token": "shadow.button-shadow.stroke.primary",
+        "notes": "Extracted. Component-scoped effect (button, primary stroke). (Effect STYLE, not a variable.)"
+      },
+      {
+        "figma_name": "button-shadow/stroke/important",
+        "figma_collection": "Effect style - component-scoped (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "EFFECT",
+        "raw_value": "DROP_SHADOW #5258660F offset(0,1) blur2 spread0",
+        "resolved_value": "DROP_SHADOW #5258660F offset(0,1) blur2 spread0",
+        "alias_reference": null,
+        "semantic_category": "effect/component/button",
+        "suggested_code_token": "shadow.button-shadow.stroke.important",
+        "notes": "Extracted. Component-scoped effect (button, neutral/important stroke). (Effect STYLE, not a variable.)"
+      },
+      {
+        "figma_name": "button-shadow/stroke/error",
+        "figma_collection": "Effect style - component-scoped (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "EFFECT",
+        "raw_value": "DROP_SHADOW #E9353514 offset(0,1) blur2 spread0",
+        "resolved_value": "DROP_SHADOW #E9353514 offset(0,1) blur2 spread0",
+        "alias_reference": null,
+        "semantic_category": "effect/component/button",
+        "suggested_code_token": "shadow.button-shadow.stroke.error",
+        "notes": "Extracted. Component-scoped effect (button, error stroke). (Effect STYLE, not a variable.)"
+      },
+      {
+        "figma_name": "button-shadow/focus/primary",
+        "figma_collection": "Effect style - component-scoped (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "EFFECT",
+        "raw_value": "DROP_SHADOW #EBF1FF spread4 + DROP_SHADOW #FFFFFF spread2",
+        "resolved_value": "DROP_SHADOW #EBF1FF spread4 + DROP_SHADOW #FFFFFF spread2",
+        "alias_reference": null,
+        "semantic_category": "effect/component/button",
+        "suggested_code_token": "shadow.button-shadow.focus.primary",
+        "notes": "Extracted. Component focus ring (primary). Outer tint ~ primary-lighter. (Effect STYLE, not a variable.)"
+      },
+      {
+        "figma_name": "button-shadow/focus/important",
+        "figma_collection": "Effect style - component-scoped (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "EFFECT",
+        "raw_value": "DROP_SHADOW #E4E5E7 spread4 + DROP_SHADOW #FFFFFF spread2",
+        "resolved_value": "DROP_SHADOW #E4E5E7 spread4 + DROP_SHADOW #FFFFFF spread2",
+        "alias_reference": null,
+        "semantic_category": "effect/component/button",
+        "suggested_code_token": "shadow.button-shadow.focus.important",
+        "notes": "Extracted. Component focus ring (neutral). (Effect STYLE, not a variable.)"
+      },
+      {
+        "figma_name": "button-shadow/focus/error",
+        "figma_collection": "Effect style - component-scoped (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "EFFECT",
+        "raw_value": "DROP_SHADOW #FFECEB spread4 + DROP_SHADOW #FFFFFF spread2",
+        "resolved_value": "DROP_SHADOW #FFECEB spread4 + DROP_SHADOW #FFFFFF spread2",
+        "alias_reference": null,
+        "semantic_category": "effect/component/button",
+        "suggested_code_token": "shadow.button-shadow.focus.error",
+        "notes": "Extracted. Component focus ring (error). (Effect STYLE, not a variable.)"
+      },
+      {
+        "figma_name": "radio-checkbox-shadow/default",
+        "figma_collection": "Effect style - component-scoped (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "EFFECT",
+        "raw_value": "DROP_SHADOW #1B1C1D1F offset(0,2) blur2 spread0",
+        "resolved_value": "DROP_SHADOW #1B1C1D1F offset(0,2) blur2 spread0",
+        "alias_reference": null,
+        "semantic_category": "effect/component/radio-checkbox",
+        "suggested_code_token": "shadow.radio-checkbox-shadow.default",
+        "notes": "Extracted. Component-scoped (radio/checkbox rest). (Effect STYLE, not a variable.)"
+      },
+      {
+        "figma_name": "radio-checkbox-shadow/active-bg",
+        "figma_collection": "Effect style - component-scoped (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "EFFECT",
+        "raw_value": "INNER_SHADOW #16266452 offset(0,2) blur2 spread0",
+        "resolved_value": "INNER_SHADOW #16266452 offset(0,2) blur2 spread0",
+        "alias_reference": null,
+        "semantic_category": "effect/component/radio-checkbox",
+        "suggested_code_token": "shadow.radio-checkbox-shadow.active-bg",
+        "notes": "Extracted. Component-scoped inner shadow (checked fill). (Effect STYLE, not a variable.)"
+      },
+      {
+        "figma_name": "radio-checkbox-shadow/disabled",
+        "figma_collection": "Effect style - component-scoped (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "EFFECT",
+        "raw_value": "INNER_SHADOW #0F0F1014 offset(0,2) blur2 spread0",
+        "resolved_value": "INNER_SHADOW #0F0F1014 offset(0,2) blur2 spread0",
+        "alias_reference": null,
+        "semantic_category": "effect/component/radio-checkbox",
+        "suggested_code_token": "shadow.radio-checkbox-shadow.disabled",
+        "notes": "Extracted. Component-scoped inner shadow (disabled). (Effect STYLE, not a variable.)"
+      },
+      {
+        "figma_name": "toggle-shadow/switch-toggle/Active",
+        "figma_collection": "Effect style - component-scoped (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "EFFECT",
+        "raw_value": "DROP_SHADOW #1B1C1D05 offset(0,2) blur4 + DROP_SHADOW #1B1C1D0F offset(0,6) blur10",
+        "resolved_value": "DROP_SHADOW #1B1C1D05 offset(0,2) blur4 + DROP_SHADOW #1B1C1D0F offset(0,6) blur10",
+        "alias_reference": null,
+        "semantic_category": "effect/component/switch",
+        "suggested_code_token": "shadow.toggle-shadow.switch-toggle.Active",
+        "notes": "Extracted. Component-scoped (switch knob elevation). (Effect STYLE, not a variable.)"
+      }
+    ],
+    "typography": [
+      {
+        "figma_name": "Title/H1 Title",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Bold",
+          "fontWeight": 700,
+          "fontSize": 56,
+          "lineHeight": 64,
+          "letterSpacing": -4
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Bold",
+          "fontWeight": 700,
+          "fontSize": 56,
+          "lineHeight": 64,
+          "letterSpacing": -4
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/title",
+        "suggested_code_token": "font.title.h1-title",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Title/H2 Title",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Bold",
+          "fontWeight": 700,
+          "fontSize": 48,
+          "lineHeight": 56,
+          "letterSpacing": -3
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Bold",
+          "fontWeight": 700,
+          "fontSize": 48,
+          "lineHeight": 56,
+          "letterSpacing": -3
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/title",
+        "suggested_code_token": "font.title.h2-title",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Title/H3 Title",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "SemiBold",
+          "fontWeight": 600,
+          "fontSize": 40,
+          "lineHeight": 48,
+          "letterSpacing": -5
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "SemiBold",
+          "fontWeight": 600,
+          "fontSize": 40,
+          "lineHeight": 48,
+          "letterSpacing": -5
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/title",
+        "suggested_code_token": "font.title.h3-title",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Title/H4 Title",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Bold",
+          "fontWeight": 700,
+          "fontSize": 32,
+          "lineHeight": 40,
+          "letterSpacing": -3
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Bold",
+          "fontWeight": 700,
+          "fontSize": 32,
+          "lineHeight": 40,
+          "letterSpacing": -3
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/title",
+        "suggested_code_token": "font.title.h4-title",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Title/H5 Title",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Bold",
+          "fontWeight": 700,
+          "fontSize": 24,
+          "lineHeight": 32,
+          "letterSpacing": -4
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Bold",
+          "fontWeight": 700,
+          "fontSize": 24,
+          "lineHeight": 32,
+          "letterSpacing": -4
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/title",
+        "suggested_code_token": "font.title.h5-title",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Title/H6 Title",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Bold",
+          "fontWeight": 700,
+          "fontSize": 20,
+          "lineHeight": 28,
+          "letterSpacing": -3
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Bold",
+          "fontWeight": 700,
+          "fontSize": 20,
+          "lineHeight": 28,
+          "letterSpacing": -3
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/title",
+        "suggested_code_token": "font.title.h6-title",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Label/X Large",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Bold",
+          "fontWeight": 700,
+          "fontSize": 24,
+          "lineHeight": 32,
+          "letterSpacing": -3
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Bold",
+          "fontWeight": 700,
+          "fontSize": 24,
+          "lineHeight": 32,
+          "letterSpacing": -3
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/label",
+        "suggested_code_token": "font.label.x-large",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Label/Large",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "SemiBold",
+          "fontWeight": 600,
+          "fontSize": 18,
+          "lineHeight": 24,
+          "letterSpacing": -3
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "SemiBold",
+          "fontWeight": 600,
+          "fontSize": 18,
+          "lineHeight": 24,
+          "letterSpacing": -3
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/label",
+        "suggested_code_token": "font.label.large",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Label/Medium",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "SemiBold",
+          "fontWeight": 600,
+          "fontSize": 16,
+          "lineHeight": 24,
+          "letterSpacing": -2
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "SemiBold",
+          "fontWeight": 600,
+          "fontSize": 16,
+          "lineHeight": 24,
+          "letterSpacing": -2
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/label",
+        "suggested_code_token": "font.label.medium",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Label/Small",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "SemiBold",
+          "fontWeight": 600,
+          "fontSize": 14,
+          "lineHeight": 20,
+          "letterSpacing": -2
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "SemiBold",
+          "fontWeight": 600,
+          "fontSize": 14,
+          "lineHeight": 20,
+          "letterSpacing": -2
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/label",
+        "suggested_code_token": "font.label.small",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Label/X Small",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Medium",
+          "fontWeight": 500,
+          "fontSize": 12,
+          "lineHeight": 16,
+          "letterSpacing": -3
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Medium",
+          "fontWeight": 500,
+          "fontSize": 12,
+          "lineHeight": 16,
+          "letterSpacing": -3
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/label",
+        "suggested_code_token": "font.label.x-small",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Paragraph/X Large",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Regular",
+          "fontWeight": 400,
+          "fontSize": 24,
+          "lineHeight": 32,
+          "letterSpacing": -3
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Regular",
+          "fontWeight": 400,
+          "fontSize": 24,
+          "lineHeight": 32,
+          "letterSpacing": -3
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/paragraph",
+        "suggested_code_token": "font.paragraph.x-large",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Paragraph/Large",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Regular",
+          "fontWeight": 400,
+          "fontSize": 18,
+          "lineHeight": 24,
+          "letterSpacing": -2
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Regular",
+          "fontWeight": 400,
+          "fontSize": 18,
+          "lineHeight": 24,
+          "letterSpacing": -2
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/paragraph",
+        "suggested_code_token": "font.paragraph.large",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Paragraph/Medium",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Regular",
+          "fontWeight": 400,
+          "fontSize": 16,
+          "lineHeight": 24,
+          "letterSpacing": -1.1
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Regular",
+          "fontWeight": 400,
+          "fontSize": 16,
+          "lineHeight": 24,
+          "letterSpacing": -1.1
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/paragraph",
+        "suggested_code_token": "font.paragraph.medium",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Paragraph/Small",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Medium",
+          "fontWeight": 500,
+          "fontSize": 14,
+          "lineHeight": 20,
+          "letterSpacing": -4
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Medium",
+          "fontWeight": 500,
+          "fontSize": 14,
+          "lineHeight": 20,
+          "letterSpacing": -4
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/paragraph",
+        "suggested_code_token": "font.paragraph.small",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Paragraph/X Small",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Regular",
+          "fontWeight": 400,
+          "fontSize": 12,
+          "lineHeight": 16,
+          "letterSpacing": -2
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Regular",
+          "fontWeight": 400,
+          "fontSize": 12,
+          "lineHeight": 16,
+          "letterSpacing": -2
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/paragraph",
+        "suggested_code_token": "font.paragraph.x-small",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Subheading/Medium",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Medium",
+          "fontWeight": 500,
+          "fontSize": 16,
+          "lineHeight": 24,
+          "letterSpacing": 6
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Medium",
+          "fontWeight": 500,
+          "fontSize": 16,
+          "lineHeight": 24,
+          "letterSpacing": 6
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/subheading",
+        "suggested_code_token": "font.subheading.medium",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Subheading/Small",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Medium",
+          "fontWeight": 500,
+          "fontSize": 14,
+          "lineHeight": 20,
+          "letterSpacing": 6
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Medium",
+          "fontWeight": 500,
+          "fontSize": 14,
+          "lineHeight": 20,
+          "letterSpacing": 6
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/subheading",
+        "suggested_code_token": "font.subheading.small",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Subheading/X Small",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Medium",
+          "fontWeight": 500,
+          "fontSize": 12,
+          "lineHeight": 16,
+          "letterSpacing": 4
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Medium",
+          "fontWeight": 500,
+          "fontSize": 12,
+          "lineHeight": 16,
+          "letterSpacing": 4
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/subheading",
+        "suggested_code_token": "font.subheading.x-small",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Subheading/2X Small",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Medium",
+          "fontWeight": 500,
+          "fontSize": 11,
+          "lineHeight": 12,
+          "letterSpacing": -2
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Medium",
+          "fontWeight": 500,
+          "fontSize": 11,
+          "lineHeight": 12,
+          "letterSpacing": -2
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/subheading",
+        "suggested_code_token": "font.subheading.2x-small",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Docs/Paragraph",
+        "figma_collection": "Text styles - Mulish (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Regular",
+          "fontWeight": 400,
+          "fontSize": 18,
+          "lineHeight": 32,
+          "letterSpacing": -3
+        },
+        "resolved_value": {
+          "fontFamily": "Mulish",
+          "fontStyle": "Regular",
+          "fontWeight": 400,
+          "fontSize": 18,
+          "lineHeight": 32,
+          "letterSpacing": -3
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/docs",
+        "suggested_code_token": "font.docs.paragraph",
+        "notes": "Extracted. Text STYLE. letterSpacing in Figma raw units. Subheadings use positive tracking (eyebrow)."
+      },
+      {
+        "figma_name": "Small/Paragraph/01/Semibold",
+        "figma_collection": "FOREIGN - Simple Design System (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Inter",
+          "fontStyle": "Semi Bold",
+          "fontWeight": 600,
+          "fontSize": 14,
+          "lineHeight": 22,
+          "letterSpacing": 0
+        },
+        "resolved_value": {
+          "fontFamily": "Inter",
+          "fontStyle": "Semi Bold",
+          "fontWeight": 600,
+          "fontSize": 14,
+          "lineHeight": 22,
+          "letterSpacing": 0
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/foreign",
+        "suggested_code_token": "(do-not-adopt)",
+        "notes": "Extracted but FOREIGN (Inter). Exclude from OmniXtra type scale."
+      },
+      {
+        "figma_name": "Small/Caption/Semibold",
+        "figma_collection": "FOREIGN - Simple Design System (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "TEXT",
+        "raw_value": {
+          "fontFamily": "Inter",
+          "fontStyle": "Semi Bold",
+          "fontWeight": 600,
+          "fontSize": 12,
+          "lineHeight": 20,
+          "letterSpacing": 0
+        },
+        "resolved_value": {
+          "fontFamily": "Inter",
+          "fontStyle": "Semi Bold",
+          "fontWeight": 600,
+          "fontSize": 12,
+          "lineHeight": 20,
+          "letterSpacing": 0
+        },
+        "alias_reference": null,
+        "semantic_category": "typography/foreign",
+        "suggested_code_token": "(do-not-adopt)",
+        "notes": "Extracted but FOREIGN (Inter). Exclude from OmniXtra type scale."
+      }
+    ],
+    "effect": [
+      {
+        "figma_name": "regular-shadow/x-small",
+        "figma_collection": "Effect style - elevation scale (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "EFFECT",
+        "raw_value": "DROP_SHADOW #E4E5E73D offset(0,1) blur2 spread0",
+        "resolved_value": "DROP_SHADOW #E4E5E73D offset(0,1) blur2 spread0",
+        "alias_reference": null,
+        "semantic_category": "effect/elevation",
+        "suggested_code_token": "shadow.x_small",
+        "notes": "Extracted. General elevation scale (Effect STYLE)."
+      },
+      {
+        "figma_name": "regular-shadow/small",
+        "figma_collection": "Effect style - elevation scale (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "EFFECT",
+        "raw_value": "DROP_SHADOW #1B1C1D0A offset(0,2) blur4 spread0",
+        "resolved_value": "DROP_SHADOW #1B1C1D0A offset(0,2) blur4 spread0",
+        "alias_reference": null,
+        "semantic_category": "effect/elevation",
+        "suggested_code_token": "shadow.small",
+        "notes": "Extracted. General elevation scale (Effect STYLE)."
+      },
+      {
+        "figma_name": "regular-shadow/medium",
+        "figma_collection": "Effect style - elevation scale (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "EFFECT",
+        "raw_value": "DROP_SHADOW #585C5F1A offset(0,16) blur32 spread-12",
+        "resolved_value": "DROP_SHADOW #585C5F1A offset(0,16) blur32 spread-12",
+        "alias_reference": null,
+        "semantic_category": "effect/elevation",
+        "suggested_code_token": "shadow.medium",
+        "notes": "Extracted. General elevation scale (Effect STYLE)."
+      },
+      {
+        "figma_name": "regular-shadow/large",
+        "figma_collection": "Effect style - elevation scale (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "EFFECT",
+        "raw_value": "DROP_SHADOW #585C5F29 offset(0,16) blur40 spread-8",
+        "resolved_value": "DROP_SHADOW #585C5F29 offset(0,16) blur40 spread-8",
+        "alias_reference": null,
+        "semantic_category": "effect/elevation",
+        "suggested_code_token": "shadow.large",
+        "notes": "Extracted. General elevation scale (Effect STYLE)."
+      },
+      {
+        "figma_name": "regular-shadow/x-large",
+        "figma_collection": "Effect style - elevation scale (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "EFFECT",
+        "raw_value": "DROP_SHADOW #585C5F29 offset(0,24) blur56 spread-4",
+        "resolved_value": "DROP_SHADOW #585C5F29 offset(0,24) blur56 spread-4",
+        "alias_reference": null,
+        "semantic_category": "effect/elevation",
+        "suggested_code_token": "shadow.x_large",
+        "notes": "Extracted. General elevation scale (Effect STYLE)."
+      },
+      {
+        "figma_name": "regular-shadow/2x-large",
+        "figma_collection": "Effect style - elevation scale (extracted)",
+        "figma_mode": "Mode 1 (default - only mode surfaced by get_variable_defs)",
+        "type": "EFFECT",
+        "raw_value": "DROP_SHADOW #585C5F33 offset(0,40) blur96 spread-8",
+        "resolved_value": "DROP_SHADOW #585C5F33 offset(0,40) blur96 spread-8",
+        "alias_reference": null,
+        "semantic_category": "effect/elevation",
+        "suggested_code_token": "shadow.2x_large",
+        "notes": "Extracted. General elevation scale (Effect STYLE)."
+      }
+    ]
+  }
+}

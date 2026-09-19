@@ -4,7 +4,7 @@ import { e2eFixturesEnabled } from "@/lib/e2e-enabled";
 export const e2eBranding: TenantBranding = {
   locale: "en",
   logo_url: null,
-  primary_color: "#116149",
+  primary_color: "#584ce1",
   tenant_name: "Acme Learning",
   time_zone: "UTC",
 };

@@ -10,7 +10,7 @@ import type { Course, OrgRole, TenantBranding } from "@/lib/schemas";
 const fallbackBranding: TenantBranding = {
   locale: "en",
   logo_url: null,
-  primary_color: "#116149",
+  primary_color: "#584ce1",
   tenant_name: "Academy",
   time_zone: "UTC",
 };

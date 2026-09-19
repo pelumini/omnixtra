@@ -19,7 +19,7 @@ export function InvitationPending({ session }: InvitationPendingProps) {
           {session.user.full_name} is signed in, but this academy has not added the account yet.
         </p>
         <Link
-          className="mt-5 inline-flex h-10 items-center justify-center bg-[var(--primary)] px-4 text-sm font-medium text-white hover:bg-emerald-800"
+          className="mt-5 inline-flex h-10 items-center justify-center bg-[var(--primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-dark)]"
           href="/join"
         >
           Accept invitation

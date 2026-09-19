@@ -139,7 +139,7 @@ function CourseCard({ course }: { course: MyCourse }) {
         )}
       </div>
       <Link
-        className="inline-flex h-9 w-fit items-center justify-center bg-[var(--primary)] px-3 text-sm font-medium text-white hover:bg-emerald-800"
+        className="inline-flex h-9 w-fit items-center justify-center bg-[var(--primary)] px-3 text-sm font-medium text-white hover:bg-[var(--color-primary-dark)]"
         href={href}
       >
         Open

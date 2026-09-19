@@ -1,29 +1,40 @@
 @import "tailwindcss";
+@import "../styles/tokens/tokens.css";
 
 :root {
-  --background: #f7f8fa;
-  --foreground: #111827;
-  --primary: #116149;
-  --primary-foreground: #ffffff;
-  --border: #d7dde5;
+  --background: var(--color-bg-weak-100);
+  --foreground: var(--color-text-main-900);
+  --primary: var(--color-primary-base);
+  --primary-foreground: var(--color-text-white-0);
+  --border: var(--color-stroke-soft-200);
+  --tenant-primary: var(--primary);
 }
 
 @theme {
-  --font-sans: var(--font-inter), var(--font-geist), Arial, Helvetica, sans-serif;
-  --font-secondary: var(--font-geist), var(--font-inter), Arial, Helvetica, sans-serif;
+  --font-sans: var(--font-mulish), Arial, Helvetica, sans-serif;
+  --font-secondary: var(--font-mulish), Arial, Helvetica, sans-serif;
+  --color-app-background: var(--background);
+  --color-app-foreground: var(--foreground);
+  --color-app-primary: var(--primary);
+  --color-app-primary-hover: var(--color-primary-dark);
+  --color-app-primary-muted: var(--color-primary-lighter);
+  --color-app-border: var(--border);
+  --color-app-success: var(--color-state-success);
+  --color-app-warning: var(--color-state-warning);
+  --color-app-error: var(--color-state-error);
+  --radius-app: var(--radius-8);
+  --shadow-app-xs: var(--shadow-x-small);
+  --shadow-app-sm: var(--shadow-small);
+  --shadow-app-md: var(--shadow-medium);
 }
 
 body {
-  --font-primary: var(--font-inter);
-  --font-secondary: var(--font-geist);
+  --font-primary: var(--font-mulish);
+  --font-secondary: var(--font-mulish);
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-inter), var(--font-geist), Arial, Helvetica, sans-serif;
-  font-feature-settings:
-    "cv02" 1,
-    "cv03" 1,
-    "cv04" 1,
-    "cv11" 1;
+  font-family: var(--font-mulish), Arial, Helvetica, sans-serif;
+  letter-spacing: normal; /* Exported Figma letter-spacing units are unverified; tune after visual comparison. */
   text-rendering: optimizeLegibility;
 }
 
@@ -40,9 +51,9 @@ textarea,
 summary,
 label,
 th {
-  font-family: var(--font-geist), var(--font-inter), Arial, Helvetica, sans-serif;
+  font-family: var(--font-mulish), Arial, Helvetica, sans-serif;
 }
 
 .font-secondary {
-  font-family: var(--font-geist), var(--font-inter), Arial, Helvetica, sans-serif;
+  font-family: var(--font-mulish), Arial, Helvetica, sans-serif;
 }

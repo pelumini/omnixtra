@@ -100,14 +100,14 @@ export function AdminCourseList({
     <main className="mx-auto grid min-h-screen max-w-[104rem] content-start gap-5 px-5 py-6 lg:px-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#116149]">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--primary)]">
             Course operations
           </p>
           <h1 className="mt-2 text-3xl font-bold text-[#0c1726]">Courses</h1>
         </div>
         {canAuthor ? (
           <button
-            className="inline-flex h-11 items-center gap-2 rounded-md bg-[#116149] px-4 text-sm font-semibold text-white hover:bg-[#0d4f3b]"
+            className="inline-flex h-11 items-center gap-2 rounded-md bg-[var(--primary)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)]"
             onClick={() => setShowCreate(true)}
             type="button"
           >
@@ -119,7 +119,7 @@ export function AdminCourseList({
 
       {message ? (
         <div className="flex items-start gap-2 rounded-md border border-[#cbd5e1] bg-white px-4 py-3 text-sm text-[#52657a]">
-          <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[#116149]" />
+          <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[var(--primary)]" />
           <span>{message}</span>
         </div>
       ) : null}
@@ -154,8 +154,8 @@ export function AdminCourseList({
                 <button
                   className={`h-9 rounded-md border px-3 text-sm font-semibold capitalize ${
                     status === tab
-                      ? "border-[#116149] bg-[#116149] text-white"
-                      : "border-[#d6dee8] bg-white text-[#52657a] hover:border-[#116149] hover:text-[#116149]"
+                      ? "border-[var(--primary)] bg-[var(--primary)] text-white"
+                      : "border-[var(--border)] bg-white text-[var(--color-text-sub-500)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
                   }`}
                   key={tab}
                   onClick={() => setStatus(tab)}
@@ -183,7 +183,7 @@ export function AdminCourseList({
                   <tr className="hover:bg-[#f8fbf9]" key={course.id}>
                     <td className="px-4 py-4">
                       <div className="flex min-w-0 items-center gap-3">
-                        <span className="grid size-10 shrink-0 place-items-center rounded-md bg-[#e8f5ef] text-[#116149]">
+                        <span className="grid size-10 shrink-0 place-items-center rounded-md bg-[var(--color-primary-lighter)] text-[var(--primary)]">
                           <BookOpen aria-hidden="true" className="size-5" />
                         </span>
                         <div className="min-w-0">
@@ -206,7 +206,7 @@ export function AdminCourseList({
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
                         <Link
-                          className="inline-flex h-9 items-center gap-2 rounded-md border border-[#116149] px-3 text-sm font-semibold text-[#116149] hover:bg-[#e8f5ef]"
+                          className="inline-flex h-9 items-center gap-2 rounded-md border border-[var(--primary)] px-3 text-sm font-semibold text-[var(--primary)] hover:bg-[var(--color-primary-lighter)]"
                           href={`/admin/courses/${course.id}`}
                         >
                           <ExternalLink aria-hidden="true" className="size-4" />
@@ -305,7 +305,7 @@ function NewCourseForm({
       onSubmit={handleSubmit(submit)}
     >
       <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#116149]">
+        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--primary)]">
           New course
         </p>
         <h2 className="mt-2 text-xl font-bold text-[#0c1726]">Start with one lesson</h2>
@@ -326,14 +326,14 @@ function NewCourseForm({
                 <button
                   className={`grid grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-md border px-3 py-3 text-left ${
                     selected
-                      ? "border-[#116149] bg-[#e8f5ef]"
-                      : "border-[#d6dee8] bg-white hover:border-[#116149]"
+                      ? "border-[var(--primary)] bg-[var(--color-primary-lighter)]"
+                      : "border-[var(--border)] bg-white hover:border-[var(--primary)]"
                   }`}
                   key={type.value}
                   onClick={() => setStarterType(type.value)}
                   type="button"
                 >
-                  <Icon aria-hidden="true" className="mt-0.5 size-5 text-[#116149]" />
+                  <Icon aria-hidden="true" className="mt-0.5 size-5 text-[var(--primary)]" />
                   <span className="min-w-0">
                     <span className="block text-sm font-semibold text-[#0c1726]">{type.label}</span>
                     <span className="mt-1 block text-xs leading-5 text-[#52657a]">
@@ -403,7 +403,7 @@ function CourseStatus({ status }: { status: Course["status"] }) {
   const styles = {
     archived: "bg-slate-100 text-slate-700",
     draft: "bg-[#fff2dc] text-[#9a5b00]",
-    published: "bg-[#e8f5ef] text-[#116149]",
+    published: "bg-[var(--color-primary-lighter)] text-[var(--primary)]",
   };
 
   return (

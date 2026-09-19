@@ -70,7 +70,7 @@ async function loadBranding(context: { cookie?: string; host?: string }): Promis
     return {
       locale: "en",
       logo_url: null,
-      primary_color: "#116149",
+      primary_color: "#584ce1",
       tenant_name: "your academy",
       time_zone: "UTC",
     };

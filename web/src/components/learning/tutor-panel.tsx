@@ -124,7 +124,7 @@ export function TutorPanel({ courseId }: TutorPanelProps) {
           <article
             className={`border px-3 py-2 text-sm leading-6 ${
               message.role === "learner"
-                ? "border-[var(--primary)] bg-emerald-50"
+                ? "border-[var(--primary)] bg-[var(--color-primary-lighter)]"
                 : "border-[var(--border)] bg-gray-50"
             }`}
             key={message.id}

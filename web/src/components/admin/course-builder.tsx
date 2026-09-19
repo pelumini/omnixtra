@@ -291,7 +291,7 @@ function CourseStatus({ status }: { status: Course["status"] }) {
   const styles = {
     archived: "bg-gray-100 text-gray-700",
     draft: "bg-amber-100 text-amber-800",
-    published: "bg-emerald-100 text-emerald-800",
+    published: "bg-[var(--color-primary-lighter)] text-[var(--color-primary-dark)]",
   };
 
   return <span className={`px-2 py-1 text-xs font-medium ${styles[status]}`}>{status}</span>;
@@ -630,7 +630,7 @@ function BlockForm({
 
             return (
               <label
-                className="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-md border border-[var(--border)] bg-white px-3 py-3 text-sm hover:border-[var(--primary)] hover:bg-emerald-50"
+                className="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-md border border-[var(--border)] bg-white px-3 py-3 text-sm hover:border-[var(--primary)] hover:bg-[var(--color-primary-lighter)]"
                 key={blockType.value}
               >
                 <input className="mt-1" {...register("blockType")} type="radio" value={blockType.value} />

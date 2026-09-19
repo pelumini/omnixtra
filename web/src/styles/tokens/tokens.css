@@ -1,0 +1,188 @@
+/* OmniXtra Design Tokens - generated from tokens.json (source: omnixtra-canonical-tokens.json).
+   Single mode only (current/default Figma mode). Do not edit by hand. */
+:root {
+
+  /* --- Primitive - colors --- */
+  --color-red-lighter: #fdedf0;
+  --color-red-light: #f8c9d2;
+  --color-red-base: #df1c41;
+  --color-red-dark: #af1d38;
+  --color-green-lighter: #effaf6;
+  --color-green-base: #38c793;
+  --color-orange-lighter: #fef3eb;
+  --color-orange-base: #f17b2c;
+  --color-blue-light: #c2d6ff;
+  --color-blue-base: #375dfb;
+  --color-yellow-light: #fbdfb1;
+  --color-teal-light: #c2efff;
+  --color-purple-light: #cac2ff;
+  --color-light-indigo-50: #eeedfc;
+  --color-light-indigo-500: #584ce1;
+  --color-light-indigo-600: #4b41bf;
+  --color-light-indigo-700: #3e359e;
+  --color-light-indigo-800: #302a7c;
+  --color-light-indigo-900: #231e5a;
+
+  /* --- Primitive - radius --- */
+  --radius-8: 8px;
+
+  /* --- Semantic - colors (aliases -> var() where canonical supports it; else extracted value) --- */
+  --color-bg-white-0: #ffffff;
+  --color-bg-weak-100: #f6f8fa;
+  --color-bg-soft-200: #e2e4e9;
+  --color-bg-surface-700: #20232d;
+  --color-bg-strong-900: #0a0d14;
+  --color-text-white-0: #ffffff;
+  --color-text-disabled-300: #cdd0d5;
+  --color-text-soft-400: #868c98;
+  --color-text-sub-500: #525866;
+  --color-text-main-900: #0a0d14;
+  --color-icon-white-0: #ffffff;
+  --color-icon-disabled-300: #cdd0d5;
+  --color-icon-soft-400: #868c98;
+  --color-icon-sub-500: #525866;
+  --color-icon-strong-900: #0a0d14;
+  --color-stroke-white-0: #ffffff;
+  --color-stroke-soft-200: #e2e4e9;
+  --color-stroke-sub-300: #cdd0d5;
+  --color-stroke-strong-900: #0a0d14;
+  /* Brand override: Figma confirms semantic primary is light-indigo/500, not the raw export's blue/base. */
+  --color-primary-lighter: var(--color-light-indigo-50);
+  --color-primary-base: var(--color-light-indigo-500);
+  --color-primary-dark: var(--color-light-indigo-600);
+  --color-state-success: var(--color-green-base);
+  --color-state-warning: var(--color-orange-base);
+  --color-state-error: var(--color-red-base);
+  --color-state-neutral: #868c98;
+
+  /* --- Effect - elevation shadows --- */
+  --shadow-x-small: 0px 1px 2px 0px rgba(228, 229, 231, 0.239);
+  --shadow-small: 0px 2px 4px 0px rgba(27, 28, 29, 0.039);
+  --shadow-medium: 0px 16px 32px -12px rgba(88, 92, 95, 0.102);
+  --shadow-large: 0px 16px 40px -8px rgba(88, 92, 95, 0.161);
+  --shadow-x-large: 0px 24px 56px -4px rgba(88, 92, 95, 0.161);
+  --shadow-2x-large: 0px 40px 96px -8px rgba(88, 92, 95, 0.2);
+
+  /* --- Component-scoped shadows --- */
+  --shadow-button-stroke-primary: 0px 1px 2px 0px rgba(88, 76, 225, 0.078);
+  --shadow-button-stroke-important: 0px 1px 2px 0px rgba(82, 88, 102, 0.059);
+  --shadow-button-stroke-error: 0px 1px 2px 0px rgba(233, 53, 53, 0.078);
+  --shadow-button-focus-primary: 0px 0px 0px 4px rgba(238, 237, 252, 1), 0px 0px 0px 2px rgba(255, 255, 255, 1);
+  --shadow-button-focus-important: 0px 0px 0px 4px rgba(228, 229, 231, 1), 0px 0px 0px 2px rgba(255, 255, 255, 1);
+  --shadow-button-focus-error: 0px 0px 0px 4px rgba(255, 236, 235, 1), 0px 0px 0px 2px rgba(255, 255, 255, 1);
+  --shadow-radio-checkbox-default: 0px 2px 2px 0px rgba(27, 28, 29, 0.122);
+  --shadow-radio-checkbox-active-bg: inset 0px 2px 2px 0px rgba(22, 38, 100, 0.322);
+  --shadow-radio-checkbox-disabled: inset 0px 2px 2px 0px rgba(15, 15, 16, 0.078);
+  --shadow-switch-toggle-active: 0px 2px 4px 0px rgba(27, 28, 29, 0.02), 0px 6px 10px 0px rgba(27, 28, 29, 0.059);
+
+  /* --- Legacy (OmniXtra) colors --- */
+  --color-legacy-red-error-100: #E1004B;
+  --color-legacy-red-error-200: #D80027;
+
+  /* --- Typography - Mulish (letter-spacing is Figma RAW units; unit unverified - NOT converted) --- */
+  --font-title-h1-family: Mulish;
+  --font-title-h1-weight: 700;
+  --font-title-h1-size: 56px;
+  --font-title-h1-line-height: 64px;
+  --font-title-h1-letter-spacing: -4; /* Figma raw units; unit unverified */
+  --font-title-h2-family: Mulish;
+  --font-title-h2-weight: 700;
+  --font-title-h2-size: 48px;
+  --font-title-h2-line-height: 56px;
+  --font-title-h2-letter-spacing: -3; /* Figma raw units; unit unverified */
+  --font-title-h3-family: Mulish;
+  --font-title-h3-weight: 600;
+  --font-title-h3-size: 40px;
+  --font-title-h3-line-height: 48px;
+  --font-title-h3-letter-spacing: -5; /* Figma raw units; unit unverified */
+  --font-title-h4-family: Mulish;
+  --font-title-h4-weight: 700;
+  --font-title-h4-size: 32px;
+  --font-title-h4-line-height: 40px;
+  --font-title-h4-letter-spacing: -3; /* Figma raw units; unit unverified */
+  --font-title-h5-family: Mulish;
+  --font-title-h5-weight: 700;
+  --font-title-h5-size: 24px;
+  --font-title-h5-line-height: 32px;
+  --font-title-h5-letter-spacing: -4; /* Figma raw units; unit unverified */
+  --font-title-h6-family: Mulish;
+  --font-title-h6-weight: 700;
+  --font-title-h6-size: 20px;
+  --font-title-h6-line-height: 28px;
+  --font-title-h6-letter-spacing: -3; /* Figma raw units; unit unverified */
+  --font-label-x-large-family: Mulish;
+  --font-label-x-large-weight: 700;
+  --font-label-x-large-size: 24px;
+  --font-label-x-large-line-height: 32px;
+  --font-label-x-large-letter-spacing: -3; /* Figma raw units; unit unverified */
+  --font-label-large-family: Mulish;
+  --font-label-large-weight: 600;
+  --font-label-large-size: 18px;
+  --font-label-large-line-height: 24px;
+  --font-label-large-letter-spacing: -3; /* Figma raw units; unit unverified */
+  --font-label-medium-family: Mulish;
+  --font-label-medium-weight: 600;
+  --font-label-medium-size: 16px;
+  --font-label-medium-line-height: 24px;
+  --font-label-medium-letter-spacing: -2; /* Figma raw units; unit unverified */
+  --font-label-small-family: Mulish;
+  --font-label-small-weight: 600;
+  --font-label-small-size: 14px;
+  --font-label-small-line-height: 20px;
+  --font-label-small-letter-spacing: -2; /* Figma raw units; unit unverified */
+  --font-label-x-small-family: Mulish;
+  --font-label-x-small-weight: 500;
+  --font-label-x-small-size: 12px;
+  --font-label-x-small-line-height: 16px;
+  --font-label-x-small-letter-spacing: -3; /* Figma raw units; unit unverified */
+  --font-paragraph-x-large-family: Mulish;
+  --font-paragraph-x-large-weight: 400;
+  --font-paragraph-x-large-size: 24px;
+  --font-paragraph-x-large-line-height: 32px;
+  --font-paragraph-x-large-letter-spacing: -3; /* Figma raw units; unit unverified */
+  --font-paragraph-large-family: Mulish;
+  --font-paragraph-large-weight: 400;
+  --font-paragraph-large-size: 18px;
+  --font-paragraph-large-line-height: 24px;
+  --font-paragraph-large-letter-spacing: -2; /* Figma raw units; unit unverified */
+  --font-paragraph-medium-family: Mulish;
+  --font-paragraph-medium-weight: 400;
+  --font-paragraph-medium-size: 16px;
+  --font-paragraph-medium-line-height: 24px;
+  --font-paragraph-medium-letter-spacing: -1.1; /* Figma raw units; unit unverified */
+  --font-paragraph-small-family: Mulish;
+  --font-paragraph-small-weight: 500;
+  --font-paragraph-small-size: 14px;
+  --font-paragraph-small-line-height: 20px;
+  --font-paragraph-small-letter-spacing: -4; /* Figma raw units; unit unverified */
+  --font-paragraph-x-small-family: Mulish;
+  --font-paragraph-x-small-weight: 400;
+  --font-paragraph-x-small-size: 12px;
+  --font-paragraph-x-small-line-height: 16px;
+  --font-paragraph-x-small-letter-spacing: -2; /* Figma raw units; unit unverified */
+  --font-subheading-medium-family: Mulish;
+  --font-subheading-medium-weight: 500;
+  --font-subheading-medium-size: 16px;
+  --font-subheading-medium-line-height: 24px;
+  --font-subheading-medium-letter-spacing: 6; /* Figma raw units; unit unverified */
+  --font-subheading-small-family: Mulish;
+  --font-subheading-small-weight: 500;
+  --font-subheading-small-size: 14px;
+  --font-subheading-small-line-height: 20px;
+  --font-subheading-small-letter-spacing: 6; /* Figma raw units; unit unverified */
+  --font-subheading-x-small-family: Mulish;
+  --font-subheading-x-small-weight: 500;
+  --font-subheading-x-small-size: 12px;
+  --font-subheading-x-small-line-height: 16px;
+  --font-subheading-x-small-letter-spacing: 4; /* Figma raw units; unit unverified */
+  --font-subheading-2x-small-family: Mulish;
+  --font-subheading-2x-small-weight: 500;
+  --font-subheading-2x-small-size: 11px;
+  --font-subheading-2x-small-line-height: 12px;
+  --font-subheading-2x-small-letter-spacing: -2; /* Figma raw units; unit unverified */
+  --font-docs-paragraph-family: Mulish;
+  --font-docs-paragraph-weight: 400;
+  --font-docs-paragraph-size: 18px;
+  --font-docs-paragraph-line-height: 32px;
+  --font-docs-paragraph-letter-spacing: -3; /* Figma raw units; unit unverified */
+}

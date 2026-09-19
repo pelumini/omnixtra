@@ -23,7 +23,7 @@ export function Button({
     <button
       aria-busy={isProcessing || undefined}
       className={cn(
-        "inline-flex h-10 cursor-pointer items-center justify-center bg-[var(--primary)] px-4 text-sm font-medium text-[var(--primary-foreground)] transition-colors hover:bg-emerald-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex h-10 cursor-pointer items-center justify-center bg-[var(--primary)] px-4 text-sm font-medium text-[var(--primary-foreground)] transition-colors hover:bg-[var(--color-primary-dark)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       disabled={isDisabled}

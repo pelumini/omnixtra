@@ -59,7 +59,7 @@ export function PublicLanding() {
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-4 md:grid-cols-[0.9fr_1.1fr] md:items-end">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#116149]">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
                   Built for launch speed
                 </p>
                 <h2 className="mt-3 text-3xl font-bold leading-tight sm:text-4xl">
@@ -118,7 +118,7 @@ export function PublicLanding() {
         <section id="pricing" className="px-6 py-16 sm:py-20">
           <div className="mx-auto flex max-w-7xl flex-col gap-6 border-t border-[#d6dee8] pt-10 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#116149]">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
                 Start now
               </p>
               <h2 className="mt-3 text-3xl font-bold leading-tight">
@@ -126,7 +126,7 @@ export function PublicLanding() {
               </h2>
             </div>
             <Link
-              className="inline-flex h-12 items-center justify-center rounded-md bg-[#116149] px-6 text-base font-semibold text-white hover:bg-[#0d4f3b] sm:min-w-56"
+              className="inline-flex h-12 items-center justify-center rounded-md bg-[var(--primary)] px-6 text-base font-semibold text-white hover:bg-[var(--color-primary-dark)] sm:min-w-56"
               href="/get-started"
             >
               Create your academy
@@ -153,7 +153,7 @@ function ProductShowcase() {
         <div className="overflow-hidden rounded-md border border-[#d6dee8] bg-[#f8fafc]">
           <div className="flex h-12 items-center justify-between border-b border-[#d6dee8] bg-white px-4">
             <div className="flex items-center gap-2">
-              <span className="grid size-8 place-items-center rounded-md bg-[#116149] text-sm font-bold text-white">
+              <span className="grid size-8 place-items-center rounded-md bg-[var(--primary)] text-sm font-bold text-white">
                 O
               </span>
               <span className="text-sm font-bold text-[#0c1726]">OmniXtra Academy</span>
@@ -172,14 +172,14 @@ function ProductShowcase() {
             <div className="grid gap-5 p-5 lg:grid-cols-[1.1fr_0.9fr]">
               <div className="space-y-5">
                 <div className="rounded-md border border-[#d6dee8] bg-white p-5">
-                  <p className="text-xs font-semibold uppercase text-[#116149]">
+                  <p className="text-xs font-semibold uppercase text-[var(--primary)]">
                     Course builder
                   </p>
                   <h3 className="mt-2 text-2xl font-bold text-[#0c1726]">
                     Safety onboarding
                   </h3>
                   <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                    <CourseTile title="Intro" tone="bg-[#e8f5ef]" />
+                    <CourseTile title="Intro" tone="bg-[var(--color-primary-lighter)]" />
                     <CourseTile title="Policy" tone="bg-[#fff2dc]" />
                     <CourseTile title="Quiz" tone="bg-[#eef3f7]" />
                   </div>
@@ -205,7 +205,7 @@ function ProductShowcase() {
                     <Metric value="3.2k" label="Learners" />
                   </div>
                   <div className="mt-5 h-3 overflow-hidden rounded-md bg-[#e8eef4]">
-                    <div className="h-full w-4/5 bg-[#116149]" />
+                    <div className="h-full w-4/5 bg-[var(--primary)]" />
                   </div>
                 </div>
                 <div className="rounded-md border border-[#d6dee8] bg-[#0c1726] p-5 text-white">
@@ -265,7 +265,7 @@ function Metric({ label, value }: { label: string; value: string }) {
 function MarketCard({ body, kicker, title }: { body: string; kicker: string; title: string }) {
   return (
     <article className="rounded-lg border border-[#d6dee8] bg-white p-6">
-      <p className="text-sm font-bold text-[#116149]">{kicker}</p>
+      <p className="text-sm font-bold text-[var(--primary)]">{kicker}</p>
       <h3 className="mt-4 text-xl font-bold text-[#0c1726]">{title}</h3>
       <p className="mt-3 text-sm leading-6 text-[#52657a]">{body}</p>
     </article>
@@ -286,7 +286,10 @@ function Footer() {
     <footer className="border-t border-[#d6dee8] bg-white">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-6 py-6 text-sm text-[#52657a]">
         <span>(c) OmniXtra</span>
-        <Link className="font-medium text-[#116149] hover:text-[#0d4f3b]" href="/join">
+        <Link
+          className="font-medium text-[var(--primary)] hover:text-[var(--color-primary-dark)]"
+          href="/join"
+        >
           Have an invitation? Join here
         </Link>
       </div>

@@ -52,7 +52,7 @@ export function AdminFirstRunChecklist({
     <main className="mx-auto grid min-h-screen max-w-[104rem] content-start gap-5 px-5 py-6 lg:px-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#116149]">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--primary)]">
             Academy setup
           </p>
           <h1 className="mt-2 text-3xl font-bold text-[#0c1726]">
@@ -61,13 +61,13 @@ export function AdminFirstRunChecklist({
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Link
-            className="inline-flex h-11 items-center justify-center rounded-md border border-[#116149] px-4 text-sm font-semibold text-[#116149] hover:bg-[#e8f5ef]"
+            className="inline-flex h-11 items-center justify-center rounded-md border border-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary)] hover:bg-[var(--color-primary-lighter)]"
             href="/admin/courses"
           >
             Add widgets
           </Link>
           <Link
-            className="inline-flex h-11 items-center gap-2 rounded-md bg-[#116149] px-4 text-sm font-semibold text-white hover:bg-[#0d4f3b]"
+            className="inline-flex h-11 items-center gap-2 rounded-md bg-[var(--primary)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)]"
             href="/admin/courses"
           >
             <Edit3 aria-hidden="true" className="size-4" />
@@ -96,7 +96,7 @@ export function AdminFirstRunChecklist({
             </div>
           </div>
           <div className="mt-4 flex flex-wrap gap-4 text-sm">
-            <Legend color="bg-[#116149]" label="Logins" />
+            <Legend color="bg-[var(--primary)]" label="Logins" />
             <Legend color="bg-[#e4b622]" label="Course completions" />
           </div>
         </Widget>
@@ -125,14 +125,16 @@ export function AdminFirstRunChecklist({
           <div className="grid gap-3">
             {items.map((item) => (
               <Link
-                className="group grid gap-3 rounded-md border border-[#d6dee8] bg-white p-4 hover:border-[#116149] sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center"
+                className="group grid gap-3 rounded-md border border-[var(--border)] bg-white p-4 hover:border-[var(--primary)] sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center"
                 href={item.href}
                 key={item.title}
               >
                 <span
                   aria-label={item.completed ? "Completed" : "Not completed"}
                   className={`grid size-10 place-items-center rounded-full ${
-                    item.completed ? "bg-[#116149] text-white" : "bg-[#e8f5ef] text-[#116149]"
+                    item.completed
+                      ? "bg-[var(--primary)] text-white"
+                      : "bg-[var(--color-primary-lighter)] text-[var(--primary)]"
                   }`}
                 >
                   {item.completed ? (
@@ -145,7 +147,7 @@ export function AdminFirstRunChecklist({
                   <span className="block text-sm font-bold text-[#0c1726]">{item.title}</span>
                   <span className="mt-1 block text-sm text-[#52657a]">{item.description}</span>
                 </span>
-                <span className="text-sm font-semibold text-[#116149] group-hover:underline">
+                <span className="text-sm font-semibold text-[var(--primary)] group-hover:underline">
                   Open
                 </span>
               </Link>
@@ -157,7 +159,7 @@ export function AdminFirstRunChecklist({
       <section className="grid gap-5 xl:grid-cols-2">
         <Widget title="Users">
           <div className="grid min-h-72 place-items-center">
-            <div className="grid size-56 place-items-center rounded-full border-[28px] border-[#116149]">
+            <div className="grid size-56 place-items-center rounded-full border-[28px] border-[var(--primary)]">
               <span className="text-4xl font-bold text-[#0c1726]">1</span>
             </div>
           </div>
@@ -166,11 +168,11 @@ export function AdminFirstRunChecklist({
         <Widget title="Courses' progress status">
           <div className="grid min-h-72 place-items-center text-center">
             <div>
-              <BookOpen aria-hidden="true" className="mx-auto size-12 text-[#116149]" />
+              <BookOpen aria-hidden="true" className="mx-auto size-12 text-[var(--primary)]" />
               <h3 className="mt-5 text-xl font-bold text-[#0c1726]">No stats to show</h3>
               <p className="mt-3 text-sm text-[#52657a]">Create your first course now</p>
               <Link
-                className="mt-6 inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-semibold text-[#116149] hover:bg-[#e8f5ef]"
+                className="mt-6 inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-semibold text-[var(--primary)] hover:bg-[var(--color-primary-lighter)]"
                 href="/admin/courses"
               >
                 Go to courses

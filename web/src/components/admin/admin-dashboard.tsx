@@ -39,7 +39,7 @@ export function AdminDashboard({
     <main className="mx-auto grid min-h-screen max-w-[104rem] content-start gap-5 px-5 py-6 lg:px-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#116149]">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--primary)]">
             Admin dashboard
           </p>
           <h1 className="mt-2 text-3xl font-bold text-[#0c1726]">
@@ -48,13 +48,13 @@ export function AdminDashboard({
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Link
-            className="inline-flex h-11 items-center justify-center rounded-md border border-[#116149] px-4 text-sm font-semibold text-[#116149] hover:bg-[#e8f5ef]"
+            className="inline-flex h-11 items-center justify-center rounded-md border border-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary)] hover:bg-[var(--color-primary-lighter)]"
             href="/admin/courses"
           >
             Add widgets
           </Link>
           <a
-            className="inline-flex h-11 items-center gap-2 rounded-md bg-[#116149] px-4 text-sm font-semibold text-white hover:bg-[#0d4f3b]"
+            className="inline-flex h-11 items-center gap-2 rounded-md bg-[var(--primary)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)]"
             href={csvUrl}
           >
             <Download aria-hidden="true" className="size-4" />
@@ -119,7 +119,7 @@ export function AdminDashboard({
           <div className="grid min-h-72 place-items-center">
             <div
               aria-label={`${activeLearners} active users`}
-              className="grid size-56 place-items-center rounded-full border-[28px] border-[#116149]"
+              className="grid size-56 place-items-center rounded-full border-[28px] border-[var(--primary)]"
             >
               <span className="text-4xl font-bold text-[#0c1726]">{activeLearners}</span>
             </div>
@@ -132,13 +132,13 @@ export function AdminDashboard({
               <div className="grid gap-2 py-4" key={course.course_id}>
                 <div className="flex items-center justify-between gap-3">
                   <span className="truncate text-sm font-semibold">{course.course_title}</span>
-                  <span className="text-sm font-semibold text-[#116149]">
+                  <span className="text-sm font-semibold text-[var(--primary)]">
                     {course.completion_percentage}%
                   </span>
                 </div>
                 <div className="h-3 overflow-hidden rounded-md bg-[#e8eef4]">
                   <div
-                    className="h-full bg-[#116149]"
+                    className="h-full bg-[var(--primary)]"
                     style={{ width: `${course.completion_percentage}%` }}
                   />
                 </div>
@@ -221,13 +221,13 @@ function ActivityChart({ completionRate }: { completionRate: number }) {
           <div className="absolute inset-x-0 top-[60%] h-px bg-[#d9e1ec]" />
           <div className="absolute inset-x-0 top-[80%] h-px bg-[#d9e1ec]" />
           <div
-            className="absolute bottom-0 right-10 w-8 rounded-t-md bg-[#116149]"
+            className="absolute bottom-0 right-10 w-8 rounded-t-md bg-[var(--primary)]"
             style={{ height: `${barHeight}%` }}
           />
         </div>
       </div>
       <div className="mt-4 flex flex-wrap gap-4 text-sm">
-        <Legend color="bg-[#116149]" label="Logins" />
+        <Legend color="bg-[var(--primary)]" label="Logins" />
         <Legend color="bg-[#e4b622]" label="Course completions" />
       </div>
     </div>
@@ -270,7 +270,7 @@ function TimelineItem({ text, time, tone }: { text: string; time: string; tone: 
     <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3">
       <span
         aria-hidden="true"
-        className={`mt-1.5 size-3 rounded-full ${tone === "green" ? "bg-[#116149]" : "bg-[#e4b622]"}`}
+        className={`mt-1.5 size-3 rounded-full ${tone === "green" ? "bg-[var(--primary)]" : "bg-[var(--color-state-warning)]"}`}
       />
       <p className="truncate text-sm text-[#0c1726]">{text}</p>
       <span className="text-sm italic text-[#6b7788]">{time}</span>

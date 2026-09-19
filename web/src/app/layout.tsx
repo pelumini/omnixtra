@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Inter } from "next/font/google";
+import { Mulish } from "next/font/google";
 import { headers } from "next/headers";
 import type { CSSProperties } from "react";
 import type { ReactNode } from "react";
@@ -13,14 +13,10 @@ import { tenantSlugFromHost } from "@/lib/tenant-host";
 
 import "./globals.css";
 
-const inter = Inter({
+const mulish = Mulish({
   subsets: ["latin"],
-  variable: "--font-inter",
-});
-
-const geist = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist",
+  variable: "--font-mulish",
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -31,7 +27,7 @@ export const metadata: Metadata = {
 const defaultBranding: TenantBranding = {
   locale: "en",
   logo_url: null,
-  primary_color: "#116149",
+  primary_color: "#584ce1",
   tenant_name: "OmniXtra",
   time_zone: "UTC",
 };
@@ -48,8 +44,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang={branding.locale}>
       <body
-        className={`${inter.variable} ${geist.variable} font-sans`}
-        style={{ "--primary": branding.primary_color } as CSSProperties}
+        className={`${mulish.variable} font-sans`}
+        style={{ "--tenant-primary": branding.primary_color } as CSSProperties}
       >
         <SessionHeader
           branding={branding}

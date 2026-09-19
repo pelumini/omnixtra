@@ -9,7 +9,7 @@ export function AppToaster() {
       toastOptions={{
         classNames: {
           error: "border-red-200 bg-red-50 text-red-800",
-          success: "border-emerald-200 bg-emerald-50 text-emerald-900",
+          success: "border-[var(--color-state-success)] bg-[var(--color-green-lighter)] text-[var(--color-text-main-900)]",
           toast: "rounded-md border shadow-sm",
         },
       }}

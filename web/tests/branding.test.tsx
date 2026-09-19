@@ -15,8 +15,7 @@ vi.mock("next/headers", () => ({
 }));
 
 vi.mock("next/font/google", () => ({
-  Geist: () => ({ variable: "font-geist" }),
-  Inter: () => ({ variable: "font-inter" }),
+  Mulish: () => ({ variable: "font-mulish" }),
 }));
 
 vi.mock("@/lib/api", () => ({
@@ -44,10 +43,9 @@ describe("tenant branding", () => {
 
     expect(getTenantBranding).toHaveBeenCalledWith({ host: "acme.localhost" });
     expect(html).toContain("lang=\"en-GB\"");
-    expect(html).toContain("font-inter");
-    expect(html).toContain("font-geist");
+    expect(html).toContain("font-mulish");
     expect(html).toContain("font-sans");
-    expect(html).toContain("--primary:#0f766e");
+    expect(html).toContain("--tenant-primary:#0f766e");
     expect(html).toContain("Acme Learning");
     expect(html).toContain("Loaded");
   });
