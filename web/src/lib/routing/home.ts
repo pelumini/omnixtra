@@ -1,4 +1,5 @@
-import type { SessionResponse, OrgRole } from "@/lib/schemas";
+import type { SessionResponse } from "@/lib/schemas/auth";
+import type { OrgRole } from "@/lib/schemas/common";
 
 export function homeForOrgRole(role: OrgRole): string {
   return role === "tenant_admin" ? "/admin" : "/my-courses";

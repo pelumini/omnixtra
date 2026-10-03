@@ -1,10 +1,10 @@
 import type {
-  BillingPlan,
-  Course,
   CourseCompletionAnalytics,
-  CoursePlayer,
   LearnerProgressReportRow,
-} from "@/lib/schemas";
+} from "@/lib/schemas/analytics";
+import type { BillingPlan } from "@/features/billing";
+import type { Course } from "@/features/courses";
+import type { CoursePlayer } from "@/features/learning";
 
 export const courseId = "00000000-0000-0000-0000-000000000101";
 export const sectionId = "00000000-0000-0000-0000-000000000201";

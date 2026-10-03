@@ -3,7 +3,8 @@
 import type { ReactNode } from "react";
 
 import { AppShell } from "@/components/app/app-shell";
-import type { OrgRole, TenantBranding } from "@/lib/schemas";
+import type { TenantBranding } from "@/lib/schemas/academy";
+import type { OrgRole } from "@/lib/schemas/common";
 
 type AdminShellProps = {
   branding: TenantBranding;

@@ -3,11 +3,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { SessionHeader } from "@/components/app/session-header";
-import { MembersView } from "@/components/admin/members-view";
-import { CourseBuilder } from "@/components/admin/course-builder";
-import { AdminCourseList } from "@/components/admin/admin-course-list";
-import { MyCoursesDashboard } from "@/components/learning/my-courses-dashboard";
-import type { TenantBranding } from "@/lib/schemas";
+import { AdminCourseList, CourseBuilder } from "@/features/courses";
+import { MyCoursesDashboard } from "@/features/learning";
+import { MembersView } from "@/features/members";
+import type { TenantBranding } from "@/lib/schemas/academy";
 import { e2eMyCourses } from "@/lib/e2e-fixtures";
 import { draftCourse } from "./fixtures";
 

@@ -12,12 +12,14 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { CSSProperties, ReactNode } from "react";
 import { useState } from "react";
 
 import { canManageBilling, canManageMembers } from "@/lib/permissions";
 import { homeForOrgRole } from "@/lib/routing/home";
-import type { OrgRole, TenantBranding } from "@/lib/schemas";
+import type { TenantBranding } from "@/lib/schemas/academy";
+import type { OrgRole } from "@/lib/schemas/common";
 
 type AppShellProps = {
   branding: TenantBranding;
@@ -48,6 +50,7 @@ export function AppShell({
   viewerRole,
 }: AppShellProps) {
   const [collapsed, setCollapsed] = useState(initialCollapsed);
+  const pathname = usePathname() ?? "";
   const homeHref = homeForOrgRole(viewerRole);
   const visibleItems = navItems.filter((item) => {
     if (!item.roles.includes(viewerRole)) {
@@ -63,22 +66,22 @@ export function AppShell({
   });
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] bg-[#f6f8fb]">
+    <div className="min-h-[calc(100vh-3.5rem)] bg-[var(--color-bg-weak-100)]">
       <div className="grid grid-cols-1 md:grid-cols-[auto_minmax(0,1fr)]">
         <aside
-          className={`border-b border-[var(--color-primary-dark)] bg-[var(--primary)] text-white md:sticky md:top-14 md:flex md:h-[calc(100vh-3.5rem)] md:self-start md:flex-col md:border-b-0 md:border-r ${
+          className={`border-b border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] text-[var(--color-text-sub-500)] md:sticky md:top-14 md:flex md:h-[calc(100vh-3.5rem)] md:self-start md:flex-col md:border-b-0 md:border-r ${
             collapsed ? "md:w-24" : "md:w-72"
           }`}
         >
-          <div className="flex min-h-16 items-center gap-3 border-b border-white/15 px-4">
+          <div className="flex min-h-16 items-center gap-3 border-b border-[var(--color-stroke-soft-200)] px-4">
             <Link
               aria-label={`${branding.tenant_name} home`}
-              className="flex min-w-0 items-center gap-3 text-white"
+              className="flex min-w-0 items-center gap-3 text-[var(--color-text-main-900)]"
               href={homeHref}
             >
               <span
                 aria-hidden="true"
-                className="grid size-10 shrink-0 place-items-center rounded-md bg-white bg-contain bg-center bg-no-repeat text-sm font-bold text-[var(--primary)]"
+                className="grid size-10 shrink-0 place-items-center rounded-md bg-[var(--color-primary-lighter)] bg-contain bg-center bg-no-repeat text-sm font-bold text-[var(--primary)]"
                 style={
                   branding.logo_url
                     ? ({ backgroundImage: `url(${branding.logo_url})` } as CSSProperties)
@@ -94,7 +97,7 @@ export function AppShell({
             <button
               aria-expanded={!collapsed}
               aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
-              className="ml-auto hidden size-9 place-items-center rounded-md border border-white/25 text-white hover:bg-white/10 md:grid"
+              className="ml-auto hidden size-9 place-items-center rounded-md border border-[var(--color-stroke-soft-200)] text-[var(--color-icon-sub-500)] hover:bg-[var(--color-bg-weak-100)] hover:text-[var(--color-icon-strong-900)] md:grid"
               onClick={() => setCollapsed((value) => !value)}
               type="button"
             >
@@ -109,11 +112,15 @@ export function AppShell({
           <nav className="flex gap-2 overflow-x-auto px-3 py-3 md:grid md:overflow-visible md:py-4">
             {visibleItems.map((item) => {
               const Icon = item.icon;
+              const active = isActivePath(pathname, item.href);
               return (
                 <Link
-                  className={`flex h-12 shrink-0 items-center gap-3 rounded-md px-3 text-sm font-semibold text-white hover:bg-white/10 ${
-                    collapsed ? "md:justify-center" : ""
-                  }`}
+                  aria-current={active ? "page" : undefined}
+                  className={`relative flex h-12 shrink-0 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-colors ${
+                    active
+                      ? "bg-[var(--color-primary-lighter)] text-[var(--primary)] before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-[var(--primary)]"
+                      : "bg-transparent text-[var(--color-text-sub-500)] hover:bg-[var(--color-bg-weak-100)] hover:text-[var(--color-text-main-900)]"
+                  } ${collapsed ? "md:justify-center" : ""}`}
                   href={item.href}
                   key={item.href}
                   title={collapsed ? item.label : undefined}
@@ -127,7 +134,7 @@ export function AppShell({
 
           <div className="mt-auto hidden px-3 pb-4 md:block">
             <Link
-              className={`flex h-12 items-center gap-3 rounded-md border border-white/15 bg-white/5 px-3 text-sm font-semibold text-white hover:bg-white/10 ${
+              className={`flex h-12 items-center gap-3 rounded-lg border border-[var(--color-stroke-soft-200)] bg-transparent px-3 text-sm font-semibold text-[var(--color-text-sub-500)] hover:bg-[var(--color-bg-weak-100)] hover:text-[var(--color-text-main-900)] ${
                 collapsed ? "justify-center" : ""
               }`}
               href="/admin"
@@ -143,4 +150,11 @@ export function AppShell({
       </div>
     </div>
   );
+}
+
+function isActivePath(pathname: string, href: string) {
+  if (href === "/admin") {
+    return pathname === href;
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
 }

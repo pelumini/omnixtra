@@ -45,27 +45,33 @@ export function Field({
       : undefined;
 
   return (
-    <div>
-      <label className="block text-xs font-medium text-slate-600" htmlFor={registration.name}>
-        {label}
-      </label>
+    <div className="grid gap-1">
       <div
         className={cn(
-          "mt-1 flex items-stretch",
-          suffix ? "rounded-md border" : "",
-          suffix ? borderColor(Boolean(error)) : "",
+          "relative mt-2 flex h-10 items-stretch rounded-[10px] border bg-[var(--color-bg-white-0)] shadow-[var(--shadow-x-small)] transition-[border-color,box-shadow] hover:border-[var(--color-stroke-soft-200)] focus-within:border-[var(--color-stroke-strong-900)] focus-within:shadow-[var(--shadow-button-focus-important)]",
+          fieldBorderColor(Boolean(error)),
+          disabled
+            ? "border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-weak-100)] shadow-none"
+            : "",
         )}
       >
+        <label
+          className={cn(
+            "absolute -top-2 left-3 z-10 bg-[var(--color-bg-white-0)] px-1 text-xs font-medium leading-4 text-[var(--color-text-main-900)]",
+            disabled ? "bg-[var(--color-bg-weak-100)] text-[var(--color-text-disabled-300)]" : "",
+          )}
+          htmlFor={registration.name}
+        >
+          {label}
+        </label>
         <input
           {...registration}
           aria-describedby={describedBy}
           aria-invalid={Boolean(error)}
           autoComplete={autoComplete}
           className={cn(
-            "h-10 w-full px-3 text-sm text-[var(--foreground)] focus:outline-none disabled:bg-[var(--background)] disabled:text-slate-400",
-            suffix
-              ? "rounded-l-md focus:ring-1 focus:ring-[var(--primary)]"
-              : cn("rounded-md border focus:ring-1", borderColor(Boolean(error))),
+            "min-w-0 flex-1 rounded-[10px] bg-transparent py-2.5 pl-3 pr-2.5 text-xs leading-4 text-[var(--color-text-main-900)] placeholder:text-[var(--color-text-soft-400)] focus:outline-none disabled:cursor-not-allowed disabled:text-[var(--color-text-disabled-300)] disabled:placeholder:text-[var(--color-text-disabled-300)]",
+            suffix ? "rounded-r-none" : "",
           )}
           disabled={disabled}
           id={registration.name}
@@ -73,7 +79,7 @@ export function Field({
           type={type}
         />
         {suffix ? (
-          <span className="flex items-center rounded-r-md bg-[var(--background)] px-3 text-sm text-slate-500">
+          <span className="flex items-center rounded-r-[10px] border-l border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-weak-100)] px-3 text-xs leading-4 text-[var(--color-text-sub-500)]">
             {suffix}
           </span>
         ) : null}
@@ -81,7 +87,10 @@ export function Field({
       {error ? (
         <FieldError id={`${registration.name}-error`}>{error}</FieldError>
       ) : hint ? (
-        <span className="mt-1 block text-xs text-slate-500" id={`${registration.name}-hint`}>
+        <span
+          className="block text-xs leading-4 text-[var(--color-text-sub-500)]"
+          id={`${registration.name}-hint`}
+        >
           {hint}
         </span>
       ) : null}
@@ -106,8 +115,11 @@ export function TextareaField({
       : undefined;
 
   return (
-    <div>
-      <label className="block text-xs font-medium text-slate-600" htmlFor={registration.name}>
+    <div className="grid gap-1">
+      <label
+        className="block text-xs font-medium leading-4 text-[var(--color-text-main-900)]"
+        htmlFor={registration.name}
+      >
         {label}
       </label>
       <textarea
@@ -116,8 +128,8 @@ export function TextareaField({
         aria-invalid={Boolean(error)}
         autoComplete={autoComplete}
         className={cn(
-          "mt-1 min-h-24 w-full resize-y rounded-md border px-3 py-2 text-sm text-[var(--foreground)] focus:outline-none focus:ring-1 disabled:bg-[var(--background)] disabled:text-slate-400",
-          borderColor(Boolean(error)),
+          "min-h-24 w-full resize-y rounded-[10px] border bg-[var(--color-bg-white-0)] px-3 py-2.5 text-xs leading-4 text-[var(--color-text-main-900)] shadow-[var(--shadow-x-small)] transition-[border-color,box-shadow] placeholder:text-[var(--color-text-soft-400)] hover:border-[var(--color-stroke-soft-200)] focus:outline-none disabled:cursor-not-allowed disabled:border-[var(--color-stroke-soft-200)] disabled:bg-[var(--color-bg-weak-100)] disabled:text-[var(--color-text-disabled-300)] disabled:shadow-none disabled:placeholder:text-[var(--color-text-disabled-300)]",
+          controlBorderColor(Boolean(error)),
         )}
         disabled={disabled}
         id={registration.name}
@@ -127,7 +139,10 @@ export function TextareaField({
       {error ? (
         <FieldError id={`${registration.name}-error`}>{error}</FieldError>
       ) : hint ? (
-        <span className="mt-1 block text-xs text-slate-500" id={`${registration.name}-hint`}>
+        <span
+          className="block text-xs leading-4 text-[var(--color-text-sub-500)]"
+          id={`${registration.name}-hint`}
+        >
           {hint}
         </span>
       ) : null}
@@ -150,8 +165,11 @@ export function SelectField({
       : undefined;
 
   return (
-    <div>
-      <label className="block text-xs font-medium text-slate-600" htmlFor={registration.name}>
+    <div className="grid gap-1">
+      <label
+        className="block text-xs font-medium leading-4 text-[var(--color-text-main-900)]"
+        htmlFor={registration.name}
+      >
         {label}
       </label>
       <select
@@ -159,8 +177,8 @@ export function SelectField({
         aria-describedby={describedBy}
         aria-invalid={Boolean(error)}
         className={cn(
-          "mt-1 h-10 w-full rounded-md border bg-white px-3 text-sm text-[var(--foreground)] focus:outline-none focus:ring-1 disabled:bg-[var(--background)] disabled:text-slate-400",
-          borderColor(Boolean(error)),
+          "h-10 w-full rounded-[10px] border bg-[var(--color-bg-white-0)] px-3 text-xs leading-4 text-[var(--color-text-main-900)] shadow-[var(--shadow-x-small)] transition-[border-color,box-shadow] hover:border-[var(--color-stroke-soft-200)] focus:outline-none disabled:cursor-not-allowed disabled:border-[var(--color-stroke-soft-200)] disabled:bg-[var(--color-bg-weak-100)] disabled:text-[var(--color-text-disabled-300)] disabled:shadow-none",
+          controlBorderColor(Boolean(error)),
         )}
         disabled={disabled}
         id={registration.name}
@@ -170,7 +188,10 @@ export function SelectField({
       {error ? (
         <FieldError id={`${registration.name}-error`}>{error}</FieldError>
       ) : hint ? (
-        <span className="mt-1 block text-xs text-slate-500" id={`${registration.name}-hint`}>
+        <span
+          className="block text-xs leading-4 text-[var(--color-text-sub-500)]"
+          id={`${registration.name}-hint`}
+        >
           {hint}
         </span>
       ) : null}
@@ -180,7 +201,7 @@ export function SelectField({
 
 export function FieldError({ children, id }: { children: ReactNode; id?: string }) {
   return (
-    <p className="mt-1 text-xs text-red-600" id={id} role="alert">
+    <p className="text-xs leading-4 text-[var(--color-state-error)]" id={id} role="alert">
       {children}
     </p>
   );
@@ -192,7 +213,7 @@ export function FormError({ children }: { children: ReactNode }) {
   }
   return (
     <div
-      className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+      className="rounded-[10px] border border-[var(--color-state-error)] bg-[var(--color-red-lighter)] px-3 py-2 text-sm text-[var(--color-state-error)]"
       role="alert"
     >
       {children}
@@ -229,8 +250,14 @@ export function SubmitButton({
   );
 }
 
-function borderColor(hasError: boolean) {
+function controlBorderColor(hasError: boolean) {
   return hasError
-    ? "border-red-400 focus:border-red-500 focus:ring-red-500"
-    : "border-[var(--border)] focus:border-[var(--primary)] focus:ring-[var(--primary)]";
+    ? "border-[var(--color-state-error)] focus:border-[var(--color-state-error)] focus:shadow-[var(--shadow-button-focus-error)]"
+    : "border-[var(--color-stroke-soft-200)] focus:border-[var(--color-stroke-strong-900)] focus:shadow-[var(--shadow-button-focus-important)]";
+}
+
+function fieldBorderColor(hasError: boolean) {
+  return hasError
+    ? "border-[var(--color-state-error)] focus-within:border-[var(--color-state-error)] focus-within:shadow-[var(--shadow-button-focus-error)]"
+    : "border-[var(--color-stroke-soft-200)]";
 }

@@ -1,11 +1,13 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { AdminCourseList } from "@/components/admin/admin-course-list";
+import { AdminCourseList, getCourses, type Course } from "@/features/courses";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { InvitationPending } from "@/components/app/invitation-pending";
-import { getAuthSession, getCourses, getTenantBranding } from "@/lib/api";
-import type { Course, OrgRole, TenantBranding } from "@/lib/schemas";
+import { getTenantBranding } from "@/lib/api/academy";
+import { getAuthSession } from "@/lib/api/auth";
+import type { TenantBranding } from "@/lib/schemas/academy";
+import type { OrgRole } from "@/lib/schemas/common";
 
 const fallbackBranding: TenantBranding = {
   locale: "en",

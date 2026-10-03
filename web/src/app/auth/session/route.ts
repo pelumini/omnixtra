@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
-import { getAuthSession } from "@/lib/api";
+import { getAuthSession } from "@/lib/api/auth";
 
 export async function GET() {
   const requestHeaders = await headers();

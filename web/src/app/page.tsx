@@ -4,16 +4,25 @@ import { headers } from "next/headers";
 import { InvitationPending } from "@/components/app/invitation-pending";
 import { PublicLanding } from "@/components/app/public-landing";
 import { SignInView } from "@/components/auth/sign-in-view";
-import { getAuthSession, getTenantBranding } from "@/lib/api";
+import { getBrandingOrDefault } from "@/lib/auth/branding";
+import { getSessionOrNull } from "@/lib/auth/session";
 import { E2E_FIXTURES_ENABLED } from "@/lib/e2e-enabled";
 import { homeForSession } from "@/lib/routing/home";
-import type { TenantBranding } from "@/lib/schemas";
+import type { TenantBranding } from "@/lib/schemas/academy";
 import { tenantSlugFromHost } from "@/lib/tenant-host";
 
 type HomeProps = {
   searchParams?: Promise<{
     e2e_session?: string;
   }>;
+};
+
+const fallbackBranding: TenantBranding = {
+  locale: "en",
+  logo_url: null,
+  primary_color: "#584ce1",
+  tenant_name: "your academy",
+  time_zone: "UTC",
 };
 
 export default async function Home({ searchParams }: HomeProps) {
@@ -42,37 +51,14 @@ export default async function Home({ searchParams }: HomeProps) {
     cookie: requestHeaders.get("cookie") ?? undefined,
     host,
   };
-  const session = await loadSession(context);
+  const session = await getSessionOrNull(context);
 
   if (session === null) {
-    const branding = await loadBranding(context);
+    const branding = await getBrandingOrDefault(context, fallbackBranding);
     return <SignInView academyName={branding.tenant_name} />;
   }
-  if (session.data.membership === null) {
-    return <InvitationPending session={session.data} />;
+  if (session.membership === null) {
+    return <InvitationPending session={session} />;
   }
-  redirect(homeForSession(session.data) ?? "/");
-}
-
-async function loadSession(context: { cookie?: string; host?: string }) {
-  try {
-    return await getAuthSession(context);
-  } catch {
-    return null;
-  }
-}
-
-async function loadBranding(context: { cookie?: string; host?: string }): Promise<TenantBranding> {
-  try {
-    const response = await getTenantBranding(context);
-    return response.data;
-  } catch {
-    return {
-      locale: "en",
-      logo_url: null,
-      primary_color: "#584ce1",
-      tenant_name: "your academy",
-      time_zone: "UTC",
-    };
-  }
+  redirect(homeForSession(session) ?? "/");
 }

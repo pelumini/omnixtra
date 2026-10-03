@@ -3,7 +3,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { SessionHeader } from "@/components/app/session-header";
-import type { SessionResponse, TenantBranding } from "@/lib/schemas";
+import type { TenantBranding } from "@/lib/schemas/academy";
+import type { SessionResponse } from "@/lib/schemas/auth";
 
 const branding: TenantBranding = {
   locale: "en",

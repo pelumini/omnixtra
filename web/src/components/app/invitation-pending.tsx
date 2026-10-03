@@ -1,7 +1,7 @@
 import { KeyRound } from "lucide-react";
 import Link from "next/link";
 
-import type { SessionResponse } from "@/lib/schemas";
+import type { SessionResponse } from "@/lib/schemas/auth";
 
 type InvitationPendingProps = {
   session: SessionResponse;

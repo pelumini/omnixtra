@@ -12,7 +12,10 @@ import {
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import type { CourseCompletionAnalytics, LearnerProgressReportRow } from "@/lib/schemas";
+import type {
+  CourseCompletionAnalytics,
+  LearnerProgressReportRow,
+} from "@/lib/schemas/analytics";
 
 type AdminDashboardProps = {
   adminName?: string;

@@ -5,12 +5,16 @@ type SkeletonProps = {
 };
 
 export function Skeleton({ className }: SkeletonProps) {
-  return <div className={cn("animate-pulse rounded-md bg-slate-200", className)} />;
+  return (
+    <div
+      className={cn("animate-pulse rounded-md bg-[var(--color-bg-weak-100)]", className)}
+    />
+  );
 }
 
 export function CardSkeleton() {
   return (
-    <div className="grid gap-3 border border-[var(--border)] bg-white p-4">
+    <div className="grid gap-3 rounded-xl border border-[var(--border)] bg-[var(--color-bg-white-0)] p-4">
       <Skeleton className="h-4 w-1/3" />
       <Skeleton className="h-3 w-2/3" />
       <Skeleton className="h-3 w-1/2" />

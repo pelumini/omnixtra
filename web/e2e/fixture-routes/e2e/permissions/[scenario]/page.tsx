@@ -1,12 +1,11 @@
 import { notFound } from "next/navigation";
 
-import { AdminCourseList } from "@/components/admin/admin-course-list";
-import { CourseBuilder } from "@/components/admin/course-builder";
-import { MembersView } from "@/components/admin/members-view";
+import { AdminCourseList, CourseBuilder, type Course } from "@/features/courses";
+import { LearnerCoursePlayer, type CoursePlayer } from "@/features/learning";
+import { MembersView, type Membership } from "@/features/members";
 import { AppShell } from "@/components/app/app-shell";
-import { LearnerCoursePlayer } from "@/components/learning/learner-course-player";
 import { e2eFixturesEnabled } from "@/lib/e2e-fixtures";
-import type { Course, CoursePlayer, Membership, TenantBranding } from "@/lib/schemas";
+import type { TenantBranding } from "@/lib/schemas/academy";
 
 type PermissionFixturePageProps = {
   params: Promise<{

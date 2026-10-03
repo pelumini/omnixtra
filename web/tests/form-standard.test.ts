@@ -10,9 +10,9 @@ import {
 import {
   courseWithFirstLessonFormSchema,
   firstLessonFormSchema,
-  inviteMemberFormSchema,
-} from "@/lib/schemas/admin-forms";
-import { quizAttemptFormSchema, tutorQuestionFormSchema } from "@/lib/schemas/learning-forms";
+} from "@/features/courses";
+import { inviteMemberFormSchema } from "@/features/members";
+import { quizAttemptFormSchema, tutorQuestionFormSchema } from "@/features/learning";
 
 describe("form standard helpers", () => {
   it("resolves field-specific validation messages before generic fallbacks", () => {

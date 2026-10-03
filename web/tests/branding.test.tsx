@@ -18,8 +18,10 @@ vi.mock("next/font/google", () => ({
   Mulish: () => ({ variable: "font-mulish" }),
 }));
 
-vi.mock("@/lib/api", () => ({
+vi.mock("@/lib/api/auth", () => ({
   getAuthSession: (context: { cookie?: string; host?: string }) => getAuthSession(context),
+}));
+vi.mock("@/lib/api/academy", () => ({
   getTenantBranding: (context: { host?: string }) => getTenantBranding(context),
 }));
 

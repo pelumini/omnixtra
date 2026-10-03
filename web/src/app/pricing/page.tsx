@@ -1,8 +1,6 @@
 import { headers } from "next/headers";
 
-import { PricingPage } from "@/components/billing/pricing-page";
-import { getBillingPlans } from "@/lib/api";
-import type { BillingPlan } from "@/lib/schemas";
+import { getBillingPlans, PricingPage, type BillingPlan } from "@/features/billing";
 
 export default async function PricingRoute() {
   const requestHeaders = await headers();

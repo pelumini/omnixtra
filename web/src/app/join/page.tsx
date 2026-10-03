@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 
 import { AcceptInvitationView } from "@/components/auth/accept-invitation-view";
-import { getInvitationPreview } from "@/lib/api";
+import { getInvitationPreview } from "@/features/members";
 
 type JoinPageProps = {
   searchParams?: Promise<{

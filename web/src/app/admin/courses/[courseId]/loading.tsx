@@ -1,6 +1,6 @@
 import { AdminShell } from "@/components/admin/admin-shell";
 import { DetailSkeleton } from "@/components/ui/skeletons";
-import type { TenantBranding } from "@/lib/schemas";
+import type { TenantBranding } from "@/lib/schemas/academy";
 
 const loadingBranding: TenantBranding = {
   locale: "en",

@@ -719,6 +719,33 @@ Treat these prices and capacities as product hypotheses, not constants to bury d
 
 Marketplace, Stripe Connect, revenue share, and invoicing are Phase 3.
 
+### 3.6 Frontend structure (web/)
+
+The frontend follows a **feature-first** layout. Four homes, and imports flow **down** this stack — never sideways into another feature's internals.
+
+| Layer | Path | What lives here |
+|---|---|---|
+| **Routing** | `src/app/` | Thin server components and route handlers **only**. Route groups: `(marketing)`, `(app)`, `(auth)`. |
+| **Domain** | `src/features/<domain>/` | Everything domain-specific: `components/`, `api.ts`, `schemas.ts`, `mappers.ts`. The heart of the app. |
+| **Shared UI** | `src/components/ui/` + `src/components/layout/` | Design-system primitives (`ui/`) and app chrome — shells, headers, toaster (`layout/`). No domain logic. |
+| **Cross-cutting** | `src/lib/` | Domain-agnostic: `api/client.ts` (fetch core), `auth/`, `forms/`, `permissions.ts`, `tenant-host.ts`, `utils.ts`. |
+
+**The rules:**
+
+- **`app/` is routing, not implementation.** A `page.tsx` or `layout.tsx` fetches data (server-side), gates access, and composes components. It does not contain feature UI. One-off components a single route needs go in that route's `_components/` folder (colocated), not in a global folder. Promote a component to `features/` or `components/` only when a **second** route imports it.
+
+- **Domain code lives in `features/<domain>/`.** Each feature owns its components, API calls, zod schemas, and mappers. A feature exposes a **public surface via `index.ts`** (barrels are for `features/*` only — never for `ui/` or deep internals). **A feature never imports another feature's internals** — only its `index.ts`.
+
+- **One concern per file.** A component renders one thing. If it passes **~250 lines** or grows a second independent `useState` cluster / sub-form, split it. Orchestrators compose children; they don't implement them inline. (ESLint warns at 250 lines.)
+
+- **No new monoliths.** Never append to a 400+ line "everything" file (the old `lib/api.ts` / `lib/schemas.ts` pattern). Add a new domain file. If you find such a file, flag it rather than growing it.
+
+- **Data fetching stays server-side.** Server components and route handlers fetch; client components receive data as props. Client code never holds secrets or service-internal URLs.
+
+- **Boundaries are enforced by lint, not goodwill.** `eslint` errors on cross-layer / cross-feature import violations and on import order; it warns on file size. CI is the source of truth — a boundary violation is a failing build, not a style nit.
+
+**When unsure where something goes:** is it tied to one route → that route's `_components/`. Tied to one domain → `features/<domain>/`. Reused design-system UI → `components/ui/`. App chrome → `components/layout/`. Domain-agnostic helper → `lib/`. If it still doesn't fit, ask before inventing a new top-level folder.
+
 ---
 
 ## Part 4: AI Subsystem
@@ -1540,6 +1567,10 @@ The charter labels the MVP as a 10-week schedule, but its S0-S5 sprint table imp
 - [x] 2026-08-23 add-course content chooser fix: moved OmniXtra standard content choices into the `/admin/courses` Add course path, made the chooser visible by default for empty course lists, kept existing course lists table-first until Add course is clicked, and covered Content, Web content, Video, Image, and Quiz visibility in frontend tests.
 - [x] 2026-08-23 latest PRD refresh: added `docs/product/OMNIXTRA_PRD_LATEST.md` as the current MVP product requirements snapshot, aligned to ADR-003 identity/membership/authorization, academy-first routing, admin/member UX, OmniXtra green branding, Inter/Geist typography, standard content authoring, AI tutor guardrails, billing, local development, and MVP acceptance criteria.
 - [x] 2026-09-19 design integration Stage 1, tokens only: made the extracted Figma primitive, semantic, component, effect, and typography tokens the app token layer; corrected semantic primary from the raw export's blue to verified light-indigo/500 (`#584CE1`); retired the old emerald literals and utilities in `web/src`; exposed semantic roles through Tailwind; and replaced Inter/Geist with Mulish while intentionally retaining unresolved neutral hexes, light mode only, and normal letter spacing pending Figma-unit verification. No components or screens were rebuilt in this stage.
+- [x] 2026-09-19 design integration Stage 2a, Button and Input: restyled the shared Button and RHF-backed Field in place against the canonical component spec; added backward-compatible primary/secondary, medium/small/x-small, and icon-only Button options; retained processing feedback and all existing form APIs; applied semantic indigo interaction states, focus rings, disabled/error states, floating labels, hint text, and tokenized shadows; and recorded the approved gap-fill decisions in `component-specs.md`. No screens, API contracts, or other primitives were changed.
+- [x] 2026-09-19 design integration Stage 2a.1 consistency cleanup: moved primary Button shadow and focus rendering onto app-owned indigo aliases; aligned TextareaField, SelectField, and FormError with Field's semantic border, focus, error, disabled, label, and hint tokens without API changes; removed the stale hardcoded-color helper; and switched skeleton fill/card radius to the approved token treatment.
+- [x] 2026-09-19 design integration Stage 2b, Card, Badge, and Nav item: added composable semantic Card and status Badge primitives, standardized the shared role-filtered sidebar on neutral Ghost-button navigation states with an indigo active tint and accent bar, preserved shell props/routes/permissions, and recorded the canonical geometry and route-matching decisions. Feature-screen adoption remains deferred to Stage 3.
+- [x] 2026-09-20 design integration Stage 3, apex landing: rebuilt the public marketing route section by section from the supplied Figma references and reconciled asset manifest; retained apex-only rendering and academy-subdomain authentication behavior; implemented the create-academy, sign-in, and invitation entry funnel; used semantic tokens, Mulish, shared Card primitives, Lucide icons, responsive layouts, and lazy-loaded reusable pattern/feature imagery. No backend, tenant resolution, or authenticated product screens changed.
 
 ### Phase 2: Months 4-6
 

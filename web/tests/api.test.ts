@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { getInvitationPreview } from "@/lib/api";
+import { getInvitationPreview } from "@/features/members";
 
 describe("API request context", () => {
   afterEach(() => {

@@ -1,5 +1,43 @@
-import { createTenant, type ApiRequestError } from "@/lib/api";
+import {
+  apiUrl,
+  type ApiRequestError,
+  postJson,
+  publicApiUrl,
+  requestHeaders,
+  type RequestContext,
+  throwIfApiError,
+} from "@/lib/api/client";
+import {
+  tenantBrandingEnvelopeSchema,
+  tenantCreateEnvelopeSchema,
+  tenantCreateRequestSchema,
+  type TenantCreateRequest,
+} from "@/lib/schemas/academy";
 import type { CreateAcademyInput } from "@/lib/schemas/auth";
+import { tenantApiUrlForSlug } from "@/lib/tenant-host";
+
+export async function createTenant(request: TenantCreateRequest) {
+  const body = tenantCreateRequestSchema.parse(request);
+  const response = await postJson(
+    "/api/v1/tenants",
+    body,
+    {},
+    tenantApiUrlForSlug(publicApiUrl, body.tenant_slug),
+  );
+
+  return tenantCreateEnvelopeSchema.parse(response);
+}
+
+export async function getTenantBranding(context: RequestContext = {}) {
+  const response = await fetch(`${apiUrl()}/api/v1/tenant/branding`, {
+    cache: "no-store",
+    headers: requestHeaders(context),
+  });
+  const body: unknown = await response.json();
+  throwIfApiError(response, body);
+
+  return tenantBrandingEnvelopeSchema.parse(body);
+}
 
 type CreateAcademyResult = {
   accessToken: string;

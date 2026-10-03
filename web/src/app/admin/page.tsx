@@ -6,15 +6,19 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { DeniedState } from "@/components/app/denied-state";
 import { InvitationPending } from "@/components/app/invitation-pending";
 import {
-  getCourses,
   getCompletionAnalytics,
-  getAuthSession,
   getLearnerProgressReport,
-  getTenantBranding,
   learnerProgressCsvUrl,
-} from "@/lib/api";
+} from "@/lib/api/analytics";
+import { getCourses } from "@/features/courses";
+import { getBrandingOrDefault } from "@/lib/auth/branding";
+import { getSessionOrNull } from "@/lib/auth/session";
 import { e2eFixturesEnabled } from "@/lib/e2e-enabled";
-import type { CourseCompletionAnalytics, LearnerProgressReportRow, TenantBranding } from "@/lib/schemas";
+import type { TenantBranding } from "@/lib/schemas/academy";
+import type {
+  CourseCompletionAnalytics,
+  LearnerProgressReportRow,
+} from "@/lib/schemas/analytics";
 
 const fallbackBranding: TenantBranding = {
   locale: "en",
@@ -44,15 +48,15 @@ export default async function AdminDashboardPage() {
   const host = requestHeaders.get("host") ?? undefined;
   const cookie = requestHeaders.get("cookie") ?? undefined;
   const context = { cookie, host };
-  const authSession = await loadSession(context);
+  const authSession = await getSessionOrNull(context);
 
   if (authSession === null) {
     redirect("/login");
   }
-  if (authSession.data.membership === null) {
-    return <InvitationPending session={authSession.data} />;
+  if (authSession.membership === null) {
+    return <InvitationPending session={authSession} />;
   }
-  if (authSession.data.membership.org_role !== "tenant_admin") {
+  if (authSession.membership.org_role !== "tenant_admin") {
     return (
       <DeniedState
         description="Your academy access does not include admin permissions."
@@ -65,7 +69,7 @@ export default async function AdminDashboardPage() {
   let courseCount = 0;
   let learnerProgress: LearnerProgressReportRow[] = [];
   let loadError: string | null = null;
-  const branding = await loadBranding(context);
+  const branding = await getBrandingOrDefault(context, fallbackBranding);
 
   try {
     const [analyticsResponse, progressResponse, coursesResponse] = await Promise.all([
@@ -81,9 +85,9 @@ export default async function AdminDashboardPage() {
   }
 
   return (
-    <AdminShell branding={branding} viewerRole={authSession.data.membership.org_role}>
+    <AdminShell branding={branding} viewerRole={authSession.membership.org_role}>
       <AdminHome
-        adminName={authSession.data.user.full_name}
+        adminName={authSession.user.full_name}
         analytics={analytics}
         courseCount={courseCount}
         csvUrl={learnerProgressCsvUrl()}
@@ -92,21 +96,4 @@ export default async function AdminDashboardPage() {
       />
     </AdminShell>
   );
-}
-
-async function loadSession(context: { cookie?: string; host?: string }) {
-  try {
-    return await getAuthSession(context);
-  } catch {
-    return null;
-  }
-}
-
-async function loadBranding(context: { cookie?: string; host?: string }) {
-  try {
-    const response = await getTenantBranding(context);
-    return response.data;
-  } catch {
-    return fallbackBranding;
-  }
 }

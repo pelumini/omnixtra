@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { AdminHome } from "@/components/admin/admin-home";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AppShell } from "@/components/app/app-shell";
-import type { TenantBranding } from "@/lib/schemas";
+import type { TenantBranding } from "@/lib/schemas/academy";
 import { analytics, learnerProgress } from "./fixtures";
 
 const branding: TenantBranding = {

@@ -1,6 +1,9 @@
 import { AdminDashboard } from "@/components/admin/admin-dashboard";
 import { AdminFirstRunChecklist } from "@/components/admin/admin-first-run-checklist";
-import type { CourseCompletionAnalytics, LearnerProgressReportRow } from "@/lib/schemas";
+import type {
+  CourseCompletionAnalytics,
+  LearnerProgressReportRow,
+} from "@/lib/schemas/analytics";
 
 type AdminHomeProps = {
   adminName?: string;

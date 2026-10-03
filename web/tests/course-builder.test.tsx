@@ -2,7 +2,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { CourseBuilder } from "@/components/admin/course-builder";
+import { CourseBuilder } from "@/features/courses";
 import { draftCourse } from "./fixtures";
 
 describe("course builder UI", () => {

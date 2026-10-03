@@ -6,9 +6,9 @@ import type { ReactNode } from "react";
 
 import { AppToaster } from "@/components/app/app-toaster";
 import { SessionHeader } from "@/components/app/session-header";
-import { getAuthSession, getTenantBranding } from "@/lib/api";
+import { getBrandingOrDefault } from "@/lib/auth/branding";
+import { getSessionOrNull } from "@/lib/auth/session";
 import { e2eFixturesEnabled } from "@/lib/e2e-enabled";
-import type { SessionResponse, TenantBranding } from "@/lib/schemas";
 import { tenantSlugFromHost } from "@/lib/tenant-host";
 
 import "./globals.css";
@@ -24,21 +24,16 @@ export const metadata: Metadata = {
   description: "AI-native learning management platform",
 };
 
-const defaultBranding: TenantBranding = {
-  locale: "en",
-  logo_url: null,
-  primary_color: "#584ce1",
-  tenant_name: "OmniXtra",
-  time_zone: "UTC",
-};
-
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const requestHeaders = await headers();
   const context = {
     cookie: requestHeaders.get("cookie") ?? undefined,
     host: requestHeaders.get("host") ?? undefined,
   };
-  const [branding, session] = await Promise.all([loadBranding(context.host), loadSession(context)]);
+  const [branding, session] = await Promise.all([
+    getBrandingOrDefault({ host: context.host }),
+    getSessionOrNull(context),
+  ]);
   const showAuthLink = tenantSlugFromHost(context.host ?? "") !== null;
 
   return (
@@ -54,30 +49,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           refreshSession={!e2eFixturesEnabled()}
           showAuthLink={showAuthLink}
         />
-        <div className="pt-14">{children}</div>
+        <div className={showAuthLink ? "pt-14" : "pt-20"}>{children}</div>
         <AppToaster />
       </body>
     </html>
   );
-}
-
-async function loadBranding(host: string | undefined): Promise<TenantBranding> {
-  try {
-    const response = await getTenantBranding({ host });
-    return response.data;
-  } catch {
-    return defaultBranding;
-  }
-}
-
-async function loadSession(context: {
-  cookie?: string;
-  host?: string;
-}): Promise<SessionResponse | null> {
-  try {
-    const response = await getAuthSession(context);
-    return response.data;
-  } catch {
-    return null;
-  }
 }

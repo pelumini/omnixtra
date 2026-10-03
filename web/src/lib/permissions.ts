@@ -1,4 +1,4 @@
-import type { CourseRole, OrgRole } from "@/lib/schemas";
+import type { CourseRole, OrgRole } from "@/lib/schemas/common";
 
 export function isTenantAdmin(role: OrgRole) {
   return role === "tenant_admin";

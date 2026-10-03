@@ -1,4 +1,6 @@
-import type { MyCourse, SessionResponse, TenantBranding } from "@/lib/schemas";
+import type { TenantBranding } from "@/lib/schemas/academy";
+import type { SessionResponse } from "@/lib/schemas/auth";
+import type { MyCourse } from "@/features/learning";
 import { e2eFixturesEnabled } from "@/lib/e2e-enabled";
 
 export const e2eBranding: TenantBranding = {

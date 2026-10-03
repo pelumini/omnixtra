@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 
 import { Field, FormError, SubmitButton } from "@/components/ui/form-controls";
-import { login } from "@/lib/api";
+import { login } from "@/lib/api/auth";
 import { resolveMessage } from "@/lib/forms/messages";
 import { useFormSubmit } from "@/lib/forms/use-form-submit";
 import { signInSchema, type SignInInput } from "@/lib/schemas/auth";

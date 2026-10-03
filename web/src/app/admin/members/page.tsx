@@ -2,16 +2,14 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { AdminShell } from "@/components/admin/admin-shell";
-import { MembersView } from "@/components/admin/members-view";
+import { MembersView } from "@/features/members";
 import { InvitationPending } from "@/components/app/invitation-pending";
-import {
-  getAuthSession,
-  getBillingPlans,
-  getBillingSubscription,
-  getMemberships,
-  getTenantBranding,
-} from "@/lib/api";
-import type { BillingPlan, Membership, OrgRole, TenantBranding } from "@/lib/schemas";
+import { getTenantBranding } from "@/lib/api/academy";
+import { getAuthSession } from "@/lib/api/auth";
+import { getBillingPlans, getBillingSubscription, type BillingPlan } from "@/features/billing";
+import { getMemberships, type Membership } from "@/features/members";
+import type { TenantBranding } from "@/lib/schemas/academy";
+import type { OrgRole } from "@/lib/schemas/common";
 
 const starterAdminSeats = 3;
 const fallbackBranding: TenantBranding = {

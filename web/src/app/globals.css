@@ -8,6 +8,9 @@
   --primary-foreground: var(--color-text-white-0);
   --border: var(--color-stroke-soft-200);
   --tenant-primary: var(--primary);
+  --shadow-app-button-primary: 0 1px 2px 0 rgb(88 76 225 / 8%);
+  --shadow-app-button-primary-focus:
+    0 0 0 4px var(--color-light-indigo-50), 0 0 0 2px var(--color-bg-white-0);
 }
 
 @theme {
@@ -56,4 +59,39 @@ th {
 
 .font-secondary {
   font-family: var(--font-mulish), Arial, Helvetica, sans-serif;
+}
+
+@layer components {
+  .landing-container {
+    @apply mx-auto w-full max-w-7xl px-5 sm:px-8;
+  }
+
+  .landing-button {
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition-colors focus-visible:outline-none;
+    box-shadow: var(--shadow-app-button-primary);
+  }
+
+  .landing-button > svg {
+    @apply size-4;
+  }
+
+  .landing-button:focus-visible {
+    box-shadow: var(--shadow-app-button-primary-focus);
+  }
+
+  .landing-button-primary {
+    @apply bg-[var(--primary)] text-[var(--color-text-white-0)] hover:bg-[var(--color-primary-dark)];
+  }
+
+  .landing-button-soft {
+    @apply bg-[var(--color-red-lighter)] text-[var(--color-red-base)] hover:bg-[var(--color-bg-weak-100)];
+  }
+
+  .landing-footer-link {
+    @apply inline-flex items-center gap-2 rounded-full bg-[var(--color-bg-surface-700)] px-3 py-2 text-[var(--color-text-white-0)] hover:bg-[var(--color-light-indigo-800)];
+  }
+
+  .landing-footer-link > svg {
+    @apply size-4;
+  }
 }

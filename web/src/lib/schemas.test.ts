@@ -1,36 +1,46 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  blockCreateRequestSchema,
-  blockContentSchema,
+  tenantBrandingEnvelopeSchema,
+  tenantCreateEnvelopeSchema,
+  tenantCreateRequestSchema,
+} from "@/lib/schemas/academy";
+import {
+  courseCompletionAnalyticsEnvelopeSchema,
+  learnerProgressReportEnvelopeSchema,
+} from "@/lib/schemas/analytics";
+import { sessionEnvelopeSchema } from "@/lib/schemas/auth";
+import {
   billingPlansEnvelopeSchema,
   billingSubscriptionEnvelopeSchema,
-  courseCompletionAnalyticsEnvelopeSchema,
+} from "@/features/billing";
+import { healthEnvelopeSchema } from "@/lib/schemas/common";
+import {
+  blockCreateRequestSchema,
+  blockContentSchema,
   courseCreateRequestSchema,
   courseDetailEnvelopeSchema,
-  courseCompletionEnvelopeSchema,
-  enrolmentEnvelopeSchema,
   coursePageEnvelopeSchema,
-  coursePlayerEnvelopeSchema,
-  healthEnvelopeSchema,
+  lessonCreateRequestSchema,
+  mediaAssetCreateRequestSchema,
+  mediaAssetSchema,
+} from "@/features/courses";
+import {
   invitationAcceptRequestSchema,
   invitationCreateEnvelopeSchema,
   invitationPreviewEnvelopeSchema,
   membershipsEnvelopeSchema,
-  lessonCreateRequestSchema,
+} from "@/features/members";
+import {
+  courseCompletionEnvelopeSchema,
+  coursePlayerEnvelopeSchema,
+  enrolmentEnvelopeSchema,
   lessonProgressRequestSchema,
-  learnerProgressReportEnvelopeSchema,
-  mediaAssetCreateRequestSchema,
-  mediaAssetSchema,
   myCoursesEnvelopeSchema,
   quizAttemptRequestSchema,
-  sessionEnvelopeSchema,
-  tenantCreateEnvelopeSchema,
-  tenantCreateRequestSchema,
-  tenantBrandingEnvelopeSchema,
   tutorEventSchema,
   tutorJobEnvelopeSchema,
-} from "@/lib/schemas";
+} from "@/features/learning";
 
 describe("healthEnvelopeSchema", () => {
   it("accepts the API health envelope", () => {

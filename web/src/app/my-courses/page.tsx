@@ -3,10 +3,11 @@ import { redirect } from "next/navigation";
 
 import { InvitationPending } from "@/components/app/invitation-pending";
 import { AppShell } from "@/components/app/app-shell";
-import { MyCoursesDashboard } from "@/components/learning/my-courses-dashboard";
-import { getAuthSession, getMyCourses, getTenantBranding } from "@/lib/api";
+import { getMyCourses, MyCoursesDashboard, type MyCourse } from "@/features/learning";
+import { getTenantBranding } from "@/lib/api/academy";
+import { getAuthSession } from "@/lib/api/auth";
 import { E2E_FIXTURES_ENABLED } from "@/lib/e2e-enabled";
-import type { MyCourse, TenantBranding } from "@/lib/schemas";
+import type { TenantBranding } from "@/lib/schemas/academy";
 
 type MyCoursesPageProps = {
   searchParams?: Promise<{

@@ -1,8 +1,6 @@
 import { headers } from "next/headers";
 
-import { LearnerCoursePlayer } from "@/components/learning/learner-course-player";
-import { getCoursePlayer } from "@/lib/api";
-import type { CoursePlayer } from "@/lib/schemas";
+import { getCoursePlayer, LearnerCoursePlayer, type CoursePlayer } from "@/features/learning";
 
 type LearnerCoursePageProps = {
   params: Promise<{

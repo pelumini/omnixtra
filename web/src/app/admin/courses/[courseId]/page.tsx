@@ -1,11 +1,13 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
-import { CourseDetail } from "@/components/admin/course-detail";
+import { CourseDetail, getCourse } from "@/features/courses";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { InvitationPending } from "@/components/app/invitation-pending";
-import { getAuthSession, getCourse, getTenantBranding } from "@/lib/api";
-import type { OrgRole, TenantBranding } from "@/lib/schemas";
+import { getTenantBranding } from "@/lib/api/academy";
+import { getAuthSession } from "@/lib/api/auth";
+import type { TenantBranding } from "@/lib/schemas/academy";
+import type { OrgRole } from "@/lib/schemas/common";
 
 type CourseDetailPageProps = {
   params: Promise<{

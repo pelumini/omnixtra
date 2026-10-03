@@ -8,8 +8,7 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-import { AdminCourseList } from "@/components/admin/admin-course-list";
-import { CourseDetail } from "@/components/admin/course-detail";
+import { AdminCourseList, CourseDetail } from "@/features/courses";
 import { courseId, draftCourse, lessonId, sectionId } from "./fixtures";
 
 describe("course detail authoring slice", () => {

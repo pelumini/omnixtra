@@ -5,10 +5,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Field, FormError, SubmitButton } from "@/components/ui/form-controls";
-import { acceptInvitation } from "@/lib/api";
+import { acceptInvitation, type InvitationPreview } from "@/features/members";
 import { resolveMessage } from "@/lib/forms/messages";
 import { useFormSubmit } from "@/lib/forms/use-form-submit";
-import type { InvitationPreview } from "@/lib/schemas";
 import {
   acceptInvitationSchema,
   type AcceptInvitationInput,
