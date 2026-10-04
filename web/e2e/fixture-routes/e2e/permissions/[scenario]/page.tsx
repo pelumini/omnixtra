@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 
+import { AppShell } from "@/components/layout/app-shell";
 import { AdminCourseList, CourseBuilder, type Course } from "@/features/courses";
 import { LearnerCoursePlayer, type CoursePlayer } from "@/features/learning";
 import { MembersView, type Membership } from "@/features/members";
-import { AppShell } from "@/components/layout/app-shell";
 import { e2eFixturesEnabled } from "@/lib/e2e-fixtures";
+
 import type { TenantBranding } from "@/lib/schemas/academy";
 
 type PermissionFixturePageProps = {
