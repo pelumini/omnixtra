@@ -1,5 +1,6 @@
-import type { BlockFormInput } from "../../schemas";
 import { resolveMessage } from "@/lib/forms/messages";
+
+import type { BlockFormInput } from "../../schemas";
 
 export type StandardContentType = BlockFormInput["blockType"];
 

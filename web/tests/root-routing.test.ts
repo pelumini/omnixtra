@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { homeForOrgRole, homeForSession } from "@/lib/routing/home";
+
 import type { SessionResponse } from "@/lib/schemas/auth";
 
 const baseSession: SessionResponse = {

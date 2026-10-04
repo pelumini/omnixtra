@@ -1,7 +1,7 @@
+import { e2eFixturesEnabled } from "@/lib/e2e-enabled";
+
 import type { TenantBranding } from "@/lib/schemas/academy";
 import type { SessionResponse } from "@/lib/schemas/auth";
-import type { MyCourse } from "@/features/learning";
-import { e2eFixturesEnabled } from "@/lib/e2e-enabled";
 
 export const e2eBranding: TenantBranding = {
   locale: "en",
@@ -44,37 +44,37 @@ export const e2ePendingSession: SessionResponse = {
   },
 };
 
-export const e2eMyCourses: MyCourse[] = [
+export const e2eMyCourses = [
   {
     course_id: "00000000-0000-0000-0000-000000000711",
-    course_role: "learner",
+    course_role: "learner" as const,
     progress: {
       completed_lessons: 2,
       percent_complete: 40,
       total_lessons: 5,
     },
     slug: "security-basics",
-    status: "published",
+    status: "published" as const,
     title: "Security Basics",
   },
   {
     course_id: "00000000-0000-0000-0000-000000000712",
-    course_role: "facilitator",
+    course_role: "facilitator" as const,
     progress: null,
     slug: "customer-enablement",
-    status: "published",
+    status: "published" as const,
     title: "Customer Enablement",
   },
   {
     course_id: "00000000-0000-0000-0000-000000000713",
-    course_role: "course_owner",
+    course_role: "course_owner" as const,
     progress: {
       completed_lessons: 0,
       percent_complete: 0,
       total_lessons: 3,
     },
     slug: "manager-onboarding",
-    status: "draft",
+    status: "draft" as const,
     title: "Manager Onboarding",
   },
 ];

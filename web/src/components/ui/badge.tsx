@@ -1,6 +1,7 @@
+import { cn } from "@/lib/utils";
+
 import type { HTMLAttributes, ReactNode } from "react";
 
-import { cn } from "@/lib/utils";
 
 type BadgeStatus = "success" | "pending" | "error" | "neutral";
 type BadgeVariant = "default" | "lighter";

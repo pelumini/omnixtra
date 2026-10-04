@@ -17,7 +17,9 @@ import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { Field, FormError, SubmitButton } from "@/components/ui/form-controls";
-import { TutorPanel } from "./tutor-panel";
+import { resolveMessage } from "@/lib/forms/messages";
+import { useFormSubmit } from "@/lib/forms/use-form-submit";
+
 import {
   certificateDownloadUrl,
   completeCourse,
@@ -26,8 +28,6 @@ import {
   submitQuizAttempt,
   updateLessonProgress,
 } from "../api";
-import { resolveMessage } from "@/lib/forms/messages";
-import { useFormSubmit } from "@/lib/forms/use-form-submit";
 import {
   quizAttemptFormSchema,
   type Certificate,
@@ -36,6 +36,8 @@ import {
   type LessonProgress,
   type QuizAttemptFormInput,
 } from "../schemas";
+
+import { TutorPanel } from "./tutor-panel";
 
 type LearnerCoursePlayerProps = {
   courseId: string;

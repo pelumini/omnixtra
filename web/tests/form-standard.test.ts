@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
 
+import {
+  courseWithFirstLessonFormSchema,
+  firstLessonFormSchema,
+} from "@/features/courses";
+import { quizAttemptFormSchema, tutorQuestionFormSchema } from "@/features/learning";
+import { inviteMemberFormSchema } from "@/features/members";
 import { resolveMessage } from "@/lib/forms/messages";
 import { partitionServerError } from "@/lib/forms/server-errors";
 import {
@@ -7,12 +13,6 @@ import {
   createAcademySchema,
   signInSchema,
 } from "@/lib/schemas/auth";
-import {
-  courseWithFirstLessonFormSchema,
-  firstLessonFormSchema,
-} from "@/features/courses";
-import { inviteMemberFormSchema } from "@/features/members";
-import { quizAttemptFormSchema, tutorQuestionFormSchema } from "@/features/learning";
 
 describe("form standard helpers", () => {
   it("resolves field-specific validation messages before generic fallbacks", () => {

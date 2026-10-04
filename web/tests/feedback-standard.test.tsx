@@ -11,11 +11,12 @@ vi.mock("sonner", () => ({
   toast: sonnerToast,
 }));
 
-import { AdminShell } from "@/components/admin/admin-shell";
+import { AdminShell } from "@/components/layout/admin-shell";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/form-controls";
 import { CoursesListSkeleton, DetailSkeleton } from "@/components/ui/skeletons";
 import { feedbackToast } from "@/lib/feedback/toast";
+
 import type { TenantBranding } from "@/lib/schemas/academy";
 
 const branding: TenantBranding = {

@@ -3,18 +3,24 @@
 import { BadgeCheck, CircleAlert, Layers3 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
+
+import { DeniedState } from "@/components/layout/denied-state";
+import { Button } from "@/components/ui/button";
+import { canAuthorCourse } from "@/lib/permissions";
+
+import { publishCourse } from "../api";
+
 import { BlockForm } from "./course-builder/BlockForm";
 import { CourseDetailsForm } from "./course-builder/CourseDetailsForm";
 import { CourseStatus } from "./course-builder/CourseStatus";
 import { LessonForm } from "./course-builder/LessonForm";
 import { MediaForm } from "./course-builder/MediaForm";
 import { SectionForm } from "./course-builder/SectionForm";
-import { DeniedState } from "@/components/app/denied-state";
-import { Button } from "@/components/ui/button";
-import { publishCourse } from "../api";
-import { canAuthorCourse } from "@/lib/permissions";
-import type { CourseRole } from "@/lib/schemas/common";
+
+
+
 import type { Block, Course, Lesson, MediaAsset, Section } from "../schemas";
+import type { CourseRole } from "@/lib/schemas/common";
 
 type CourseBuilderProps = { course: Course; courseRole?: CourseRole };
 

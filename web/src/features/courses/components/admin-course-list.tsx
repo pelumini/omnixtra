@@ -20,14 +20,16 @@ import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Field, FormError, SubmitButton, TextareaField } from "@/components/ui/form-controls";
-import { createCourse, createLesson } from "../api";
 import { resolveMessage } from "@/lib/forms/messages";
 import { useFormSubmit } from "@/lib/forms/use-form-submit";
 import { canCreateCourse } from "@/lib/permissions";
+
+import { createCourse, createLesson } from "../api";
 import {
   courseWithFirstLessonFormSchema,
   type CourseWithFirstLessonFormInput,
 } from "../schemas";
+
 import type { Course } from "../schemas";
 import type { OrgRole } from "@/lib/schemas/common";
 

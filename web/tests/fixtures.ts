@@ -1,7 +1,7 @@
 import type {
   CourseCompletionAnalytics,
   LearnerProgressReportRow,
-} from "@/lib/schemas/analytics";
+} from "@/features/analytics";
 import type { BillingPlan } from "@/features/billing";
 import type { Course } from "@/features/courses";
 import type { CoursePlayer } from "@/features/learning";

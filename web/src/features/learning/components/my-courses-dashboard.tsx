@@ -1,8 +1,8 @@
 import { BookOpen, CircleAlert, GraduationCap, Presentation, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
-import type { CourseRole } from "@/lib/schemas/common";
 import type { MyCourse } from "../schemas";
+import type { CourseRole } from "@/lib/schemas/common";
 
 type MyCoursesDashboardProps = {
   courses: MyCourse[];

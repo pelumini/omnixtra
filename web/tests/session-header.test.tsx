@@ -2,7 +2,8 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { SessionHeader } from "@/components/app/session-header";
+import { SessionHeader } from "@/components/layout/session-header";
+
 import type { TenantBranding } from "@/lib/schemas/academy";
 import type { SessionResponse } from "@/lib/schemas/auth";
 

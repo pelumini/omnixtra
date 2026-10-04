@@ -2,11 +2,13 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { PublicLanding } from "@/components/app/public-landing";
-import { AcceptInvitationView } from "@/components/auth/accept-invitation-view";
-import { BareHostLoginView } from "@/components/auth/bare-host-login-view";
-import { SignInView } from "@/components/auth/sign-in-view";
-import { CreateAcademyForm } from "@/components/forms/create-academy-form";
+import { CreateAcademyForm } from "@/features/academy";
+import {
+  AcceptInvitationView,
+  BareHostLoginView,
+  SignInView,
+} from "@/features/auth";
+import { PublicLanding } from "@/features/marketing";
 
 describe("auth UI", () => {
   it("keeps public landing focused on academy creation with marketing CTAs", () => {

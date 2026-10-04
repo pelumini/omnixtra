@@ -13,8 +13,9 @@ import {
   tenantCreateRequestSchema,
   type TenantCreateRequest,
 } from "@/lib/schemas/academy";
-import type { CreateAcademyInput } from "@/lib/schemas/auth";
 import { tenantApiUrlForSlug } from "@/lib/tenant-host";
+
+import type { CreateAcademyInput } from "@/lib/schemas/auth";
 
 export async function createTenant(request: TenantCreateRequest) {
   const body = tenantCreateRequestSchema.parse(request);

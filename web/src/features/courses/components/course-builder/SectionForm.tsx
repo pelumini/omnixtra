@@ -5,9 +5,11 @@ import { Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 import { Field, FormError, SubmitButton } from "@/components/ui/form-controls";
-import { createSection } from "../../api";
 import { useFormSubmit } from "@/lib/forms/use-form-submit";
+
+import { createSection } from "../../api";
 import { sectionFormSchema, type Section, type SectionFormInput } from "../../schemas";
+
 import { formFieldError } from "./mappers";
 
 export function SectionForm({ courseId, onCreated, position }: { courseId: string; onCreated: (section: Section) => void; position: number }) {

@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { LearnerCoursePlayer } from "@/features/learning";
+
 import { courseId, coursePlayer } from "./fixtures";
 
 describe("course player UI", () => {

@@ -2,13 +2,15 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { SessionHeader } from "@/components/app/session-header";
+import { SessionHeader } from "@/components/layout/session-header";
 import { AdminCourseList, CourseBuilder } from "@/features/courses";
 import { MyCoursesDashboard } from "@/features/learning";
 import { MembersView } from "@/features/members";
-import type { TenantBranding } from "@/lib/schemas/academy";
 import { e2eMyCourses } from "@/lib/e2e-fixtures";
+
 import { draftCourse } from "./fixtures";
+
+import type { TenantBranding } from "@/lib/schemas/academy";
 
 const branding: TenantBranding = {
   locale: "en",

@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { metaSchema, orgRoleSchema } from "@/lib/schemas/common";
 import {
   academyNameSchema,
   emailSchema,
@@ -7,7 +8,6 @@ import {
   passwordSchema,
   subdomainSchema,
 } from "@/lib/validation/primitives";
-import { metaSchema, orgRoleSchema } from "@/lib/schemas/common";
 
 export const loginRequestSchema = z.object({
   email: z.string().email(),

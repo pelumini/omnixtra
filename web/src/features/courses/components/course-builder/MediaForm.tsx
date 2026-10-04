@@ -5,9 +5,11 @@ import { Upload } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 import { Field, FormError, SelectField, SubmitButton } from "@/components/ui/form-controls";
-import { createMediaAsset } from "../../api";
 import { useFormSubmit } from "@/lib/forms/use-form-submit";
+
+import { createMediaAsset } from "../../api";
 import { mediaFormSchema, type MediaAsset, type MediaFormInput } from "../../schemas";
+
 import { formFieldError } from "./mappers";
 
 export function MediaForm({ courseId, onCreated }: { courseId: string; onCreated: (asset: MediaAsset) => void }) {

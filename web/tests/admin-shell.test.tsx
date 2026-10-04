@@ -2,11 +2,13 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { AdminHome } from "@/components/admin/admin-home";
-import { AdminShell } from "@/components/admin/admin-shell";
-import { AppShell } from "@/components/app/app-shell";
-import type { TenantBranding } from "@/lib/schemas/academy";
+import { AdminShell } from "@/components/layout/admin-shell";
+import { AppShell } from "@/components/layout/app-shell";
+import { AdminHome } from "@/features/dashboard";
+
 import { analytics, learnerProgress } from "./fixtures";
+
+import type { TenantBranding } from "@/lib/schemas/academy";
 
 const branding: TenantBranding = {
   locale: "en",

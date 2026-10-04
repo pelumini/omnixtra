@@ -1,16 +1,12 @@
-// Minimal flat ESLint config (ESLint 9) for web/ — PHASE-1 INTERIM.
-//
-// Uses only packages already in package.json (@eslint/eslintrc + eslint-config-next),
-// so `npm run lint` works with NO extra installs. The strict config with import-order,
-// layer boundaries, and max-lines is reintroduced at Phase 4 (when src/features/** exists
-// and a clean reinstall can add eslint-plugin-boundaries / -import / the TS resolver).
+// Strict flat ESLint config for import ordering and architectural boundaries.
 
 import { FlatCompat } from "@eslint/eslintrc";
+import boundaries from "eslint-plugin-boundaries";
+import importPlugin from "eslint-plugin-import";
 
 const compat = new FlatCompat({ baseDirectory: import.meta.dirname });
 
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     ignores: [
       ".next/**",
@@ -20,6 +16,85 @@ const eslintConfig = [
       "test-results/**",
       "src/styles/tokens/**",
     ],
+  },
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    plugins: {
+      boundaries,
+      import: importPlugin,
+    },
+    settings: {
+      "boundaries/elements": [
+        { partialMatch: false, pattern: "src/app/**", type: "app" },
+        { partialMatch: false, pattern: "src/features/*/**", type: "feature" },
+        { partialMatch: false, pattern: "src/components/**", type: "component" },
+        { partialMatch: false, pattern: "src/lib/**", type: "lib" },
+      ],
+      "import/resolver": {
+        typescript: {
+          project: "./tsconfig.json",
+        },
+      },
+    },
+    rules: {
+      "boundaries/dependencies": [
+        "error",
+        {
+          default: "disallow",
+          policies: [
+            {
+              allow: {
+                to: {
+                  element: { types: { anyOf: ["app", "feature", "component", "lib"] } },
+                },
+              },
+              from: { element: { type: "app" } },
+            },
+            {
+              allow: {
+                to: { element: { types: { anyOf: ["feature", "component", "lib"] } } },
+              },
+              from: { element: { type: "feature" } },
+            },
+            {
+              allow: {
+                to: { element: { types: { anyOf: ["component", "lib"] } } },
+              },
+              from: { element: { type: "component" } },
+            },
+            {
+              allow: { to: { element: { type: "lib" } } },
+              from: { element: { type: "lib" } },
+            },
+          ],
+        },
+      ],
+      "import/order": [
+        "error",
+        {
+          alphabetize: { caseInsensitive: true, order: "asc" },
+          groups: [
+            "builtin",
+            "external",
+            "internal",
+            "parent",
+            "sibling",
+            "index",
+            "object",
+            "type",
+          ],
+          "newlines-between": "always",
+        },
+      ],
+      "max-lines": [
+        "warn",
+        {
+          max: 250,
+          skipBlankLines: true,
+          skipComments: true,
+        },
+      ],
+    },
   },
 ];
 

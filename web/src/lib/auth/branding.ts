@@ -1,4 +1,5 @@
 import { getTenantBranding } from "@/lib/api/academy";
+
 import type { RequestContext } from "@/lib/api/client";
 import type { TenantBranding } from "@/lib/schemas/academy";
 

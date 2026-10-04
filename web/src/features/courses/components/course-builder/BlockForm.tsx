@@ -3,10 +3,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Boxes, FileText, Globe, Image, ListChecks, PlaySquare, Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
+
 import { FieldError, FormError, SelectField, SubmitButton, TextareaField } from "@/components/ui/form-controls";
-import { createBlock } from "../../api";
 import { useFormSubmit } from "@/lib/forms/use-form-submit";
+
+import { createBlock } from "../../api";
 import { blockFormSchema, type Block, type BlockFormInput, type Lesson } from "../../schemas";
+
 import { backendBlockType, blockContent, contentBodyLabel, formFieldError } from "./mappers";
 
 const blockTypes = [

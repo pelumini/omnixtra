@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { TutorPanel } from "@/features/learning";
+
 import { courseId } from "./fixtures";
 
 describe("tutor UI", () => {

@@ -5,13 +5,15 @@ import { Pencil } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 import { Field, FormError, SubmitButton, TextareaField } from "@/components/ui/form-controls";
-import { updateCourse } from "../../api";
 import { useFormSubmit } from "@/lib/forms/use-form-submit";
+
+import { updateCourse } from "../../api";
 import {
   courseDetailsFormSchema,
   type Course,
   type CourseDetailsFormInput,
 } from "../../schemas";
+
 import { formFieldError } from "./mappers";
 
 export function CourseDetailsForm({

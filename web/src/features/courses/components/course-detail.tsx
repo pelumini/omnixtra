@@ -7,9 +7,10 @@ import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Field, FormError, SubmitButton, TextareaField } from "@/components/ui/form-controls";
-import { createLesson } from "../api";
 import { resolveMessage } from "@/lib/forms/messages";
 import { useFormSubmit } from "@/lib/forms/use-form-submit";
+
+import { createLesson } from "../api";
 import {
   firstLessonFormSchema,
   type CourseDetail as CourseDetailType,

@@ -2,7 +2,8 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { AdminDashboard } from "@/components/admin/admin-dashboard";
+import { AdminDashboard } from "@/features/dashboard";
+
 import { analytics, learnerProgress } from "./fixtures";
 
 describe("admin reporting UI", () => {

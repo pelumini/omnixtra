@@ -1,15 +1,17 @@
-import type { Metadata } from "next";
 import { Mulish } from "next/font/google";
 import { headers } from "next/headers";
-import type { CSSProperties } from "react";
-import type { ReactNode } from "react";
 
-import { AppToaster } from "@/components/app/app-toaster";
-import { SessionHeader } from "@/components/app/session-header";
+
+import { AppToaster } from "@/components/layout/app-toaster";
+import { SessionHeader } from "@/components/layout/session-header";
 import { getBrandingOrDefault } from "@/lib/auth/branding";
 import { getSessionOrNull } from "@/lib/auth/session";
 import { e2eFixturesEnabled } from "@/lib/e2e-enabled";
 import { tenantSlugFromHost } from "@/lib/tenant-host";
+
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
+import type { CSSProperties } from "react";
 
 import "./globals.css";
 

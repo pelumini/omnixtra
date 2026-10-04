@@ -3,10 +3,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FileText, Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
+
 import { Field, FormError, SelectField, SubmitButton } from "@/components/ui/form-controls";
-import { createLesson } from "../../api";
 import { useFormSubmit } from "@/lib/forms/use-form-submit";
+
+import { createLesson } from "../../api";
 import { lessonFormSchema, type Lesson, type LessonFormInput, type Section } from "../../schemas";
+
 import { formFieldError } from "./mappers";
 
 export function LessonForm({ courseId, disabled, lessons, onCreated, onSectionChange, sections, selectedSectionId }: { courseId: string; disabled: boolean; lessons: Lesson[]; onCreated: (lesson: Lesson) => void; onSectionChange: (sectionId: string) => void; sections: Section[]; selectedSectionId: string }) {
