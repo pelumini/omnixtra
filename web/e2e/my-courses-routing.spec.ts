@@ -7,6 +7,10 @@ test("unauthenticated root renders the public landing page", async ({ page }) =>
   await expect(page.getByRole("heading", { name: "Launch your own learning academy." })).toBeVisible();
   await expect(page.getByRole("link", { name: "Create your academy" }).first()).toBeVisible();
   await expect(page.getByRole("link", { name: "Join with invite" }).first()).toBeVisible();
+  const openMenu = page.getByRole("button", { name: "Open menu" });
+  if (await openMenu.isVisible()) {
+    await openMenu.click();
+  }
   await expect(page.getByRole("link", { exact: true, name: "Sign in" })).toBeVisible();
 });
 
