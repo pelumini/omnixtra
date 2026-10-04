@@ -8,15 +8,13 @@ test("org admin sees member, billing, and course creation entry points while mem
   const adminNavigation = page.getByRole("complementary");
   await expect(adminNavigation.getByRole("link", { name: "Members" })).toBeVisible();
   await expect(adminNavigation.getByRole("link", { name: "Billing" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "New Course" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Create" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add course" })).toBeVisible();
 
   await page.goto("/e2e/permissions/member");
 
   await expect(page.getByRole("link", { name: "Members" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Billing" })).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "New Course" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Create" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Add course" })).toHaveCount(0);
 });
 
 test("member direct navigation to members sees denial and no member data", async ({ page }) => {
