@@ -4,19 +4,19 @@ test("unauthenticated root renders the public landing page", async ({ page }) =>
   await page.goto("/");
 
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { name: /Launch your fully branded academy/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Launch your own learning academy." })).toBeVisible();
   await expect(page.getByRole("link", { name: "Create your academy" })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Have an invitation/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Join with invite" })).toBeVisible();
   await expect(page.getByRole("link", { exact: true, name: "Sign in" })).toBeVisible();
 });
 
 test("bare localhost login asks for an academy host", async ({ page }) => {
   await page.goto("/login");
 
-  await expect(
-    page.getByText("Open your academy sign-in page, for example acme.localhost:3001/login."),
-  ).toBeVisible();
-  await expect(page.getByRole("button", { name: "Sign in" })).toBeDisabled();
+  await expect(page.getByRole("heading", { name: "Open your academy" })).toBeVisible();
+  await expect(page.getByText("your-academy.localhost:3001/login")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Create an academy" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Use your invitation" })).toBeVisible();
 });
 
 test("authenticated header shows account menu and hides sign in", async ({ page }) => {
@@ -33,14 +33,14 @@ test("server root router sends admins to admin and members to my courses", async
   await page.goto("/?e2e_session=admin");
 
   await expect(page).toHaveURL(/\/admin$/);
-  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /Launch your fully branded academy/ })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: /Welcome, .+!/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Launch your own learning academy." })).toHaveCount(0);
 
   await page.goto("/?e2e_session=member");
 
   await expect(page).toHaveURL(/\/my-courses\?e2e=member$/);
   await expect(page.getByRole("heading", { name: "My Courses" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /Launch your fully branded academy/ })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Launch your own learning academy." })).toHaveCount(0);
 
   await page.goto("/?e2e_session=pending");
 
@@ -69,7 +69,9 @@ test("my courses supports admin visits and zero-total member state", async ({ pa
   await page.goto("/my-courses?e2e=admin");
 
   await expect(page.getByRole("heading", { name: "My Courses" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Members" })).toBeVisible();
+  await expect(
+    page.getByRole("complementary").getByRole("link", { name: "Members" }),
+  ).toBeVisible();
   await expect(page.getByRole("heading", { name: "Courses I own" })).toBeVisible();
 
   await page.goto("/my-courses?e2e=empty");

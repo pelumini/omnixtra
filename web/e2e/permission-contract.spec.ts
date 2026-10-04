@@ -5,8 +5,9 @@ test("org admin sees member, billing, and course creation entry points while mem
 }) => {
   await page.goto("/e2e/permissions/admin");
 
-  await expect(page.getByRole("link", { name: "Members" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Billing" })).toBeVisible();
+  const adminNavigation = page.getByRole("complementary");
+  await expect(adminNavigation.getByRole("link", { name: "Members" })).toBeVisible();
+  await expect(adminNavigation.getByRole("link", { name: "Billing" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "New Course" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Create" })).toBeVisible();
 
