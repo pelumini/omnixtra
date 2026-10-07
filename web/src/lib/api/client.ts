@@ -22,7 +22,10 @@ export type RequestContext = {
 };
 
 export async function getHealth() {
-  const response = await fetch(`${apiUrl()}/health`, { cache: "no-store" });
+  const response = await fetch(`${apiUrl()}/health`, {
+    cache: "no-store",
+    headers: browserTenantHeaders(),
+  });
   const body: unknown = await response.json();
 
   return healthEnvelopeSchema.parse(body);
@@ -36,6 +39,7 @@ export function requestHeaders(context: RequestContext): HeadersInit {
   if (context.host) {
     headers.host = context.host;
     headers["x-forwarded-host"] = context.host;
+    headers["x-tenant-host"] = context.host;
   }
   return headers;
 }
@@ -50,7 +54,7 @@ export async function postJson(
     body: body === null ? undefined : JSON.stringify(body),
     cache: "no-store",
     credentials: "include",
-    headers: { "Content-Type": "application/json", ...headers },
+    headers: { "Content-Type": "application/json", ...browserTenantHeaders(), ...headers },
     method: "POST",
   });
   const responseBody: unknown = await response.json();
@@ -64,6 +68,13 @@ export function apiUrl(): string {
     return serverApiUrl;
   }
   return tenantApiUrl(publicApiUrl, window.location.host);
+}
+
+function browserTenantHeaders(): Record<string, string> {
+  if (typeof window === "undefined") {
+    return {};
+  }
+  return { "x-tenant-host": window.location.host };
 }
 
 export function throwIfApiError(response: Response, body: unknown) {
