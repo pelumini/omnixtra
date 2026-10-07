@@ -41,6 +41,10 @@ export function requestHeaders(context: RequestContext): HeadersInit {
     headers["x-forwarded-host"] = context.host;
     headers["x-tenant-host"] = context.host;
   }
+  const originSecret = process.env.ORIGIN_SECRET;
+  if (originSecret) {
+    headers["x-origin-secret"] = originSecret;
+  }
   return headers;
 }
 
