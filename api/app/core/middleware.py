@@ -63,6 +63,13 @@ async def _resolve_request_tenant_id(request: Request) -> UUID | None:
         request.app.state.settings.app_base_domain,
     )
     if result.is_reserved:
+        # Behind the Vercel->Railway proxy, requests that cannot set x-tenant-host
+        # (EventSource SSE, raw browser fetches) arrive with the proxy's own
+        # reserved host ("api"). For authenticated requests, resolve the tenant
+        # from the access token instead of rejecting.
+        token_tenant_id = _access_token_tenant_id(request)
+        if token_tenant_id is not None and await _active_tenant_exists(token_tenant_id):
+            return token_tenant_id
         msg = "tenant not found"
         raise NotFoundError(msg)
     if result.slug is None:
@@ -81,6 +88,34 @@ async def _resolve_request_tenant_id(request: Request) -> UUID | None:
         msg = "tenant not found"
         raise NotFoundError(msg)
     return tenant.id
+
+
+def _access_token_tenant_id(request: Request) -> UUID | None:
+    authorization = request.headers.get("authorization")
+    token = request.cookies.get(ACCESS_TOKEN_COOKIE)
+    if authorization is not None and authorization.lower().startswith("bearer "):
+        token = authorization.split(" ", maxsplit=1)[1]
+    if token is None:
+        return None
+    try:
+        payload = decode_access_token(token)
+        return UUID(str(payload["tenant_id"]))
+    except (InvalidTokenError, KeyError, ValueError):
+        return None
+
+
+async def _active_tenant_exists(tenant_id: UUID) -> bool:
+    async with async_session_factory() as session:
+        tenant = await session.scalar(
+            select(Tenant)
+            .where(
+                Tenant.id == tenant_id,
+                Tenant.status == TenantStatus.active.value,
+                Tenant.deleted_at.is_(None),
+            )
+            .execution_options(**{TENANT_FILTER_BYPASS_OPTION: True}),
+        )
+    return tenant is not None
 
 
 def _require_token_tenant_match(request: Request, tenant_id: UUID) -> None:
