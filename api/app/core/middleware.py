@@ -23,6 +23,7 @@ TENANT_RESOLUTION_EXEMPT_ROUTES: frozenset[tuple[str, str]] = frozenset(
         ("POST", "/api/v1/tenants"),
     }
 )
+ORIGIN_SECRET_EXEMPT_PATHS: frozenset[str] = frozenset({"/health", "/api/v1/health"})
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
@@ -34,6 +35,16 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
         request_id = set_request_id(request.headers.get("x-request-id"))
+        origin_secret = request.app.state.settings.origin_secret
+        if (
+            origin_secret
+            and request.url.path not in ORIGIN_SECRET_EXEMPT_PATHS
+            and request.headers.get("x-origin-secret") != origin_secret
+        ):
+            clear_request_id()
+            response = _forbidden_response()
+            response.headers["x-request-id"] = request_id
+            return response
         clear_tenant_id()
         try:
             tenant_id = await _resolve_request_tenant_id(request)
@@ -152,3 +163,12 @@ def _not_found_response(exc: NotFoundError) -> JSONResponse:
         meta=Meta.current(include_timestamp=True),
     )
     return JSONResponse(status_code=404, content=body.model_dump(mode="json"))
+
+
+def _forbidden_response() -> JSONResponse:
+    body = ErrorEnvelope(
+        data=None,
+        error=ErrorBody(type="ForbiddenError", message="forbidden", details=[]),
+        meta=Meta.current(include_timestamp=True),
+    )
+    return JSONResponse(status_code=403, content=body.model_dump(mode="json"))
