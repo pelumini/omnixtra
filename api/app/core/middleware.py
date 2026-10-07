@@ -57,7 +57,9 @@ async def _resolve_request_tenant_id(request: Request) -> UUID | None:
         return None
 
     result = resolve_tenant_slug(
-        request.headers.get("x-forwarded-host") or request.headers.get("host", ""),
+        request.headers.get("x-tenant-host")
+        or request.headers.get("x-forwarded-host")
+        or request.headers.get("host", ""),
         request.app.state.settings.app_base_domain,
     )
     if result.is_reserved:
