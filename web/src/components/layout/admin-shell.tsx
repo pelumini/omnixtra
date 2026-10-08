@@ -8,6 +8,7 @@ import type { OrgRole } from "@/lib/schemas/common";
 import type { ReactNode } from "react";
 
 type AdminShellProps = {
+  brandLoading?: boolean;
   branding: TenantBranding;
   children: ReactNode;
   initialCollapsed?: boolean;
@@ -15,6 +16,7 @@ type AdminShellProps = {
 };
 
 export function AdminShell({
+  brandLoading = false,
   branding,
   children,
   initialCollapsed = false,
@@ -22,6 +24,7 @@ export function AdminShell({
 }: AdminShellProps) {
   return (
     <AppShell
+      brandLoading={brandLoading}
       branding={branding}
       initialCollapsed={initialCollapsed}
       viewerRole={viewerRole}

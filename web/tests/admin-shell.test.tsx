@@ -60,6 +60,20 @@ describe("admin shell", () => {
     expect(html).not.toContain(">Dashboard</span>");
     expect(html).not.toContain(">Acme Learning</span>");
   });
+
+  it("skeletons only the brand identity while branding is loading", () => {
+    const html = renderToStaticMarkup(
+      <AdminShell brandLoading branding={branding} viewerRole="tenant_admin">
+        <div>Admin body</div>
+      </AdminShell>,
+    );
+
+    expect(html).toContain('aria-label="Acme Learning home"');
+    expect(html).not.toContain(">Acme Learning</span>");
+    expect(html).toContain("animate-pulse");
+    expect(html).toContain("Dashboard");
+    expect(html).toContain("Admin body");
+  });
 });
 
 describe("admin home", () => {

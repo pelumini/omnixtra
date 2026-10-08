@@ -13,7 +13,7 @@ const loadingBranding: TenantBranding = {
 
 export default function CourseDetailLoading() {
   return (
-    <AdminShell branding={loadingBranding} viewerRole="tenant_admin">
+    <AdminShell brandLoading branding={loadingBranding} viewerRole="tenant_admin">
       <DetailSkeleton />
     </AdminShell>
   );

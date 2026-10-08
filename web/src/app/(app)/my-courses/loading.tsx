@@ -13,7 +13,7 @@ const loadingBranding: TenantBranding = {
 
 export default function MyCoursesLoading() {
   return (
-    <AppShell branding={loadingBranding} viewerRole="member">
+    <AppShell brandLoading branding={loadingBranding} viewerRole="member">
       <main className="mx-auto grid min-h-screen max-w-7xl content-start gap-6 px-5 py-5">
         <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border)] pb-4">
           <div className="flex items-center gap-3">

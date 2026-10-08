@@ -13,7 +13,7 @@ const loadingBranding: TenantBranding = {
 
 export default function AdminDashboardLoading() {
   return (
-    <AdminShell branding={loadingBranding} viewerRole="tenant_admin">
+    <AdminShell brandLoading branding={loadingBranding} viewerRole="tenant_admin">
       <main className="mx-auto grid min-h-screen max-w-[104rem] content-start gap-5 px-5 py-6 lg:px-8">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div className="grid gap-3">
