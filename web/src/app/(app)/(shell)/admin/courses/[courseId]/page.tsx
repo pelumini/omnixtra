@@ -1,14 +1,9 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
-import { AdminShell } from "@/components/layout/admin-shell";
 import { InvitationPending } from "@/features/auth";
 import { CourseDetail, getCourse } from "@/features/courses";
-import { getBrandingOrDefault } from "@/lib/auth/branding";
 import { getSessionOrNull } from "@/lib/auth/session";
-
-import type { TenantBranding } from "@/lib/schemas/academy";
-import type { OrgRole } from "@/lib/schemas/common";
 
 type CourseDetailPageProps = {
   params: Promise<{
@@ -16,15 +11,9 @@ type CourseDetailPageProps = {
   }>;
 };
 
-const fallbackBranding: TenantBranding = {
-  locale: "en",
-  logo_url: null,
-  primary_color: "#584ce1",
-  tenant_name: "Academy",
-  time_zone: "UTC",
-};
-
-export default async function CourseDetailPage({ params }: CourseDetailPageProps) {
+export default async function CourseDetailPage({
+  params,
+}: CourseDetailPageProps) {
   const { courseId } = await params;
   const requestHeaders = await headers();
   const host = requestHeaders.get("host") ?? undefined;
@@ -39,24 +28,18 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
     return <InvitationPending session={authSession} />;
   }
 
-  const [branding, course] = await Promise.all([
-    getBrandingOrDefault(context, fallbackBranding),
-    loadCourse(courseId, context),
-  ]);
+  const course = await loadCourse(courseId, context);
   if (course === null) {
     notFound();
   }
 
-  const viewerRole: OrgRole = authSession.membership.org_role;
-
-  return (
-    <AdminShell branding={branding} viewerRole={viewerRole}>
-      <CourseDetail course={course.data} />
-    </AdminShell>
-  );
+  return <CourseDetail course={course.data} />;
 }
 
-async function loadCourse(courseId: string, context: { cookie?: string; host?: string }) {
+async function loadCourse(
+  courseId: string,
+  context: { cookie?: string; host?: string },
+) {
   try {
     return await getCourse(courseId, context);
   } catch {

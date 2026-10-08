@@ -11,7 +11,7 @@ vi.mock("sonner", () => ({
   toast: sonnerToast,
 }));
 
-import { AdminShell } from "@/components/layout/admin-shell";
+import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/form-controls";
 import { CoursesListSkeleton, DetailSkeleton } from "@/components/ui/skeletons";
@@ -52,10 +52,12 @@ describe("loading and feedback standard", () => {
         Invite member
       </Button>,
     );
-    const disabledHtml = renderToStaticMarkup(<Button disabled>Invite member</Button>);
+    const disabledHtml = renderToStaticMarkup(
+      <Button disabled>Invite member</Button>,
+    );
 
     expect(defaultHtml).toContain("cursor-pointer");
-    expect(processingHtml).toContain("aria-busy=\"true\"");
+    expect(processingHtml).toContain('aria-busy="true"');
     expect(processingHtml).toContain("disabled");
     expect(processingHtml).toContain("Processing...");
     expect(processingHtml).not.toContain("Invite member");
@@ -80,14 +82,16 @@ describe("loading and feedback standard", () => {
     feedbackToast.error("Course could not be created.");
 
     expect(sonnerToast.success).toHaveBeenCalledWith("Course created.");
-    expect(sonnerToast.error).toHaveBeenCalledWith("Course could not be created.");
+    expect(sonnerToast.error).toHaveBeenCalledWith(
+      "Course could not be created.",
+    );
   });
 
   it("links the context-aware academy logo to admin home", () => {
     const html = renderToStaticMarkup(
-      <AdminShell branding={branding} viewerRole="tenant_admin">
+      <AppShell branding={branding} viewerRole="tenant_admin">
         <main>Dashboard</main>
-      </AdminShell>,
+      </AppShell>,
     );
 
     expect(html).toContain('href="/admin"');

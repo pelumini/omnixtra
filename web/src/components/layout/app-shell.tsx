@@ -15,7 +15,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
-import { Skeleton } from "@/components/ui/skeletons";
 import { canManageBilling, canManageMembers } from "@/lib/permissions";
 import { homeForOrgRole } from "@/lib/routing/home";
 
@@ -24,7 +23,6 @@ import type { OrgRole } from "@/lib/schemas/common";
 import type { CSSProperties, ReactNode } from "react";
 
 type AppShellProps = {
-  brandLoading?: boolean;
   branding: TenantBranding;
   children: ReactNode;
   initialCollapsed?: boolean;
@@ -40,14 +38,33 @@ type AppNavItem = {
 
 const navItems: AppNavItem[] = [
   { href: "/admin", icon: Home, label: "Dashboard", roles: ["tenant_admin"] },
-  { href: "/my-courses", icon: GraduationCap, label: "My Courses", roles: ["tenant_admin", "member"] },
-  { href: "/admin/courses", icon: BookOpen, label: "Courses", roles: ["tenant_admin", "member"] },
-  { href: "/admin/members", icon: Users, label: "Members", roles: ["tenant_admin"] },
-  { href: "/pricing", icon: CreditCard, label: "Billing", roles: ["tenant_admin"] },
+  {
+    href: "/my-courses",
+    icon: GraduationCap,
+    label: "My Courses",
+    roles: ["tenant_admin", "member"],
+  },
+  {
+    href: "/admin/courses",
+    icon: BookOpen,
+    label: "Courses",
+    roles: ["tenant_admin", "member"],
+  },
+  {
+    href: "/admin/members",
+    icon: Users,
+    label: "Members",
+    roles: ["tenant_admin"],
+  },
+  {
+    href: "/pricing",
+    icon: CreditCard,
+    label: "Billing",
+    roles: ["tenant_admin"],
+  },
 ];
 
 export function AppShell({
-  brandLoading = false,
   branding,
   children,
   initialCollapsed = false,
@@ -83,33 +100,32 @@ export function AppShell({
               className="flex min-w-0 items-center gap-3 text-[var(--color-text-main-900)]"
               href={homeHref}
             >
-              {brandLoading ? (
-                <>
-                  <Skeleton className="size-10 shrink-0" />
-                  {!collapsed ? <Skeleton className="h-4 w-24" /> : null}
-                </>
-              ) : (
-                <>
-                  <span
-                    aria-hidden="true"
-                    className="grid size-10 shrink-0 place-items-center rounded-md bg-[var(--color-primary-lighter)] bg-contain bg-center bg-no-repeat text-sm font-bold text-[var(--primary)]"
-                    style={
-                      branding.logo_url
-                        ? ({ backgroundImage: `url(${branding.logo_url})` } as CSSProperties)
-                        : undefined
-                    }
-                  >
-                    {branding.logo_url ? null : branding.tenant_name.slice(0, 1).toUpperCase()}
-                  </span>
-                  {!collapsed ? (
-                    <span className="truncate text-base font-semibold">{branding.tenant_name}</span>
-                  ) : null}
-                </>
-              )}
+              <span
+                aria-hidden="true"
+                className="grid size-10 shrink-0 place-items-center rounded-md bg-[var(--color-primary-lighter)] bg-contain bg-center bg-no-repeat text-sm font-bold text-[var(--primary)]"
+                style={
+                  branding.logo_url
+                    ? ({
+                        backgroundImage: `url(${branding.logo_url})`,
+                      } as CSSProperties)
+                    : undefined
+                }
+              >
+                {branding.logo_url
+                  ? null
+                  : branding.tenant_name.slice(0, 1).toUpperCase()}
+              </span>
+              {!collapsed ? (
+                <span className="truncate text-base font-semibold">
+                  {branding.tenant_name}
+                </span>
+              ) : null}
             </Link>
             <button
               aria-expanded={!collapsed}
-              aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
+              aria-label={
+                collapsed ? "Expand navigation" : "Collapse navigation"
+              }
               className="ml-auto hidden size-9 place-items-center rounded-md border border-[var(--color-stroke-soft-200)] text-[var(--color-icon-sub-500)] hover:bg-[var(--color-bg-weak-100)] hover:text-[var(--color-icon-strong-900)] md:grid"
               onClick={() => setCollapsed((value) => !value)}
               type="button"

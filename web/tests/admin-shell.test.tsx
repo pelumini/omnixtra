@@ -2,7 +2,6 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { AdminShell } from "@/components/layout/admin-shell";
 import { AppShell } from "@/components/layout/app-shell";
 import { AdminHome } from "@/features/dashboard";
 
@@ -50,29 +49,15 @@ describe("admin shell", () => {
 
   it("can render collapsed navigation without visible labels", () => {
     const html = renderToStaticMarkup(
-      <AdminShell branding={branding} initialCollapsed viewerRole="tenant_admin">
+      <AppShell branding={branding} initialCollapsed viewerRole="tenant_admin">
         <div>Admin body</div>
-      </AdminShell>,
+      </AppShell>,
     );
 
     expect(html).toContain('aria-expanded="false"');
     expect(html).toContain('title="Dashboard"');
     expect(html).not.toContain(">Dashboard</span>");
     expect(html).not.toContain(">Acme Learning</span>");
-  });
-
-  it("skeletons only the brand identity while branding is loading", () => {
-    const html = renderToStaticMarkup(
-      <AdminShell brandLoading branding={branding} viewerRole="tenant_admin">
-        <div>Admin body</div>
-      </AdminShell>,
-    );
-
-    expect(html).toContain('aria-label="Acme Learning home"');
-    expect(html).not.toContain(">Acme Learning</span>");
-    expect(html).toContain("animate-pulse");
-    expect(html).toContain("Dashboard");
-    expect(html).toContain("Admin body");
   });
 });
 
