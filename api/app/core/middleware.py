@@ -36,6 +36,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         request_id = set_request_id(request.headers.get("x-request-id"))
         origin_secret = request.app.state.settings.origin_secret
+        response: Response
         if (
             origin_secret
             and request.url.path not in ORIGIN_SECRET_EXEMPT_PATHS

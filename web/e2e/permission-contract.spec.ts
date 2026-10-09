@@ -22,7 +22,7 @@ test("member direct navigation to members sees denial and no member data", async
 
   await expect(page.getByRole("heading", { name: "This area is for admins" })).toBeVisible();
   await expect(page.getByText("00000000-0000-0000-0000-000000000921")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Invite member" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Create user" })).toHaveCount(0);
 });
 
 test("admin at admin-seat limit cannot invite another admin but can still choose member", async ({
@@ -30,13 +30,14 @@ test("admin at admin-seat limit cannot invite another admin but can still choose
 }) => {
   await page.goto("/e2e/permissions/admin-seat-limit");
 
+  const createUserDialog = page.getByRole("dialog", { name: "Create user" });
   await expect(page.getByText("You've used all 3 admin seats")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Send invitation" })).toBeDisabled();
+  await expect(createUserDialog.getByRole("button", { name: "Create user" })).toBeDisabled();
 
   await page.getByLabel("Role").selectOption("member");
 
   await expect(page.getByText("You've used all 3 admin seats")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Send invitation" })).toBeDisabled();
+  await expect(createUserDialog.getByRole("button", { name: "Create user" })).toBeDisabled();
 });
 
 test("learner course surface omits authoring and direct builder access is denied without data", async ({
