@@ -73,10 +73,15 @@ export const signInSchema = z.object({
 
 export type SignInInput = z.infer<typeof signInSchema>;
 
-export const acceptInvitationSchema = z.object({
-  fullName: fullNameSchema,
-  password: passwordSchema,
-});
+export const acceptInvitationSchema = z
+  .object({
+    password: passwordSchema,
+    confirmPassword: passwordSchema,
+  })
+  .refine((input) => input.password === input.confirmPassword, {
+    message: "password_mismatch",
+    path: ["confirmPassword"],
+  });
 
 export type AcceptInvitationInput = z.infer<typeof acceptInvitationSchema>;
 export type AuthResponse = z.infer<typeof authResponseSchema>;

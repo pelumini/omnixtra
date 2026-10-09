@@ -33,13 +33,14 @@ export function AcceptInvitationView({ preview, token }: AcceptInvitationViewPro
 
 function AcceptForm({ preview, token }: { preview: InvitationPreview; token: string }) {
   const {
-    formState: { errors },
+    formState: { errors, isValid },
     handleSubmit,
     register,
     setError,
+    watch,
   } = useForm<AcceptInvitationInput>({
-    defaultValues: { fullName: "", password: "" },
-    mode: "onTouched",
+    defaultValues: { confirmPassword: "", password: "" },
+    mode: "onChange",
     reValidateMode: "onChange",
     resolver: zodResolver(acceptInvitationSchema),
   });
@@ -47,7 +48,6 @@ function AcceptForm({ preview, token }: { preview: InvitationPreview; token: str
     action: (input: AcceptInvitationInput) =>
       acceptInvitation({
         email: preview.email,
-        full_name: input.fullName,
         password: input.password,
         token,
       }),
@@ -59,29 +59,28 @@ function AcceptForm({ preview, token }: { preview: InvitationPreview; token: str
   });
   const fieldError = (field: keyof AcceptInvitationInput) => {
     const message = errors[field]?.message;
+    if (message === "password_mismatch") {
+      return "Passwords must match.";
+    }
     return message ? resolveMessage(field, message) : undefined;
   };
+  const password = watch("password");
+  const confirmPassword = watch("confirmPassword");
 
   return (
     <AuthShell
-      subtitle={`You have been invited to join ${preview.organization_name}.`}
+      subtitle={`Activating your account for ${preview.first_name} ${preview.last_name}.`}
       title={`Join ${preview.organization_name}`}
     >
       <form className="space-y-4" noValidate onSubmit={handleSubmit(submit)}>
         <FormError>{formError}</FormError>
         <fieldset className="space-y-4" disabled={isSubmitting}>
           <div>
-            <span className="block text-xs font-medium text-slate-600">Invited email</span>
+            <span className="block text-xs font-medium text-slate-600">Account email</span>
             <p className="mt-1 flex h-10 items-center truncate rounded-md border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-slate-700">
               {preview.email}
             </p>
           </div>
-          <Field
-            autoComplete="name"
-            error={fieldError("fullName")}
-            label="Full name"
-            registration={register("fullName")}
-          />
           <Field
             autoComplete="new-password"
             error={fieldError("password")}
@@ -90,10 +89,21 @@ function AcceptForm({ preview, token }: { preview: InvitationPreview; token: str
             registration={register("password")}
             type="password"
           />
+          <Field
+            autoComplete="new-password"
+            error={fieldError("confirmPassword")}
+            label="Confirm password"
+            registration={register("confirmPassword")}
+            type="password"
+          />
         </fieldset>
 
-        <SubmitButton isSubmitting={isSubmitting} pendingLabel="Joining...">
-          Accept invitation and join
+        <SubmitButton
+          disabled={!isValid || password.length < 12 || confirmPassword !== password}
+          isSubmitting={isSubmitting}
+          pendingLabel="Activating..."
+        >
+          Activate account
         </SubmitButton>
       </form>
     </AuthShell>
@@ -104,10 +114,10 @@ function InvalidInvitation() {
   return (
     <AuthShell
       subtitle="Ask your academy admin for a fresh invitation link."
-      title="This invitation is not valid"
+      title="This link is no longer valid"
     >
       <p className="text-sm text-slate-600">
-        The invitation link cannot be used. It may be incorrect or no longer active.
+        The activation link may be incorrect, expired, or already used.
       </p>
     </AuthShell>
   );

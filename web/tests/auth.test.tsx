@@ -57,6 +57,8 @@ describe("auth UI", () => {
           preview={{
             organization_name: "Acme Learning",
             email: "learner@example.com",
+            first_name: "Learner",
+            last_name: "Example",
           }}
           token={"invite_token_123"}
         />,
@@ -67,6 +69,6 @@ describe("auth UI", () => {
     );
     expect(
       renderToStaticMarkup(<AcceptInvitationView preview={null} token={"invite_token_123"} />),
-    ).toContain("This invitation is not valid");
+    ).toContain("This link is no longer valid");
   });
 });

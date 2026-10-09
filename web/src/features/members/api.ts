@@ -9,12 +9,12 @@ import { authEnvelopeSchema } from "@/lib/schemas/auth";
 
 import {
   invitationAcceptRequestSchema,
-  invitationCreateEnvelopeSchema,
-  invitationCreateRequestSchema,
+  userCreateEnvelopeSchema,
+  userCreateRequestSchema,
   invitationPreviewEnvelopeSchema,
   membershipsEnvelopeSchema,
   type InvitationAcceptRequest,
-  type InvitationCreateRequest,
+  type UserCreateRequest,
 } from "./schemas";
 
 export async function acceptInvitation(request: InvitationAcceptRequest, context: RequestContext = {}) {
@@ -53,9 +53,24 @@ export async function getMemberships(context: RequestContext = {}) {
   return membershipsEnvelopeSchema.parse(body);
 }
 
-export async function createInvitation(request: InvitationCreateRequest, context: RequestContext = {}) {
-  const body = invitationCreateRequestSchema.parse(request);
-  const response = await postJson("/api/v1/tenant/invitations", body, requestHeaders(context));
+export async function createUser(
+  input: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    orgRole: "tenant_admin" | "member";
+  },
+  context: RequestContext = {},
+) {
+  const body: UserCreateRequest = userCreateRequestSchema.parse({
+    email: input.email,
+    first_name: input.firstName,
+    last_name: input.lastName,
+    phone: input.phone,
+    org_role: input.orgRole,
+  });
+  const response = await postJson("/api/v1/tenant/users", body, requestHeaders(context));
 
-  return invitationCreateEnvelopeSchema.parse(response);
+  return userCreateEnvelopeSchema.parse(response);
 }

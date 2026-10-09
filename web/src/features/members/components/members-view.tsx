@@ -1,27 +1,17 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Copy, Mail, ShieldCheck, UserPlus, Users } from "lucide-react";
+import { Mail, ShieldCheck, Users } from "lucide-react";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
 
 import { DeniedState } from "@/components/layout/denied-state";
-import { Button } from "@/components/ui/button";
-import { Field, FormError, SelectField, SubmitButton } from "@/components/ui/form-controls";
-import { feedbackToast } from "@/lib/feedback/toast";
-import { resolveMessage } from "@/lib/forms/messages";
-import { useFormSubmit } from "@/lib/forms/use-form-submit";
 import { canManageMembers } from "@/lib/permissions";
-import { appBaseDomain, tenantSlugFromHost } from "@/lib/tenant-host";
 import { cn } from "@/lib/utils";
 
-import { createInvitation } from "../api";
-import {
-  inviteMemberFormSchema,
-  type InviteMemberFormInput,
-  type Membership,
-} from "../schemas";
+import { getMemberships } from "../api";
 
+import { ActivationSuccess, CreateUserDialog } from "./create-user-dialog";
+
+import type { Membership } from "../schemas";
 import type { OrgRole } from "@/lib/schemas/common";
 import type { ReactNode } from "react";
 
@@ -49,6 +39,7 @@ export function MembersView({
 }: MembersViewProps) {
   const [members, setMembers] = useState(initialMembers);
   const [message, setMessage] = useState(loadError);
+  const [activationLink, setActivationLink] = useState<string | null>(null);
   const activeCount = members.filter((member) => member.status === "active").length;
   const invitedCount = members.filter((member) => member.status === "invited").length;
 
@@ -71,10 +62,16 @@ export function MembersView({
           <h1 className="mt-2 text-3xl font-bold text-[#0c1726]">Members</h1>
           <p className="mt-2 text-sm text-[#52657a]">People in your academy and their access.</p>
         </div>
-        <InviteControl
+        <CreateUserDialog
           initialOpen={initialInviteOpen}
           initialRole={initialInviteRole}
-          onInvite={(member) => setMembers((current) => [...current, member])}
+          onCreated={(member, link) => {
+            setMembers((current) => [...current.filter((item) => item.id !== member.id), member]);
+            setActivationLink(link);
+            void getMemberships()
+              .then((response) => setMembers(response.data))
+              .catch(() => undefined);
+          }}
           onMessage={setMessage}
           seats={seats}
         />
@@ -84,6 +81,10 @@ export function MembersView({
         <div className="rounded-md border border-[#cbd5e1] bg-white px-4 py-3 text-sm text-[#52657a]">
           {message}
         </div>
+      ) : null}
+
+      {activationLink ? (
+        <ActivationSuccess activationLink={activationLink} onDismiss={() => setActivationLink(null)} />
       ) : null}
 
       <section className="grid gap-4 md:grid-cols-3">
@@ -129,7 +130,6 @@ function MemberTable({ members }: { members: Membership[] }) {
             <th className="px-5 py-3 font-semibold">Member</th>
             <th className="px-5 py-3 font-semibold">Role</th>
             <th className="px-5 py-3 font-semibold">Status</th>
-            <th className="px-5 py-3 font-semibold">Invitation</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[#edf1f5]">
@@ -153,9 +153,6 @@ function MemberTable({ members }: { members: Membership[] }) {
               </td>
               <td className="px-5 py-4">
                 <StatusBadge status={member.status} />
-              </td>
-              <td className="px-5 py-4">
-                <CopyInviteLink member={member} />
               </td>
             </tr>
           ))}
@@ -193,169 +190,8 @@ function StatusBadge({ status }: { status: Membership["status"] }) {
           active ? "bg-[var(--primary)]" : "bg-[var(--color-state-warning)]",
         )}
       />
-      {active ? "Active" : "Invited"}
+      {active ? "Active" : "Pending"}
     </span>
-  );
-}
-
-function CopyInviteLink({ member }: { member: Membership }) {
-  if (member.status !== "invited" || member.invitation_token === null) {
-    return <span className="text-xs text-[#94a3b8]">-</span>;
-  }
-
-  return (
-    <button
-      className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--primary)] hover:underline"
-      onClick={async () => {
-        await navigator.clipboard.writeText(invitationLink(member.invitation_token ?? ""));
-        feedbackToast.success("Invite link copied");
-      }}
-      type="button"
-    >
-      <Copy aria-hidden="true" className="size-4" />
-      Copy invite link
-    </button>
-  );
-}
-
-function invitationLink(token: string) {
-  const slug = tenantSlugFromHost(window.location.host);
-  const subdomain = slug ?? "your-academy";
-  const port = window.location.port ? `:${window.location.port}` : "";
-  return `${window.location.protocol}//${subdomain}.${appBaseDomain()}${port}/join?token=${encodeURIComponent(token)}`;
-}
-
-function InviteControl({
-  initialOpen = false,
-  initialRole = "member",
-  onInvite,
-  onMessage,
-  seats,
-}: {
-  initialOpen?: boolean;
-  initialRole?: OrgRole;
-  onInvite: (member: Membership) => void;
-  onMessage: (message: string | null) => void;
-  seats: SeatUsage;
-}) {
-  const [open, setOpen] = useState(initialOpen);
-  const {
-    formState: { errors },
-    handleSubmit,
-    register,
-    reset,
-    setError,
-    watch,
-  } = useForm<InviteMemberFormInput>({
-    defaultValues: { email: "", orgRole: initialRole },
-    mode: "onTouched",
-    reValidateMode: "onChange",
-    resolver: zodResolver(inviteMemberFormSchema),
-  });
-  const email = watch("email");
-  const role = watch("orgRole");
-
-  const atAdminLimit = seats.adminSeatsUsed >= seats.adminSeatsIncluded;
-  const inviteBlocked = role === "tenant_admin" && atAdminLimit;
-  const { formError, isSubmitting, submit } = useFormSubmit({
-    action: (input: InviteMemberFormInput) =>
-      createInvitation({ email: input.email, org_role: input.orgRole }),
-    errorMessage: "Invitation could not be sent.",
-    onSuccess: (result) => {
-      const invitation = result.data;
-      if (
-        invitation.invitation_id !== null &&
-        invitation.email !== null &&
-        invitation.org_role !== null &&
-        invitation.status !== null
-      ) {
-        onInvite({
-          email: invitation.email,
-          full_name: null,
-          id: invitation.invitation_id,
-          invitation_token: invitation.token,
-          org_role: invitation.org_role,
-          status: invitation.status,
-          user_id: null,
-        });
-      }
-      onMessage("Invitation sent");
-      setOpen(false);
-      reset({ email: "", orgRole: "member" });
-    },
-    setError,
-    successMessage: "Invitation sent.",
-  });
-  const fieldError = (field: keyof InviteMemberFormInput) => {
-    const message = errors[field]?.message;
-    return message ? resolveMessage(field, message) : undefined;
-  };
-
-  if (!open) {
-    return (
-      <Button className="gap-2" onClick={() => setOpen(true)}>
-        <UserPlus aria-hidden="true" className="size-4" />
-        Invite member
-      </Button>
-    );
-  }
-
-  return (
-    <form
-      className="w-full rounded-lg border border-[#cbd5e1] bg-white p-4 shadow-sm sm:w-96"
-      noValidate
-      onSubmit={handleSubmit((input) => {
-        onMessage(null);
-        return submit(input);
-      })}
-    >
-      <div className="mb-4">
-        <h2 className="text-base font-bold text-[#0c1726]">Invite member</h2>
-        <p className="mt-1 text-sm text-[#52657a]">Send an invitation and assign org access.</p>
-      </div>
-      <FormError>{formError}</FormError>
-      <fieldset className="grid gap-3" disabled={isSubmitting}>
-        <Field
-          error={fieldError("email")}
-          label="Email"
-          placeholder="name@company.com"
-          registration={register("email")}
-          type="email"
-        />
-        <SelectField error={fieldError("orgRole")} label="Role" registration={register("orgRole")}>
-          <option value="member">Member</option>
-          <option value="tenant_admin">Admin</option>
-        </SelectField>
-      </fieldset>
-
-      {inviteBlocked ? (
-        <p className="mt-2 text-xs text-amber-700">
-          You&apos;ve used all {seats.adminSeatsIncluded} admin seats on your plan. Upgrade
-          your plan or invite this person as a member.
-        </p>
-      ) : null}
-
-      <div className="mt-4 flex items-center gap-2">
-        <SubmitButton
-          className="w-auto"
-          disabled={inviteBlocked || email.trim().length === 0}
-          isSubmitting={isSubmitting}
-          pendingLabel="Sending..."
-        >
-          Send invitation
-        </SubmitButton>
-        <button
-          className="rounded-md px-3 py-2 text-sm text-[#52657a] hover:bg-[#f3f6f9] hover:text-[#0c1726]"
-          onClick={() => {
-            setOpen(false);
-            reset({ email: "", orgRole: "member" });
-          }}
-          type="button"
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
   );
 }
 
@@ -367,7 +203,7 @@ function EmptyState() {
       </div>
       <h2 className="mt-5 text-base font-bold text-[#0c1726]">No members yet</h2>
       <p className="mx-auto mt-2 max-w-sm text-sm text-[#52657a]">
-        Invite the first person to your academy, then copy their invitation link to share it.
+        Create the first user in your academy and assign their access.
       </p>
     </div>
   );

@@ -5,7 +5,7 @@ import {
   firstLessonFormSchema,
 } from "@/features/courses";
 import { quizAttemptFormSchema, tutorQuestionFormSchema } from "@/features/learning";
-import { inviteMemberFormSchema } from "@/features/members";
+import { createUserFormSchema } from "@/features/members";
 import { resolveMessage } from "@/lib/forms/messages";
 import { partitionServerError } from "@/lib/forms/server-errors";
 import {
@@ -71,8 +71,8 @@ describe("form standard helpers", () => {
         schema: createAcademySchema,
       },
       {
-        field: "fullName",
-        input: { fullName: "", password: "" },
+        field: "password",
+        input: { confirmPassword: "", password: "" },
         schema: acceptInvitationSchema,
       },
       {
@@ -87,8 +87,8 @@ describe("form standard helpers", () => {
       },
       {
         field: "email",
-        input: { email: "", orgRole: "member" },
-        schema: inviteMemberFormSchema,
+        input: { email: "", firstName: "", lastName: "", phone: "", orgRole: "member" },
+        schema: createUserFormSchema,
       },
       {
         field: "blockId",

@@ -85,11 +85,11 @@ describe("ADR-003 frontend permissions", () => {
     );
 
     expect(html).toContain("This area is for admins");
-    expect(html).not.toContain("Invite member");
+    expect(html).not.toContain("Create user");
     expect(html).not.toContain("00000000-0000-0000-0000-000000000112");
   });
 
-  it("renders member identity and pending invite copy action without exposing ids", () => {
+  it("renders member identity and pending status without exposing ids", () => {
     const html = renderToStaticMarkup(
       <MembersView
         initialMembers={[
@@ -104,12 +104,12 @@ describe("ADR-003 frontend permissions", () => {
           },
           {
             email: "pending@example.com",
-            full_name: null,
+            full_name: "Pending Member",
             id: "00000000-0000-0000-0000-000000000131",
-            invitation_token: "pending-token",
+            invitation_token: null,
             org_role: "tenant_admin",
             status: "invited",
-            user_id: null,
+            user_id: "00000000-0000-0000-0000-000000000132",
           },
         ]}
         loadError={null}
@@ -121,8 +121,9 @@ describe("ADR-003 frontend permissions", () => {
     expect(html).toContain("Active Member");
     expect(html).toContain("active@example.com");
     expect(html).toContain("pending@example.com");
-    expect(html).toContain("Invited");
-    expect(html).toContain("Copy invite link");
+    expect(html).toContain("Pending Member");
+    expect(html).toContain("Pending");
+    expect(html).not.toContain("Copy invite link");
     expect(html).not.toContain("00000000-0000-0000-0000-000000000122");
     expect(html).not.toContain("00000000-0000-0000-0000-000000000131");
   });
@@ -140,7 +141,7 @@ describe("ADR-003 frontend permissions", () => {
     );
 
     expect(html).toContain("used all 1 admin seats");
-    expect(html).toContain("Send invitation");
+    expect(html).toContain("Create user");
   });
 
   it("hides academy-wide course creation from ordinary members", () => {

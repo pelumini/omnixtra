@@ -30,9 +30,9 @@ import {
 } from "@/features/learning";
 import {
   invitationAcceptRequestSchema,
-  invitationCreateEnvelopeSchema,
   invitationPreviewEnvelopeSchema,
   membershipsEnvelopeSchema,
+  userCreateEnvelopeSchema,
 } from "@/features/members";
 import {
   tenantBrandingEnvelopeSchema,
@@ -127,7 +127,6 @@ describe("ADR-003 identity schemas", () => {
     expect(
       invitationAcceptRequestSchema.parse({
         email: "member@example.com",
-        full_name: "Member User",
         password: "correct horse battery staple",
         token: "x".repeat(32),
       }).email,
@@ -151,25 +150,29 @@ describe("ADR-003 identity schemas", () => {
     ).toBe("acme");
 
     expect(
-      invitationCreateEnvelopeSchema.parse({
+      userCreateEnvelopeSchema.parse({
         data: {
-          accepted: true,
+          activation_link: "https://acme.example.com/join?token=raw-token",
           email: "member@example.com",
-          invitation_id: "00000000-0000-0000-0000-000000000005",
+          first_name: "Member",
+          id: "00000000-0000-0000-0000-000000000005",
+          last_name: "User",
           org_role: "member",
+          phone: "+44000000000",
           status: "invited",
-          token: "raw-token",
         },
         error: null,
         meta: { request_id: "req_test", timestamp: null },
-      }).data.accepted,
-    ).toBe(true);
+      }).data.status,
+    ).toBe("invited");
 
     expect(
       invitationPreviewEnvelopeSchema.parse({
         data: {
           organization_name: "Acme",
           email: "member@example.com",
+          first_name: "Member",
+          last_name: "User",
         },
         error: null,
         meta: { request_id: "req_test", timestamp: null },
@@ -177,6 +180,8 @@ describe("ADR-003 identity schemas", () => {
     ).toEqual({
       organization_name: "Acme",
       email: "member@example.com",
+      first_name: "Member",
+      last_name: "User",
     });
 
     expect(
@@ -193,12 +198,12 @@ describe("ADR-003 identity schemas", () => {
           },
           {
             email: "pending@example.com",
-            full_name: null,
+            full_name: "Pending User",
             id: "00000000-0000-0000-0000-000000000006",
-            invitation_token: "raw-token",
+            invitation_token: null,
             org_role: "member",
             status: "invited",
-            user_id: null,
+            user_id: "00000000-0000-0000-0000-000000000007",
           },
         ],
         error: null,
