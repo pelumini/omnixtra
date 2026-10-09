@@ -9,6 +9,7 @@ from app.auth.dependencies import (
     require_permission,
 )
 from app.core.database import get_session
+from app.core.email import EmailProvider, get_email_provider
 from app.shared.responses import Envelope, Meta
 from app.tenancy.schemas import (
     MembershipResponse,
@@ -16,12 +17,12 @@ from app.tenancy.schemas import (
     TenantBrandingUpdateRequest,
     TenantCreateRequest,
     TenantCreateResponse,
-    TenantInvitationCreateRequest,
-    TenantInvitationCreateResponse,
+    TenantUserCreateRequest,
+    TenantUserCreateResponse,
 )
 from app.tenancy.services import (
-    create_invitation,
     create_tenant,
+    create_user,
     get_tenant_branding,
     list_memberships,
     update_tenant_branding,
@@ -30,6 +31,7 @@ from app.tenancy.services import (
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 PrincipalDep = Annotated[AuthPrincipal, Depends(require_permission("tenant:manage"))]
 UserManagerDep = Annotated[AuthPrincipal, Depends(require_permission("users:manage"))]
+EmailProviderDep = Annotated[EmailProvider, Depends(get_email_provider)]
 
 router = APIRouter(tags=["tenant-owned"])
 
@@ -76,13 +78,21 @@ async def list_memberships_route(
     return Envelope(data=response, error=None, meta=Meta.current())
 
 
-@router.post("/tenant/invitations")
-async def create_invitation_route(
-    request: TenantInvitationCreateRequest,
+@router.post("/tenant/users")
+async def create_user_route(
+    request: TenantUserCreateRequest,
     session: SessionDep,
     principal: UserManagerDep,
-) -> Envelope[TenantInvitationCreateResponse]:
-    response = await create_invitation(session, request, actor_id=principal.user_id)
+    email_provider: EmailProviderDep,
+    http_request: Request,
+) -> Envelope[TenantUserCreateResponse]:
+    response = await create_user(
+        session,
+        request,
+        actor_id=principal.user_id,
+        email_provider=email_provider,
+        settings=http_request.app.state.settings,
+    )
     return Envelope(data=response, error=None, meta=Meta.current())
 
 

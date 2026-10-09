@@ -6,5 +6,6 @@ def test_tenancy_routes_are_registered_under_api_v1() -> None:
 
     assert "/api/v1/tenants" in paths
     assert "/api/v1/tenant/branding" in paths
-    assert "/api/v1/tenant/invitations" in paths
+    assert "/api/v1/tenant/users" in paths
+    assert "/api/v1/tenant/invitations" not in paths
     assert "/api/v1/tenant/memberships" in paths

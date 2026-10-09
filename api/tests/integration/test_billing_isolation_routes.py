@@ -106,7 +106,7 @@ def test_tenant_b_does_not_see_tenant_a_subscription(monkeypatch: pytest.MonkeyP
 
 
 @pytest.mark.integration
-@covers_isolation("POST", "/api/v1/tenant/invitations")
+@covers_isolation("POST", "/api/v1/tenant/users")
 def test_admin_seat_limit_counts_tenant_admin_memberships(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -130,9 +130,6 @@ def test_admin_seat_limit_counts_tenant_admin_memberships(
         email = f"tenant-admin-{index}-{tenant.slug}@example.com"
         invitation_response = _invite_admin(client, tenant, email)
         assert invitation_response.status_code == 200
-        token = invitation_response.json()["data"]["token"]
-        accept_response = _accept_invitation(client, tenant.slug, token, email)
-        assert accept_response.status_code == 200
 
     rejected_response = _invite_admin(
         client,
@@ -180,22 +177,15 @@ def _headers(slug: str, access_token: str) -> dict[str, str]:
 
 def _invite_admin(client: TestClient, tenant: TenantAccount, email: str) -> Response:
     return client.post(
-        "/api/v1/tenant/invitations",
-        json={"email": email, "org_role": "tenant_admin"},
-        headers=_headers(tenant.slug, tenant.access_token),
-    )
-
-
-def _accept_invitation(client: TestClient, slug: str, token: str, email: str) -> Response:
-    return client.post(
-        "/api/v1/auth/invitations/accept",
+        "/api/v1/tenant/users",
         json={
-            "token": token,
             "email": email,
-            "full_name": "Tenant Admin",
-            "password": TEST_PASSWORD,
+            "first_name": "Tenant",
+            "last_name": "Admin",
+            "phone": "+44000000000",
+            "org_role": "tenant_admin",
         },
-        headers={"host": f"{slug}.localhost"},
+        headers=_headers(tenant.slug, tenant.access_token),
     )
 
 

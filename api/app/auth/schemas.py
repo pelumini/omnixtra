@@ -56,13 +56,14 @@ class InviteUserRequest(BaseModel):
 class InvitationAcceptRequest(BaseModel):
     token: str = Field(min_length=32, max_length=256)
     email: EmailStr
-    full_name: str = Field(min_length=2, max_length=200)
     password: str = Field(min_length=12, max_length=128)
 
 
 class InvitationPreviewResponse(BaseModel):
     organization_name: str
     email: EmailStr
+    first_name: str
+    last_name: str
 
 
 class MagicLinkVerifyRequest(BaseModel):

@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import AnyUrl, BaseModel, EmailStr, Field
+from pydantic import AnyUrl, BaseModel, EmailStr, Field, field_validator
 
 
 class TenantCreateRequest(BaseModel):
@@ -35,18 +35,32 @@ class MembershipResponse(BaseModel):
     invitation_token: str | None = None
 
 
-class TenantInvitationCreateRequest(BaseModel):
+class TenantUserCreateRequest(BaseModel):
     email: EmailStr
+    first_name: str = Field(min_length=1, max_length=100)
+    last_name: str = Field(min_length=1, max_length=100)
+    phone: str = Field(min_length=1, max_length=32)
     org_role: Literal["tenant_admin", "member"] = "member"
 
+    @field_validator("first_name", "last_name", "phone")
+    @classmethod
+    def trim_required_fields(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            msg = "field must not be empty"
+            raise ValueError(msg)
+        return normalized
 
-class TenantInvitationCreateResponse(BaseModel):
-    accepted: bool
-    invitation_id: str | None = None
-    email: EmailStr | None = None
-    org_role: Literal["tenant_admin", "member"] | None = None
-    status: Literal["invited"] | None = None
-    token: str | None = None
+
+class TenantUserCreateResponse(BaseModel):
+    id: str
+    email: EmailStr
+    first_name: str
+    last_name: str
+    phone: str
+    org_role: Literal["tenant_admin", "member"]
+    status: Literal["invited"]
+    activation_link: str
 
 
 class TenantBrandingResponse(BaseModel):
@@ -70,6 +84,6 @@ __all__ = [
     "TenantBrandingUpdateRequest",
     "TenantCreateRequest",
     "TenantCreateResponse",
-    "TenantInvitationCreateRequest",
-    "TenantInvitationCreateResponse",
+    "TenantUserCreateRequest",
+    "TenantUserCreateResponse",
 ]

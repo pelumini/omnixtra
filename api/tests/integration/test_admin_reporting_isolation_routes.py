@@ -17,7 +17,7 @@ TEST_PASSWORD = "correct horse battery staple"  # noqa: S105
 @covers_isolation("GET", "/api/v1/admin/analytics/completions")
 @covers_isolation("GET", "/api/v1/admin/reports/learner-progress")
 @covers_isolation("GET", "/api/v1/admin/reports/learner-progress.csv")
-@covers_isolation("POST", "/api/v1/tenant/invitations")
+@covers_isolation("POST", "/api/v1/tenant/users")
 def test_admin_reporting_routes_are_tenant_scoped() -> None:
     if not os.getenv(APP_DATABASE_URL_ENV):
         pytest.skip(f"{APP_DATABASE_URL_ENV} is not set")
@@ -50,15 +50,18 @@ def test_admin_reporting_routes_are_tenant_scoped() -> None:
     assert "learner_id,learner_name,learner_email" in csv_response.text
 
     invite_response = isolation_client.post(
-        "/api/v1/tenant/invitations",
+        "/api/v1/tenant/users",
         json={
             "email": f"learner-{tenant.slug}@example.com",
+            "first_name": "Report",
+            "last_name": "Learner",
+            "phone": "+44000000001",
             "org_role": "member",
         },
         headers=headers,
     )
     assert invite_response.status_code == 200
-    assert invite_response.json()["data"]["accepted"] is True
+    assert invite_response.json()["data"]["status"] == "invited"
 
 
 @dataclass(frozen=True)

@@ -27,6 +27,7 @@ from app.auth.schemas import (
     SessionResponse,
     SessionUser,
 )
+from app.billing.services import ensure_admin_activation_capacity
 from app.core.exceptions import AuthenticationError, NotFoundError, ValidationAppError
 from app.core.security import create_access_token, hash_password, verify_password
 from app.tenancy.models import Tenant
@@ -111,43 +112,32 @@ async def accept_invitation(
         raw_token=request.token,
         email=str(request.email),
     )
-    existing_user = await session.scalar(
-        select(User).where(User.email == _normalize_email(request.email)),
+    user = await session.scalar(
+        select(User).where(
+            User.tenant_id == tenant_id,
+            User.email == _normalize_email(request.email),
+            User.status == UserStatus.invited.value,
+            User.password_hash.is_(None),
+        ),
     )
-    if existing_user is not None:
-        existing_membership = await session.scalar(
-            select(Membership).where(Membership.user_id == existing_user.id),
+    if user is None:
+        msg = "pending user not found"
+        raise AuthenticationError(msg)
+    membership = await session.scalar(
+        select(Membership).where(
+            Membership.tenant_id == tenant_id,
+            Membership.user_id == user.id,
+            Membership.deleted_at.is_(None),
         )
-        if existing_membership is None:
-            session.add(
-                Membership(
-                    tenant_id=tenant_id,
-                    user_id=existing_user.id,
-                    org_role=invitation.org_role,
-                ),
-            )
-            await session.flush()
-        response = await _auth_response(session, existing_user)
-        refresh_token = await _create_refresh_session(
-            session,
-            tenant_id=tenant_id,
-            user_id=existing_user.id,
-            commit=False,
-        )
-        await session.commit()
-        return AuthSession(response=response, refresh_token=refresh_token)
+    )
+    if membership is None or membership.org_role != invitation.org_role:
+        msg = "pending membership not found"
+        raise AuthenticationError(msg)
+    if membership.org_role == OrgRole.tenant_admin.value:
+        await ensure_admin_activation_capacity(session)
 
-    user = User(
-        tenant_id=tenant_id,
-        email=_normalize_email(request.email),
-        full_name=request.full_name,
-        password_hash=hash_password(request.password),
-        role=OrgRole.member.value,
-        status=UserStatus.active.value,
-    )
-    session.add(user)
-    await session.flush()
-    session.add(Membership(tenant_id=tenant_id, user_id=user.id, org_role=invitation.org_role))
+    user.password_hash = hash_password(request.password)
+    user.status = UserStatus.active.value
     response = await _auth_response(session, user)
     refresh_token = await _create_refresh_session(
         session,
@@ -177,10 +167,21 @@ async def preview_invitation(
     tenant = await session.get(Tenant, tenant_id)
     if tenant is None:
         return None
+    user = await session.scalar(
+        select(User).where(
+            User.tenant_id == tenant_id,
+            User.email == invitation.email,
+            User.status == UserStatus.invited.value,
+        )
+    )
+    if user is None or user.first_name is None or user.last_name is None:
+        return None
 
     return InvitationPreviewResponse(
         organization_name=tenant.name,
         email=invitation.email,
+        first_name=user.first_name,
+        last_name=user.last_name,
     )
 
 

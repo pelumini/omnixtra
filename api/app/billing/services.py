@@ -381,10 +381,17 @@ async def ensure_learner_capacity(session: AsyncSession) -> None:
 
 
 async def ensure_admin_capacity(session: AsyncSession) -> None:
-    result = await _current_plan_and_subscription(session)
+    result = await _current_plan_and_subscription(session, lock=True)
     if result is None:
         return
     plan, _subscription = result
+    admin_count = await _admin_seat_count(session)
+    if admin_count >= plan.included_admin_seats:
+        msg = "admin seat limit exceeded for current plan"
+        raise ValidationAppError(msg)
+
+
+async def _admin_seat_count(session: AsyncSession) -> int:
     memberships = table(
         "memberships",
         column("user_id"),
@@ -403,11 +410,19 @@ async def ensure_admin_capacity(session: AsyncSession) -> None:
         .where(
             memberships.c.org_role == "tenant_admin",
             memberships.c.deleted_at.is_(None),
-            users.c.status.in_(["active", "invited"]),
             users.c.deleted_at.is_(None),
         ),
     )
-    if int(admin_count or 0) >= plan.included_admin_seats:
+    return int(admin_count or 0)
+
+
+async def ensure_admin_activation_capacity(session: AsyncSession) -> None:
+    result = await _current_plan_and_subscription(session, lock=True)
+    if result is None:
+        return
+    plan, _subscription = result
+    admin_count = await _admin_seat_count(session)
+    if admin_count > plan.included_admin_seats:
         msg = "admin seat limit exceeded for current plan"
         raise ValidationAppError(msg)
 
@@ -495,8 +510,13 @@ def _audit(
 
 async def _current_plan_and_subscription(
     session: AsyncSession,
+    *,
+    lock: bool = False,
 ) -> tuple[BillingPlan, TenantSubscription] | None:
-    subscription = await session.scalar(current_tenant_subscription())
+    query = current_tenant_subscription()
+    if lock:
+        query = query.with_for_update()
+    subscription = await session.scalar(query)
     if subscription is None:
         return None
     plan = await session.get(BillingPlan, subscription.plan_id)

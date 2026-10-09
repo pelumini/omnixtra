@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from secrets import token_urlsafe
 from typing import Literal, cast
+from urllib.parse import quote, urlsplit
 from uuid import UUID
 
 from sqlalchemy import select
@@ -10,7 +11,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.models import Invitation, Membership, OrgRole, RefreshSession, User, UserStatus
 from app.auth.services import hash_auth_token
 from app.billing.services import ensure_admin_capacity
+from app.core.config import Settings
 from app.core.context import clear_tenant_id, set_tenant_id
+from app.core.email import EmailProvider, activation_email
 from app.core.exceptions import ConflictError, NotFoundError
 from app.core.security import create_access_token, hash_password
 from app.tenancy.context import require_tenant_id
@@ -22,8 +25,8 @@ from app.tenancy.schemas import (
     TenantBrandingUpdateRequest,
     TenantCreateRequest,
     TenantCreateResponse,
-    TenantInvitationCreateRequest,
-    TenantInvitationCreateResponse,
+    TenantUserCreateRequest,
+    TenantUserCreateResponse,
 )
 
 OrgRoleValue = Literal["tenant_admin", "member"]
@@ -147,7 +150,7 @@ async def list_memberships(session: AsyncSession) -> list[MembershipResponse]:
             org_role=cast("OrgRoleValue", membership.org_role),
             full_name=user.full_name,
             email=user.email,
-            status="active",
+            status=cast("Literal['active', 'invited']", user.status),
         )
         for membership, user in membership_rows
     ] + [
@@ -165,50 +168,104 @@ async def list_memberships(session: AsyncSession) -> list[MembershipResponse]:
     ]
 
 
-async def create_invitation(
+async def create_user(
     session: AsyncSession,
-    request: TenantInvitationCreateRequest,
+    request: TenantUserCreateRequest,
     *,
+    email_provider: EmailProvider,
+    settings: Settings,
     actor_id: UUID | None = None,
-) -> TenantInvitationCreateResponse:
+) -> TenantUserCreateResponse:
     normalized_email = str(request.email).strip().lower()
+    first_name = request.first_name
+    last_name = request.last_name
+    phone = request.phone
     if request.org_role == OrgRole.tenant_admin.value:
         await ensure_admin_capacity(session)
     existing_user = await session.scalar(select(User).where(User.email == normalized_email))
     if existing_user is not None:
-        existing_membership = await session.scalar(
-            select(Membership).where(Membership.user_id == existing_user.id),
+        msg = "a user with this email already exists"
+        raise ConflictError(msg)
+    existing_invitation = await session.scalar(
+        select(Invitation).where(Invitation.email == normalized_email)
+    )
+    if existing_invitation is not None:
+        msg = "an activation for this email already exists"
+        raise ConflictError(msg)
+
+    user = User(
+        tenant_id=UUID(require_tenant_id()),
+        email=normalized_email,
+        full_name=f"{first_name} {last_name}",
+        first_name=first_name,
+        last_name=last_name,
+        phone=phone,
+        password_hash=None,
+        role=OrgRole.member.value,
+        status=UserStatus.invited.value,
+    )
+    session.add(user)
+    await session.flush()
+    session.add(
+        Membership(
+            tenant_id=user.tenant_id,
+            user_id=user.id,
+            org_role=request.org_role,
         )
-        if existing_membership is not None:
-            return TenantInvitationCreateResponse(accepted=True, token=None)
+    )
     raw_token = token_urlsafe(32)
     invitation = Invitation(
-        tenant_id=UUID(require_tenant_id()),
+        tenant_id=user.tenant_id,
         email=normalized_email,
         org_role=request.org_role,
         token_hash=hash_auth_token(raw_token),
-        raw_token=raw_token,
-        expires_at=datetime.now(UTC) + timedelta(minutes=15),
+        raw_token=None,
+        expires_at=datetime.now(UTC) + timedelta(hours=72),
     )
     session.add(invitation)
     await session.flush()
+    tenant = await _current_tenant(session)
+    activation_link = _activation_link(
+        tenant_slug=tenant.slug,
+        raw_token=raw_token,
+        settings=settings,
+    )
+    await email_provider.send(
+        activation_email(
+            to_email=normalized_email,
+            first_name=first_name,
+            tenant_name=tenant.name,
+            activation_link=activation_link,
+        )
+    )
     session.add(
         TenancyAuditEvent(
             actor_id=actor_id,
-            action="tenant.user.invited",
-            summary=f"Invited {request.org_role} user",
+            action="tenant.user.provisioned",
+            summary=f"Provisioned {request.org_role} user",
             event_data={"email": normalized_email, "org_role": request.org_role},
         ),
     )
     await session.commit()
-    return TenantInvitationCreateResponse(
-        accepted=True,
-        invitation_id=str(invitation.id),
+    return TenantUserCreateResponse(
+        id=str(user.id),
         email=normalized_email,
+        first_name=first_name,
+        last_name=last_name,
+        phone=phone,
         org_role=request.org_role,
         status="invited",
-        token=raw_token,
+        activation_link=activation_link,
     )
+
+
+def _activation_link(*, tenant_slug: str, raw_token: str, settings: Settings) -> str:
+    is_local = settings.app_env.lower() == "local"
+    scheme = "http" if is_local else "https"
+    port = urlsplit(settings.web_app_url).port if is_local else None
+    host = f"{tenant_slug}.{settings.app_base_domain.strip('.')}"
+    authority = f"{host}:{port}" if port is not None else host
+    return f"{scheme}://{authority}/join?token={quote(raw_token, safe='')}"
 
 
 async def get_tenant_branding(session: AsyncSession) -> TenantBrandingResponse:
@@ -268,8 +325,8 @@ async def _current_tenant(session: AsyncSession) -> Tenant:
 
 
 __all__ = [
-    "create_invitation",
     "create_tenant",
+    "create_user",
     "get_tenant_branding",
     "list_memberships",
     "tenant_branding_response",

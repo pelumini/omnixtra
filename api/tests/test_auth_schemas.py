@@ -7,7 +7,7 @@ from app.auth.schemas import (
     LoginRequest,
     PasswordResetCompleteRequest,
 )
-from app.tenancy.schemas import TenantCreateRequest
+from app.tenancy.schemas import TenantCreateRequest, TenantUserCreateRequest
 
 
 def test_tenant_create_schema_validates_tenant_slug() -> None:
@@ -45,9 +45,23 @@ def test_invitation_accept_schema_does_not_define_body_role() -> None:
     request = InvitationAcceptRequest(
         token="x" * 32,
         email="sofia@example.com",
-        full_name="Sofia Creator",
         password="long-enough-password",
     )
 
     assert "org_role" not in InvitationAcceptRequest.model_fields
+    assert "full_name" not in InvitationAcceptRequest.model_fields
     assert not hasattr(request, "org_role")
+
+
+def test_tenant_user_schema_trims_profile_fields() -> None:
+    request = TenantUserCreateRequest(
+        email="sofia@example.com",
+        first_name="  Sofia ",
+        last_name=" Creator  ",
+        phone=" +44 20 0000 0000 ",
+        org_role="member",
+    )
+
+    assert request.first_name == "Sofia"
+    assert request.last_name == "Creator"
+    assert request.phone == "+44 20 0000 0000"

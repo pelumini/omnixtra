@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import StrEnum
+from html import escape
 from typing import Protocol
 
 import httpx
@@ -99,12 +100,35 @@ def auth_token_email(
     )
 
 
+def activation_email(
+    *,
+    to_email: str,
+    first_name: str,
+    tenant_name: str,
+    activation_link: str,
+) -> TransactionalEmail:
+    safe_first_name = escape(first_name)
+    safe_tenant_name = escape(tenant_name)
+    safe_activation_link = escape(activation_link, quote=True)
+    return TransactionalEmail(
+        to_email=to_email,
+        subject=f"Activate your {tenant_name} account",
+        html=(
+            f"<p>Hello {safe_first_name},</p>"
+            f"<p>An administrator created your account for {safe_tenant_name}.</p>"
+            f'<p><a href="{safe_activation_link}">Activate your account</a></p>'
+            "<p>This link expires in 72 hours.</p>"
+        ),
+    )
+
+
 __all__ = [
     "EmailProvider",
     "EmailTemplate",
     "LocalEmailProvider",
     "ResendEmailProvider",
     "TransactionalEmail",
+    "activation_email",
     "auth_token_email",
     "get_email_provider",
 ]

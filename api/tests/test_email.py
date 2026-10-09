@@ -2,7 +2,7 @@ import httpx
 import pytest
 
 from app.core.config import get_settings
-from app.core.email import EmailTemplate, ResendEmailProvider, auth_token_email
+from app.core.email import EmailTemplate, ResendEmailProvider, activation_email, auth_token_email
 
 
 def test_auth_token_email_builds_template_link(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -19,6 +19,33 @@ def test_auth_token_email_builds_template_link(monkeypatch: pytest.MonkeyPatch) 
     assert email.subject == "Reset your OmniXtra password"
     assert "https://app.example/auth/password-reset/complete?token=raw-token" in email.html
     get_settings.cache_clear()
+
+
+def test_activation_email_uses_tenant_link_and_expiry() -> None:
+    email = activation_email(
+        to_email="ada@example.com",
+        first_name="Ada",
+        tenant_name="Acme Academy",
+        activation_link="https://acme.example/join?token=raw-token",
+    )
+
+    assert email.subject == "Activate your Acme Academy account"
+    assert "Hello Ada" in email.html
+    assert "https://acme.example/join?token=raw-token" in email.html
+    assert "72 hours" in email.html
+
+
+def test_activation_email_escapes_profile_content() -> None:
+    email = activation_email(
+        to_email="ada@example.com",
+        first_name="<Ada>",
+        tenant_name='Acme "Academy"',
+        activation_link='https://acme.example/join?token=a&next="bad"',
+    )
+
+    assert "&lt;Ada&gt;" in email.html
+    assert "Acme &quot;Academy&quot;" in email.html
+    assert "token=a&amp;next=&quot;bad&quot;" in email.html
 
 
 @pytest.mark.anyio

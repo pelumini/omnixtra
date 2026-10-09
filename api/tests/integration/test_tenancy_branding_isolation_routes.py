@@ -16,7 +16,7 @@ TEST_PASSWORD = "correct horse battery staple"  # noqa: S105
 @pytest.mark.integration
 @covers_isolation("POST", "/api/v1/tenants")
 @covers_isolation("GET", "/api/v1/tenant/memberships")
-@covers_isolation("POST", "/api/v1/tenant/invitations")
+@covers_isolation("POST", "/api/v1/tenant/users")
 @covers_isolation("GET", "/api/v1/tenant/branding")
 @covers_isolation("PATCH", "/api/v1/tenant/branding")
 def test_tenant_b_does_not_see_tenant_a_branding() -> None:
@@ -70,24 +70,35 @@ def test_tenant_b_does_not_see_tenant_a_branding() -> None:
     ]
 
     tenant_a_invitation_response = isolation_client.post(
-        "/api/v1/tenant/invitations",
-        json={"email": f"member-{tenant_a.slug}@example.com", "org_role": "member"},
+        "/api/v1/tenant/users",
+        json={
+            "email": f"member-{tenant_a.slug}@example.com",
+            "first_name": "Tenant A",
+            "last_name": "Member",
+            "phone": "+44000000001",
+            "org_role": "member",
+        },
         headers=_headers(tenant_a.slug, tenant_a.access_token),
     )
     assert tenant_a_invitation_response.status_code == 200
 
     invitation_response = isolation_client.post(
-        "/api/v1/tenant/invitations",
-        json={"email": f"member-{tenant_b.slug}@example.com", "org_role": "member"},
+        "/api/v1/tenant/users",
+        json={
+            "email": f"member-{tenant_b.slug}@example.com",
+            "first_name": "Tenant B",
+            "last_name": "Member",
+            "phone": "+44000000002",
+            "org_role": "member",
+        },
         headers=_headers(tenant_b.slug, tenant_b.access_token),
     )
     assert invitation_response.status_code == 200
     invitation_data = invitation_response.json()["data"]
-    assert invitation_data["accepted"] is True
     assert invitation_data["email"] == f"member-{tenant_b.slug}@example.com"
     assert invitation_data["org_role"] == "member"
     assert invitation_data["status"] == "invited"
-    assert invitation_data["token"]
+    assert invitation_data["activation_link"]
 
     memberships_with_pending_response = isolation_client.get(
         "/api/v1/tenant/memberships",
@@ -101,9 +112,9 @@ def test_tenant_b_does_not_see_tenant_a_branding() -> None:
     ]
     assert memberships_with_pending[0]["full_name"] == "Tenant Admin"
     assert memberships_with_pending[0]["status"] == "active"
-    assert memberships_with_pending[1]["full_name"] is None
+    assert memberships_with_pending[1]["full_name"] == "Tenant B Member"
     assert memberships_with_pending[1]["status"] == "invited"
-    assert memberships_with_pending[1]["invitation_token"] == invitation_data["token"]
+    assert memberships_with_pending[1]["invitation_token"] is None
     assert f"member-{tenant_a.slug}@example.com" not in {
         member["email"] for member in memberships_with_pending
     }

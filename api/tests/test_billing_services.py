@@ -14,6 +14,7 @@ from app.billing.services import (
     StripeBillingProvider,
     apply_signed_stripe_webhook,
     change_subscription_plan,
+    ensure_admin_activation_capacity,
     ensure_admin_capacity,
     ensure_learner_capacity,
     ensure_storage_capacity,
@@ -334,6 +335,41 @@ async def test_ensure_admin_capacity_rejects_full_plan() -> None:
 
 
 @pytest.mark.anyio
+async def test_admin_capacity_counts_invited_users_and_locks_subscription() -> None:
+    plan = _plan(included_learners=50, included_storage_gb=10)
+    plan.included_admin_seats = 2
+    subscription = _subscription(seats_used=0)
+    session = _AdminLimitSession(subscription=subscription, plan=plan, admin_count=2)
+
+    with pytest.raises(ValidationAppError, match="admin seat limit"):
+        await ensure_admin_capacity(session)
+
+    assert session.subscription_query_uses_lock is True
+    assert session.admin_query_uses_status_filter is False
+
+
+@pytest.mark.anyio
+async def test_admin_activation_allows_pending_user_already_counted_in_limit() -> None:
+    plan = _plan(included_learners=50, included_storage_gb=10)
+    plan.included_admin_seats = 2
+    subscription = _subscription(seats_used=0)
+    session = _AdminLimitSession(subscription=subscription, plan=plan, admin_count=2)
+
+    await ensure_admin_activation_capacity(session)
+
+
+@pytest.mark.anyio
+async def test_admin_activation_rejects_count_above_limit() -> None:
+    plan = _plan(included_learners=50, included_storage_gb=10)
+    plan.included_admin_seats = 2
+    subscription = _subscription(seats_used=0)
+    session = _AdminLimitSession(subscription=subscription, plan=plan, admin_count=3)
+
+    with pytest.raises(ValidationAppError, match="admin seat limit"):
+        await ensure_admin_activation_capacity(session)
+
+
+@pytest.mark.anyio
 async def test_increment_learner_usage_updates_subscription_usage() -> None:
     plan = _plan(included_learners=2, included_storage_gb=10)
     subscription = _subscription(seats_used=0)
@@ -507,14 +543,19 @@ class _AdminLimitSession:
         self.plan = plan
         self.admin_count = admin_count
         self.scalar_calls = 0
+        self.subscription_query_uses_lock = False
+        self.admin_query_uses_status_filter = False
 
     async def scalar(self, _statement: object) -> TenantSubscription | int:
         self.scalar_calls += 1
+        compiled = str(_statement)
+        if self.scalar_calls == 1:
+            self.subscription_query_uses_lock = "FOR UPDATE" in compiled
         if self.scalar_calls == 2:
-            compiled = str(_statement)
             assert "memberships" in compiled
             assert "memberships.org_role" in compiled
             assert "users.role" not in compiled
+            self.admin_query_uses_status_filter = "users.status" in compiled
         return self.subscription if self.scalar_calls == 1 else self.admin_count
 
     async def get(self, _model: object, _identifier: object) -> BillingPlan:

@@ -1,5 +1,6 @@
 import os
 from http.cookies import SimpleCookie
+from urllib.parse import parse_qs, urlsplit
 from uuid import uuid4
 
 import psycopg
@@ -151,7 +152,7 @@ def test_tenant_creation_sets_session_cookies_and_session_endpoint_returns_ident
 
 
 @pytest.mark.integration
-@covers_isolation("POST", "/api/v1/tenant/invitations")
+@covers_isolation("POST", "/api/v1/tenant/users")
 def test_invitation_accept_uses_token_role_not_body_role() -> None:
     if os.getenv(APP_DATABASE_URL_ENV) is None:
         pytest.skip(f"{APP_DATABASE_URL_ENV} is not set")
@@ -168,14 +169,13 @@ def test_invitation_accept_uses_token_role_not_body_role() -> None:
         org_role="member",
     )
     assert invitation_response.status_code == 200
-    token = invitation_response.json()["data"]["token"]
+    token = _activation_token(invitation_response.json()["data"]["activation_link"])
 
     accept_response = client.post(
         "/api/v1/auth/invitations/accept",
         json={
             "token": token,
             "email": invited_email,
-            "full_name": "Invited Member",
             "password": TEST_PASSWORD,
             "org_role": "tenant_admin",
         },
@@ -187,7 +187,7 @@ def test_invitation_accept_uses_token_role_not_body_role() -> None:
 
 
 @pytest.mark.integration
-@covers_isolation("POST", "/api/v1/tenant/invitations")
+@covers_isolation("POST", "/api/v1/tenant/users")
 def test_invitation_accept_rejects_expired_used_and_cross_tenant_tokens() -> None:
     if os.getenv(APP_DATABASE_URL_ENV) is None:
         pytest.skip(f"{APP_DATABASE_URL_ENV} is not set")
@@ -200,7 +200,7 @@ def test_invitation_accept_rejects_expired_used_and_cross_tenant_tokens() -> Non
     expired_email = f"expired-{run_id}@example.com"
     expired_invitation = _invite(client, tenant_a, email=expired_email, org_role="member")
     assert expired_invitation.status_code == 200
-    expired_token = expired_invitation.json()["data"]["token"]
+    expired_token = _activation_token(expired_invitation.json()["data"]["activation_link"])
     _expire_invitation(tenant_a["tenant_id"], expired_token)
     expired_response = _accept_invitation(client, tenant_a["slug"], expired_token, expired_email)
     assert expired_response.status_code == 401
@@ -208,7 +208,7 @@ def test_invitation_accept_rejects_expired_used_and_cross_tenant_tokens() -> Non
     used_email = f"used-{run_id}@example.com"
     used_invitation = _invite(client, tenant_a, email=used_email, org_role="member")
     assert used_invitation.status_code == 200
-    used_token = used_invitation.json()["data"]["token"]
+    used_token = _activation_token(used_invitation.json()["data"]["activation_link"])
     first_accept = _accept_invitation(client, tenant_a["slug"], used_token, used_email)
     assert first_accept.status_code == 200
     second_accept = _accept_invitation(client, tenant_a["slug"], used_token, used_email)
@@ -217,7 +217,7 @@ def test_invitation_accept_rejects_expired_used_and_cross_tenant_tokens() -> Non
     cross_email = f"cross-{run_id}@example.com"
     cross_invitation = _invite(client, tenant_a, email=cross_email, org_role="member")
     assert cross_invitation.status_code == 200
-    cross_token = cross_invitation.json()["data"]["token"]
+    cross_token = _activation_token(cross_invitation.json()["data"]["activation_link"])
     cross_response = _accept_invitation(client, tenant_b["slug"], cross_token, cross_email)
     assert cross_response.status_code == 404
     assert _membership_role(tenant_b["tenant_id"], cross_email) is None
@@ -262,8 +262,14 @@ def _invite(
 ) -> object:
     client.cookies.clear()
     return client.post(
-        "/api/v1/tenant/invitations",
-        json={"email": email, "org_role": org_role},
+        "/api/v1/tenant/users",
+        json={
+            "email": email,
+            "first_name": "Invited",
+            "last_name": "User",
+            "phone": "+44000000000",
+            "org_role": org_role,
+        },
         headers={
             "host": f"{tenant['slug']}.localhost",
             "authorization": f"Bearer {tenant['access_token']}",
@@ -278,11 +284,14 @@ def _accept_invitation(client: TestClient, slug: str, token: str, email: str) ->
         json={
             "token": token,
             "email": email,
-            "full_name": "Invited User",
             "password": TEST_PASSWORD,
         },
         headers={"host": f"{slug}.localhost"},
     )
+
+
+def _activation_token(activation_link: str) -> str:
+    return parse_qs(urlsplit(activation_link).query)["token"][0]
 
 
 def _membership_role(tenant_id: str, email: str) -> str | None:

@@ -1,5 +1,6 @@
 import os
 from datetime import UTC, datetime, timedelta
+from urllib.parse import parse_qs, urlsplit
 from uuid import UUID, uuid4
 
 import psycopg
@@ -99,8 +100,15 @@ def test_invitation_preview_is_unauthenticated_and_returns_only_join_fields() ->
     assert response.json()["data"] == {
         "organization_name": f"preview-{run_id}",
         "email": email,
+        "first_name": "Contract",
+        "last_name": "Member",
     }
-    assert set(response.json()["data"]) == {"organization_name", "email"}
+    assert set(response.json()["data"]) == {
+        "organization_name",
+        "email",
+        "first_name",
+        "last_name",
+    }
     assert "authorization" not in response.request.headers
 
 
@@ -291,18 +299,23 @@ def _accept_invitation(
     org_role: str,
 ) -> TenantAccount:
     invitation = client.post(
-        "/api/v1/tenant/invitations",
-        json={"email": email, "org_role": org_role},
+        "/api/v1/tenant/users",
+        json={
+            "email": email,
+            "first_name": "Contract",
+            "last_name": "Member",
+            "phone": "+44000000000",
+            "org_role": org_role,
+        },
         headers=_headers(tenant.slug, tenant.access_token),
     )
     assert invitation.status_code == 200, invitation.text
-    token = invitation.json()["data"]["token"]
+    token = _activation_token(invitation.json()["data"]["activation_link"])
     response = client.post(
         "/api/v1/auth/invitations/accept",
         json={
             "token": token,
             "email": email,
-            "full_name": "Contract Member",
             "password": TEST_PASSWORD,
         },
         headers={"host": f"{tenant.slug}.localhost"},
@@ -326,12 +339,18 @@ def _create_invitation(
     org_role: str,
 ) -> str:
     invitation = client.post(
-        "/api/v1/tenant/invitations",
-        json={"email": email, "org_role": org_role},
+        "/api/v1/tenant/users",
+        json={
+            "email": email,
+            "first_name": "Contract",
+            "last_name": "Member",
+            "phone": "+44000000000",
+            "org_role": org_role,
+        },
         headers=_headers(tenant.slug, tenant.access_token),
     )
     assert invitation.status_code == 200, invitation.text
-    token = invitation.json()["data"]["token"]
+    token = _activation_token(invitation.json()["data"]["activation_link"])
     assert isinstance(token, str)
     return token
 
@@ -348,12 +367,15 @@ def _accept_invitation_with_token(
         json={
             "token": token,
             "email": email,
-            "full_name": "Contract Member",
             "password": TEST_PASSWORD,
         },
         headers={"host": f"{tenant.slug}.localhost"},
     )
     assert response.status_code == 200, response.text
+
+
+def _activation_token(activation_link: str) -> str:
+    return parse_qs(urlsplit(activation_link).query)["token"][0]
 
 
 def _expire_invitation(tenant_id: str, raw_token: str) -> None:
