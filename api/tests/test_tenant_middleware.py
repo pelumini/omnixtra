@@ -33,6 +33,63 @@ def test_valid_tenant_subdomain_sets_context(monkeypatch: pytest.MonkeyPatch) ->
     assert get_tenant_id() is None
 
 
+def test_origin_secret_rejects_request_without_matching_header() -> None:
+    middleware = RequestContextMiddleware(app=_noop_app)
+    request = _request("localhost")
+    request.app.state.settings.origin_secret = "expected-secret"  # noqa: S105
+    called = False
+
+    async def call_next(_request: Request) -> Response:
+        nonlocal called
+        called = True
+        return Response()
+
+    response = asyncio.run(middleware.dispatch(request, call_next))
+
+    assert response.status_code == 403
+    assert called is False
+    assert b'"type":"ForbiddenError"' in response.body
+
+
+@pytest.mark.parametrize("path", ["/health", "/api/v1/health"])
+def test_origin_secret_exempts_health_routes(path: str) -> None:
+    middleware = RequestContextMiddleware(app=_noop_app)
+    request = _request("localhost")
+    request.app.state.settings.origin_secret = "expected-secret"  # noqa: S105
+    request.scope["path"] = path
+    called = False
+
+    async def call_next(_request: Request) -> Response:
+        nonlocal called
+        called = True
+        return Response()
+
+    response = asyncio.run(middleware.dispatch(request, call_next))
+
+    assert response.status_code == 200
+    assert called is True
+
+
+def test_matching_origin_secret_passes_through(monkeypatch: pytest.MonkeyPatch) -> None:
+    tenant_id = UUID("00000000-0000-0000-0000-000000000001")
+    _patch_tenant_lookup(monkeypatch, _tenant(tenant_id, status=TenantStatus.active.value))
+    middleware = RequestContextMiddleware(app=_noop_app)
+    request = _request("acme.localhost")
+    request.app.state.settings.origin_secret = "expected-secret"  # noqa: S105
+    request.scope["headers"].append((b"x-origin-secret", b"expected-secret"))
+    called = False
+
+    async def call_next(_request: Request) -> Response:
+        nonlocal called
+        called = True
+        return Response()
+
+    response = asyncio.run(middleware.dispatch(request, call_next))
+
+    assert response.status_code == 200
+    assert called is True
+
+
 def test_reserved_subdomain_returns_not_found(monkeypatch: pytest.MonkeyPatch) -> None:
     _patch_tenant_lookup(monkeypatch, None)
 
@@ -135,7 +192,12 @@ def _request(
     forwarded_host: str | None = None,
 ) -> Request:
     app = SimpleNamespace(
-        state=SimpleNamespace(settings=SimpleNamespace(app_base_domain="localhost")),
+        state=SimpleNamespace(
+            settings=SimpleNamespace(
+                app_base_domain="localhost",
+                origin_secret="",
+            ),
+        ),
     )
     headers = [(b"host", host.encode())]
     if forwarded_host is not None:
