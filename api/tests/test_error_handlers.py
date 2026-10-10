@@ -12,7 +12,9 @@ def test_request_validation_errors_are_normalized_for_forms() -> None:
         json={
             "tenant_name": "",
             "tenant_slug": "-bad",
-            "full_name": "",
+            "first_name": "",
+            "last_name": "",
+            "phone": "",
             "email": "not-an-email",
             "password": "short",
         },
@@ -24,7 +26,9 @@ def test_request_validation_errors_are_normalized_for_forms() -> None:
     assert body["error"]["message"] == "Some fields need attention."
     assert {detail["field"] for detail in body["error"]["details"]} == {
         "email",
-        "fullName",
+        "firstName",
+        "lastName",
+        "phone",
         "password",
         "tenantName",
         "tenantSlug",

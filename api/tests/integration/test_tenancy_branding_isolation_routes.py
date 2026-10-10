@@ -133,7 +133,9 @@ def _signup(client: IsolationTestClient, slug: str) -> TenantAccount:
         json={
             "tenant_name": slug.title(),
             "tenant_slug": slug,
-            "full_name": "Tenant Admin",
+            "first_name": "Tenant",
+            "last_name": "Admin",
+            "phone": "+44000000000",
             "email": f"admin-{slug}@example.com",
             "password": TEST_PASSWORD,
         },

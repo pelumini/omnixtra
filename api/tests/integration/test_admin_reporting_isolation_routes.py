@@ -77,7 +77,9 @@ def _signup(client: TestClient, slug: str) -> TenantAccount:
         json={
             "tenant_name": slug.title(),
             "tenant_slug": slug,
-            "full_name": "Reporting Admin",
+            "first_name": "Reporting",
+            "last_name": "Admin",
+            "phone": "+44000000000",
             "email": f"admin-{slug}@example.com",
             "password": TEST_PASSWORD,
         },

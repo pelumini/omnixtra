@@ -3,7 +3,22 @@ from typing import Literal
 from pydantic import AnyUrl, BaseModel, EmailStr, Field, field_validator
 
 
-class TenantCreateRequest(BaseModel):
+class RequiredUserIdentityFields(BaseModel):
+    first_name: str = Field(min_length=1, max_length=100)
+    last_name: str = Field(min_length=1, max_length=100)
+    phone: str = Field(min_length=1, max_length=32)
+
+    @field_validator("first_name", "last_name", "phone")
+    @classmethod
+    def trim_required_fields(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            msg = "field must not be empty"
+            raise ValueError(msg)
+        return normalized
+
+
+class TenantCreateRequest(RequiredUserIdentityFields):
     tenant_name: str = Field(min_length=2, max_length=200)
     tenant_description: str | None = Field(default=None, max_length=1000)
     tenant_slug: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$")
@@ -11,7 +26,6 @@ class TenantCreateRequest(BaseModel):
     primary_color: str = Field(default="#116149", pattern=r"^#[0-9a-fA-F]{6}$")
     locale: str = Field(default="en", min_length=2, max_length=16)
     time_zone: str = Field(default="UTC", min_length=1, max_length=64)
-    full_name: str = Field(min_length=2, max_length=200)
     email: EmailStr
     password: str = Field(min_length=12, max_length=128)
 
@@ -35,21 +49,9 @@ class MembershipResponse(BaseModel):
     invitation_token: str | None = None
 
 
-class TenantUserCreateRequest(BaseModel):
+class TenantUserCreateRequest(RequiredUserIdentityFields):
     email: EmailStr
-    first_name: str = Field(min_length=1, max_length=100)
-    last_name: str = Field(min_length=1, max_length=100)
-    phone: str = Field(min_length=1, max_length=32)
     org_role: Literal["tenant_admin", "member"] = "member"
-
-    @field_validator("first_name", "last_name", "phone")
-    @classmethod
-    def trim_required_fields(cls, value: str) -> str:
-        normalized = value.strip()
-        if not normalized:
-            msg = "field must not be empty"
-            raise ValueError(msg)
-        return normalized
 
 
 class TenantUserCreateResponse(BaseModel):

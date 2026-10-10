@@ -85,7 +85,9 @@ async def test_create_tenant_duplicate_slug_returns_user_facing_field_error() ->
             TenantCreateRequest(
                 tenant_name="Brendoncare",
                 tenant_slug="brendoncare",
-                full_name="Admin User",
+                first_name="Admin",
+                last_name="User",
+                phone="+44000000000",
                 email="admin@example.com",
                 password="correct horse battery staple",
             ),
