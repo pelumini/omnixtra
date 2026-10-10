@@ -1,6 +1,12 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+const route = vi.hoisted(() => ({ pathname: "/admin" }));
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => route.pathname,
+}));
 
 import { SessionHeader } from "@/components/layout/session-header";
 
@@ -35,8 +41,9 @@ const memberSession: SessionResponse = {
   },
 };
 
-describe("session header logo", () => {
-  it("links tenant admins to the admin home", () => {
+describe("session header chrome", () => {
+  it("renders the admin header in the content column without duplicate branding", () => {
+    route.pathname = "/admin";
     const html = renderToStaticMarkup(
       <SessionHeader
         branding={branding}
@@ -47,12 +54,17 @@ describe("session header logo", () => {
 
     expect(html).toContain("fixed");
     expect(html).toContain("top-0");
-    expect(html).toContain("transition-shadow");
-    expect(html).toContain('href="/admin"');
-    expect(html).toContain("Pastors Academy");
+    expect(html).toContain("md:left-[var(--app-sidebar-width,13rem)]");
+    expect(html).toContain("Dashboard");
+    expect(html).toContain('aria-haspopup="menu"');
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).toContain('aria-label="Open navigation menu"');
+    expect(html).not.toContain("<details");
+    expect(html).not.toContain("Pastors Academy");
   });
 
   it("links members to my courses and unauthenticated visitors to public home", () => {
+    route.pathname = "/my-courses";
     const memberHtml = renderToStaticMarkup(
       <SessionHeader
         branding={branding}
@@ -60,6 +72,7 @@ describe("session header logo", () => {
         refreshSession={false}
       />,
     );
+    route.pathname = "/";
     const publicHtml = renderToStaticMarkup(
       <SessionHeader branding={branding} initialSession={null} refreshSession={false} />,
     );
@@ -72,7 +85,8 @@ describe("session header logo", () => {
       />,
     );
 
-    expect(memberHtml).toContain('href="/my-courses"');
+    expect(memberHtml).toContain("My Courses");
+    expect(memberHtml).not.toContain("Pastors Academy");
     expect(publicHtml).toContain('href="/"');
     expect(publicHtml).toContain('href="/login"');
     expect(apexHtml).toContain('href="/"');

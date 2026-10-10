@@ -2,11 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { logout } from "@/lib/api/auth";
+import { signOutAndRedirect } from "@/lib/auth/sign-out";
 import { E2E_FIXTURES_ENABLED } from "@/lib/e2e-enabled";
-import { canManageBilling, canManageMembers } from "@/lib/permissions";
 import { homeForSession } from "@/lib/routing/home";
 import { sessionResponseSchema, type SessionResponse } from "@/lib/schemas/auth";
 
@@ -29,6 +29,13 @@ export function SessionHeader({ branding, fixtureMode = false, initialSession, r
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const membership = session?.membership ?? null;
+  const pathname = usePathname() ?? "";
+  const isShellHeader =
+    membership !== null &&
+    (pathname === "/admin" ||
+      pathname.startsWith("/admin/") ||
+      pathname === "/my-courses" ||
+      pathname.startsWith("/my-courses/"));
   const homeHref = homeForSession(session) ?? "/";
   const isPublicHeader = !showAuthLink && session === null;
   const closeMobile = () => setMobileOpen(false);
@@ -119,27 +126,16 @@ export function SessionHeader({ branding, fixtureMode = false, initialSession, r
     };
   }, [fixtureMode, refreshSession]);
 
-  async function signOut() {
-    try {
-      await logout();
-    } catch {
-      // The local signup handoff may only have a web-host access cookie.
-    }
-    await fetch("/auth/local-signout", { method: "POST" });
-    window.location.assign("/login");
-  }
-
-  const marketingNavProps = { mobileOpen, onCloseMobile: closeMobile, onSignOut: signOut, onToggleMobile: () => setMobileOpen((open) => !open), publicNavLinks, session };
+  const marketingNavProps = { mobileOpen, onCloseMobile: closeMobile, onSignOut: signOutAndRedirect, onToggleMobile: () => setMobileOpen((open) => !open), publicNavLinks, session };
 
   return (
-    <header className={`fixed inset-x-0 top-0 z-50 border-b border-[var(--border)] bg-white transition-shadow ${isScrolled ? "shadow-sm" : "shadow-none"}`}>
-      <div className={`landing-container flex items-center gap-3 ${isPublicHeader ? "h-20" : "min-h-14"}`}>
-        <Link aria-label={`${branding.tenant_name} home`} className="flex min-w-0 items-center gap-3 text-[var(--foreground)] hover:text-[var(--primary)]" href={homeHref}>
-          {isPublicHeader ? <Image alt="OmniXtra" className="h-auto w-36 sm:w-44" height={44} priority src="/images/landing/OmniXtra_logo_brand.svg" width={188} /> : <><span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-md bg-[var(--primary)] bg-contain bg-center bg-no-repeat text-sm font-semibold text-[var(--primary-foreground)]" style={branding.logo_url ? ({ backgroundImage: `url(${branding.logo_url})` } as CSSProperties) : undefined}>{branding.logo_url ? null : branding.tenant_name.slice(0, 1).toUpperCase()}</span><span className="truncate text-sm font-semibold">{branding.tenant_name}</span></>}
-        </Link>
-        {membership ? <AppHeaderNav canManageBilling={canManageBilling(membership.org_role)} canManageMembers={canManageMembers(membership.org_role)} membership={membership} onSignOut={signOut} session={session} showAuthLink={showAuthLink} /> : !showAuthLink ? <MarketingHeaderNav {...marketingNavProps} /> : <AppHeaderNav canManageBilling={false} canManageMembers={false} membership={null} onSignOut={signOut} session={session} showAuthLink={showAuthLink} />}
+    <header className={`fixed right-0 top-0 z-50 border-b border-[var(--border)] bg-white transition-[left,box-shadow] ${isShellHeader ? "left-0 h-14 md:left-[var(--app-sidebar-width,13rem)] md:h-16" : "left-0"} ${isScrolled ? "shadow-sm" : "shadow-none"}`}>
+      <div className={`${isShellHeader ? "flex h-full items-center px-4 sm:px-6" : `landing-container flex items-center gap-3 ${isPublicHeader ? "h-20" : "min-h-14"}`}`}>
+        {!isShellHeader ? <Link aria-label={`${branding.tenant_name} home`} className="flex min-w-0 items-center gap-3 text-[var(--foreground)] hover:text-[var(--primary)]" href={homeHref}>
+          {isPublicHeader ? <Image alt="OmniXtra" className="h-auto w-36 sm:w-44" height={44} priority src="/images/landing/OmniXtra_logo_brand.svg" width={188} /> : <><span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-md bg-[var(--primary)] bg-contain bg-center bg-no-repeat text-sm font-bold text-[var(--primary-foreground)]" style={branding.logo_url ? ({ backgroundImage: `url(${branding.logo_url})` } as CSSProperties) : undefined}>{branding.logo_url ? null : branding.tenant_name.slice(0, 1).toUpperCase()}</span><span className="max-w-48 truncate text-base font-bold">{branding.tenant_name}</span></>}
+        </Link> : null}
+        {membership ? <AppHeaderNav membership={membership} onSignOut={signOutAndRedirect} session={session} showAuthLink={showAuthLink} /> : !showAuthLink ? <MarketingHeaderNav {...marketingNavProps} /> : <AppHeaderNav membership={null} onSignOut={signOutAndRedirect} session={session} showAuthLink={showAuthLink} />}
       </div>
-      {isPublicHeader && mobileOpen ? <MarketingHeaderNav {...marketingNavProps} mobileOnly /> : null}
     </header>
   );
 }

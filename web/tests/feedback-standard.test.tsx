@@ -87,7 +87,7 @@ describe("loading and feedback standard", () => {
     );
   });
 
-  it("links the context-aware academy logo to admin home", () => {
+  it("keeps role-aware navigation and branding in the sidebar shell", () => {
     const html = renderToStaticMarkup(
       <AppShell branding={branding} viewerRole="tenant_admin">
         <main>Dashboard</main>
@@ -95,6 +95,7 @@ describe("loading and feedback standard", () => {
     );
 
     expect(html).toContain('href="/admin"');
+    expect(html).toContain("Dashboard");
     expect(html).toContain("Acme Academy");
   });
 });

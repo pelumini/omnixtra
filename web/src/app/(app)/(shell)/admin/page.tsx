@@ -11,6 +11,7 @@ import {
 import { InvitationPending } from "@/features/auth";
 import { getCourses } from "@/features/courses";
 import { AdminHome } from "@/features/dashboard";
+import { getMemberships } from "@/features/members";
 import { getSessionOrNull } from "@/lib/auth/session";
 import { e2eFixturesEnabled } from "@/lib/e2e-enabled";
 
@@ -18,6 +19,7 @@ import type {
   CourseCompletionAnalytics,
   LearnerProgressReportRow,
 } from "@/features/analytics";
+import type { Course } from "@/features/courses/schemas";
 import type { TenantBranding } from "@/lib/schemas/academy";
 
 const fallbackBranding: TenantBranding = {
@@ -36,9 +38,11 @@ export default async function AdminDashboardPage() {
           adminName="Admin"
           analytics={[]}
           courseCount={1}
+          courses={[]}
           csvUrl={learnerProgressCsvUrl()}
           learnerProgress={[]}
           loadError={null}
+          membersCount={1}
         />
       </AppShell>
     );
@@ -67,18 +71,23 @@ export default async function AdminDashboardPage() {
 
   let analytics: CourseCompletionAnalytics[] = [];
   let courseCount = 0;
+  let courses: Course[] = [];
   let learnerProgress: LearnerProgressReportRow[] = [];
+  let membersCount = 0;
   let loadError: string | null = null;
   try {
-    const [analyticsResponse, progressResponse, coursesResponse] =
+    const [analyticsResponse, progressResponse, coursesResponse, membershipsResponse] =
       await Promise.all([
         getCompletionAnalytics(context),
         getLearnerProgressReport(context),
         getCourses(context),
+        getMemberships(context),
       ]);
     analytics = analyticsResponse.data;
     learnerProgress = progressResponse.data;
-    courseCount = coursesResponse.data.items.length;
+    courses = coursesResponse.data.items;
+    courseCount = courses.length;
+    membersCount = membershipsResponse.data.length;
   } catch (error) {
     loadError =
       error instanceof Error
@@ -91,9 +100,11 @@ export default async function AdminDashboardPage() {
       adminName={authSession.user.full_name}
       analytics={analytics}
       courseCount={courseCount}
+      courses={courses}
       csvUrl={learnerProgressCsvUrl()}
       learnerProgress={learnerProgress}
       loadError={loadError}
+      membersCount={membersCount}
     />
   );
 }

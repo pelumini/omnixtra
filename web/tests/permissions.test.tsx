@@ -53,13 +53,13 @@ describe("ADR-003 frontend permissions", () => {
       <SessionHeader branding={branding} initialSession={memberSession} />,
     );
 
-    expect(adminHtml).toContain("Members");
-    expect(adminHtml).toContain("Billing");
     expect(adminHtml).toContain("Admin User");
+    expect(adminHtml).toContain("Notifications");
     expect(adminHtml).not.toContain("Sign in");
-    expect(memberHtml).not.toContain("Members");
-    expect(memberHtml).not.toContain("Billing");
-    expect(memberHtml).toContain("Courses");
+    expect(adminHtml).not.toContain('href="/admin/members"');
+    expect(adminHtml).not.toContain('href="/pricing"');
+    expect(memberHtml).not.toContain('href="/admin/members"');
+    expect(memberHtml).not.toContain('href="/pricing"');
     expect(memberHtml).toContain("Member User");
     expect(memberHtml).not.toContain("Sign in");
   });
