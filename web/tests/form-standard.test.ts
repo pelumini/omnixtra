@@ -67,7 +67,7 @@ describe("form standard helpers", () => {
     const forms = [
       {
         field: "academyName",
-        input: { academyName: "", email: "", fullName: "", password: "", subdomain: "" },
+        input: { academyName: "", email: "", firstName: "", lastName: "", password: "", phone: "", subdomain: "" },
         schema: createAcademySchema,
       },
       {

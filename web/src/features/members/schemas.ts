@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { metaSchema, orgRoleSchema } from "@/lib/schemas/common";
-import { emailSchema } from "@/lib/validation/primitives";
+import { emailSchema, firstNameSchema, lastNameSchema, phoneSchema } from "@/lib/validation/primitives";
 
 export const userCreateRequestSchema = z.object({
   email: z.string().email(),
@@ -65,9 +65,9 @@ export const membershipsEnvelopeSchema = z.object({
 
 export const createUserFormSchema = z.object({
   email: emailSchema,
-  firstName: z.string().trim().min(1, "required").max(100, "max_length"),
-  lastName: z.string().trim().min(1, "required").max(100, "max_length"),
-  phone: z.string().trim().min(1, "required").max(32, "max_length"),
+  firstName: firstNameSchema,
+  lastName: lastNameSchema,
+  phone: phoneSchema,
   orgRole: z.enum(["member", "tenant_admin"]),
 });
 

@@ -8,6 +8,7 @@ vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
 }));
 
+import { RouteChrome } from "@/components/layout/route-chrome";
 import { SessionHeader } from "@/components/layout/session-header";
 
 import type { TenantBranding } from "@/lib/schemas/academy";
@@ -42,6 +43,25 @@ const memberSession: SessionResponse = {
 };
 
 describe("session header chrome", () => {
+  it("suppresses global chrome on auth routes and preserves it on marketing routes", () => {
+    route.pathname = "/login";
+    const authHtml = renderToStaticMarkup(
+      <RouteChrome branding={branding} fixtureMode={false} initialSession={null} refreshSession={false} showAuthLink>
+        <main>Login body</main>
+      </RouteChrome>,
+    );
+    route.pathname = "/";
+    const marketingHtml = renderToStaticMarkup(
+      <RouteChrome branding={branding} fixtureMode={false} initialSession={null} refreshSession={false} showAuthLink={false}>
+        <main>Marketing body</main>
+      </RouteChrome>,
+    );
+
+    expect(authHtml).toBe("<main>Login body</main>");
+    expect(marketingHtml).toContain("Pastors Academy home");
+    expect(marketingHtml).toContain("pt-20");
+  });
+
   it("renders the admin header in the content column without duplicate branding", () => {
     route.pathname = "/admin";
     const html = renderToStaticMarkup(

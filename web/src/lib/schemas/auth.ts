@@ -4,8 +4,10 @@ import { metaSchema, orgRoleSchema } from "@/lib/schemas/common";
 import {
   academyNameSchema,
   emailSchema,
-  fullNameSchema,
+  firstNameSchema,
+  lastNameSchema,
   passwordSchema,
+  phoneSchema,
   subdomainSchema,
 } from "@/lib/validation/primitives";
 
@@ -59,7 +61,9 @@ export const sessionEnvelopeSchema = z.object({
 export const createAcademySchema = z.object({
   academyName: academyNameSchema,
   subdomain: subdomainSchema,
-  fullName: fullNameSchema,
+  firstName: firstNameSchema,
+  lastName: lastNameSchema,
+  phone: phoneSchema,
   email: emailSchema,
   password: passwordSchema,
 });

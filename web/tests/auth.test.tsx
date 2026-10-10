@@ -27,7 +27,16 @@ describe("auth UI", () => {
   });
 
   it("renders separate login, academy creation, and invitation surfaces", () => {
-    expect(renderToStaticMarkup(<SignInView />)).toContain("Continue to your academy");
+    const signInHtml = renderToStaticMarkup(<SignInView />);
+    expect(signInHtml).toContain("To continue your academy");
+    expect(signInHtml).toContain("Email Address");
+    expect(signInHtml).toContain('placeholder="Enter email"');
+    expect(signInHtml).toContain('aria-label="Show password"');
+    expect(signInHtml).toContain('href="/forgot-password"');
+    expect(signInHtml).toContain("disabled");
+    expect(signInHtml).not.toContain("Join an existing one");
+    expect(signInHtml).not.toContain("Create an academy");
+    expect(signInHtml).toContain("login-img.png");
     expect(renderToStaticMarkup(<SignInView academyName="Eap Academy" />)).toContain(
       "Sign in to Eap Academy",
     );
@@ -46,11 +55,28 @@ describe("auth UI", () => {
         onSuccess={() => {}}
       />,
     );
-    expect(createAcademyHtml).toContain("Your academy");
-    expect(createAcademyHtml).toContain("Your admin account");
-    expect(createAcademyHtml).toContain("Academy name");
-    expect(createAcademyHtml).toContain("Create academy");
+    expect(createAcademyHtml).toContain("Set up your academy space.");
+    expect(createAcademyHtml).toContain("STEP 1 OF 2");
+    expect(createAcademyHtml).toContain("First Name");
+    expect(createAcademyHtml).toContain("Last Name");
+    expect(createAcademyHtml).toContain("Phone");
+    expect(createAcademyHtml).toContain("At least 12 characters");
+    expect(createAcademyHtml).toContain("Continue");
     expect(createAcademyHtml).toContain("noValidate");
+    const academyStepHtml = renderToStaticMarkup(
+      <CreateAcademyForm
+        action={async () => ({ accessToken: "token", subdomain: "acme" })}
+        initialStep={2}
+        onSuccess={() => {}}
+      />,
+    );
+    expect(academyStepHtml).toContain("STEP 2 OF 2");
+    expect(academyStepHtml).toContain("Academy Name");
+    expect(academyStepHtml).toContain(".omnixtra.app");
+    expect(academyStepHtml).toContain('href="/terms"');
+    expect(academyStepHtml).toContain('href="/privacy"');
+    expect(academyStepHtml).toContain("disabled");
+    expect(academyStepHtml).toContain("Create Academy");
     expect(
       renderToStaticMarkup(
         <AcceptInvitationView

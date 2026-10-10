@@ -48,7 +48,9 @@ type CreateAcademyResult = {
 const serverToClientFields: Record<string, keyof CreateAcademyInput> = {
   tenantName: "academyName",
   tenantSlug: "subdomain",
-  fullName: "fullName",
+  firstName: "firstName",
+  lastName: "lastName",
+  phone: "phone",
   email: "email",
   password: "password",
   subdomain: "subdomain",
@@ -58,7 +60,9 @@ export async function createAcademy(input: CreateAcademyInput): Promise<CreateAc
   try {
     const response = await createTenant({
       email: input.email,
-      full_name: input.fullName,
+      first_name: input.firstName,
+      last_name: input.lastName,
+      phone: input.phone,
       password: input.password,
       tenant_name: input.academyName,
       tenant_slug: input.subdomain,
