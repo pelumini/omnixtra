@@ -30,7 +30,9 @@ def test_tenant_creation_login_and_protected_route_with_tenant_host() -> None:
         json={
             "tenant_name": "E2E Tenant",
             "tenant_slug": tenant_slug,
-            "full_name": "E2E Admin",
+            "first_name": "E2E",
+            "last_name": "Admin",
+            "phone": "+44000000000",
             "email": email,
             "password": TEST_PASSWORD,
         },
@@ -115,7 +117,9 @@ def test_tenant_creation_sets_session_cookies_and_session_endpoint_returns_ident
         json={
             "tenant_name": "Signup Session Tenant",
             "tenant_slug": tenant_slug,
-            "full_name": "Signup Session Admin",
+            "first_name": "Signup Session",
+            "last_name": "Admin",
+            "phone": "+44000000000",
             "email": email,
             "password": TEST_PASSWORD,
         },
@@ -237,7 +241,9 @@ def _create_tenant(client: TestClient, slug: str) -> dict[str, str]:
         json={
             "tenant_name": slug.title(),
             "tenant_slug": slug,
-            "full_name": "Tenant Admin",
+            "first_name": "Tenant",
+            "last_name": "Admin",
+            "phone": "+44000000000",
             "email": f"admin-{slug}@example.com",
             "password": TEST_PASSWORD,
         },

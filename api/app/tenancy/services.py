@@ -76,7 +76,10 @@ async def create_tenant(
         user = User(
             tenant_id=tenant.id,
             email=str(request.email).strip().lower(),
-            full_name=request.full_name,
+            full_name=f"{request.first_name} {request.last_name}".strip(),
+            first_name=request.first_name,
+            last_name=request.last_name,
+            phone=request.phone,
             password_hash=hash_password(request.password),
             role=OrgRole.member.value,
             status=UserStatus.active.value,
