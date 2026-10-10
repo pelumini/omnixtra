@@ -1,14 +1,14 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
-async function appNavigation(page: Page): Promise<Locator> {
+async function appNavigationItem(page: Page, name: string): Promise<Locator> {
   if ((page.viewportSize()?.width ?? 768) < 768) {
     const openNavigation = page.getByRole("button", { name: "Open navigation menu" });
     await expect(openNavigation).toBeVisible();
     await openNavigation.click();
-    return page.getByRole("menu");
+    return page.getByRole("menuitem", { name });
   }
 
-  return page.getByRole("complementary");
+  return page.getByRole("complementary").getByRole("link", { name });
 }
 
 test("org admin sees member, billing, and course creation entry points while member does not", async ({
@@ -16,9 +16,11 @@ test("org admin sees member, billing, and course creation entry points while mem
 }) => {
   await page.goto("/e2e/permissions/admin");
 
-  const adminNavigation = await appNavigation(page);
-  await expect(adminNavigation.getByRole("link", { name: "Members" })).toBeVisible();
-  await expect(adminNavigation.getByRole("link", { name: "Billing" })).toBeVisible();
+  await expect(await appNavigationItem(page, "Members")).toBeVisible();
+  const billingItem = (page.viewportSize()?.width ?? 768) < 768
+    ? page.getByRole("menuitem", { name: "Billing" })
+    : page.getByRole("complementary").getByRole("link", { name: "Billing" });
+  await expect(billingItem).toBeVisible();
   await expect(page.getByRole("button", { name: "Add course" })).toBeVisible();
 
   await page.goto("/e2e/permissions/member");
