@@ -21,6 +21,9 @@ export const emailSchema = z
 export const passwordSchema = textSchema(PASSWORD_MIN, PASSWORD_MAX);
 
 export const fullNameSchema = textSchema(NAME_MIN, NAME_MAX);
+export const firstNameSchema = textSchema(1, 100);
+export const lastNameSchema = textSchema(1, 100);
+export const phoneSchema = textSchema(1, 32);
 
 export const academyNameSchema = textSchema(NAME_MIN, NAME_MAX);
 

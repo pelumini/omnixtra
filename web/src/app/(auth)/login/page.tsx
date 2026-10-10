@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 
 import { BareHostLoginView, SignInView } from "@/features/auth";
+import { getBrandingOrDefault } from "@/lib/auth/branding";
 import { tenantSlugFromHost } from "@/lib/tenant-host";
 
 export default async function LoginPage() {
@@ -9,5 +10,6 @@ export default async function LoginPage() {
   if (tenantSlugFromHost(host) === null) {
     return <BareHostLoginView />;
   }
-  return <SignInView />;
+  const branding = await getBrandingOrDefault({ host });
+  return <SignInView academyName={branding.tenant_name} />;
 }

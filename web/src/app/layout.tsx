@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 
 
 import { AppToaster } from "@/components/layout/app-toaster";
-import { SessionHeader } from "@/components/layout/session-header";
+import { RouteChrome } from "@/components/layout/route-chrome";
 import { getBrandingOrDefault } from "@/lib/auth/branding";
 import { getSessionOrNull } from "@/lib/auth/session";
 import { e2eFixturesEnabled } from "@/lib/e2e-enabled";
@@ -44,14 +44,15 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         className={`${mulish.variable} font-sans`}
         style={{ "--tenant-primary": branding.primary_color } as CSSProperties}
       >
-        <SessionHeader
+        <RouteChrome
           branding={branding}
           fixtureMode={e2eFixturesEnabled()}
           initialSession={session}
           refreshSession={!e2eFixturesEnabled()}
           showAuthLink={showAuthLink}
-        />
-        <div className={showAuthLink ? "pt-14" : "pt-20"}>{children}</div>
+        >
+          {children}
+        </RouteChrome>
         <AppToaster />
       </body>
     </html>

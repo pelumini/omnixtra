@@ -24,7 +24,9 @@ export const tenantCreateRequestSchema = z.object({
   primary_color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   locale: z.string().min(2).max(16).optional(),
   time_zone: z.string().min(1).max(64).optional(),
-  full_name: z.string().min(2).max(200),
+  first_name: z.string().trim().min(1).max(100),
+  last_name: z.string().trim().min(1).max(100),
+  phone: z.string().trim().min(1).max(32),
   email: z.string().email(),
   password: z.string().min(12).max(128),
 });

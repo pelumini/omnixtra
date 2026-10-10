@@ -117,8 +117,10 @@ describe("ADR-003 identity schemas", () => {
     expect(
       tenantCreateRequestSchema.parse({
         email: "admin@example.com",
-        full_name: "Admin User",
+        first_name: "Admin",
+        last_name: "User",
         password: "correct horse battery staple",
+        phone: "+44000000000",
         tenant_name: "Acme",
         tenant_slug: "acme",
       }).tenant_slug,
