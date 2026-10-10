@@ -1,4 +1,25 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
+
+async function marketingNavigation(page: Page): Promise<Page> {
+  if ((page.viewportSize()?.width ?? 1024) < 1024) {
+    const openMenu = page.getByRole("button", { name: "Open menu" });
+    await expect(openMenu).toBeVisible();
+    await openMenu.click();
+  }
+
+  return page;
+}
+
+async function appNavigation(page: Page): Promise<Locator> {
+  if ((page.viewportSize()?.width ?? 768) < 768) {
+    const openNavigation = page.getByRole("button", { name: "Open navigation menu" });
+    await expect(openNavigation).toBeVisible();
+    await openNavigation.click();
+    return page.getByRole("menu");
+  }
+
+  return page.getByRole("complementary");
+}
 
 test("unauthenticated root renders the public landing page", async ({ page }) => {
   await page.goto("/");
@@ -7,11 +28,8 @@ test("unauthenticated root renders the public landing page", async ({ page }) =>
   await expect(page.getByRole("heading", { name: "Launch your own learning academy." })).toBeVisible();
   await expect(page.getByRole("link", { name: "Create your academy" }).first()).toBeVisible();
   await expect(page.getByRole("link", { name: "Join with invite" }).first()).toBeVisible();
-  const openMenu = page.getByRole("button", { name: "Open menu" });
-  if (await openMenu.isVisible()) {
-    await openMenu.click();
-  }
-  await expect(page.getByRole("link", { exact: true, name: "Sign in" })).toBeVisible();
+  const navigation = await marketingNavigation(page);
+  await expect(navigation.getByRole("link", { exact: true, name: "Sign in" })).toBeVisible();
 });
 
 test("bare localhost login asks for an academy host", async ({ page }) => {
@@ -26,10 +44,11 @@ test("bare localhost login asks for an academy host", async ({ page }) => {
 test("authenticated header shows account menu and hides sign in", async ({ page }) => {
   await page.goto("/e2e/session-header");
 
-  await expect(page.locator("summary", { hasText: "Admin User" })).toBeVisible();
+  const accountMenu = page.getByRole("button", { name: "Open user menu" });
+  await expect(accountMenu).toBeVisible();
   await expect(page.getByRole("link", { exact: true, name: "Sign in" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Sign out" })).toHaveCount(0);
-  await page.locator("summary", { hasText: "Admin User" }).click();
+  await accountMenu.click();
   await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
 });
 
@@ -37,7 +56,7 @@ test("server root router sends admins to admin and members to my courses", async
   await page.goto("/?e2e_session=admin");
 
   await expect(page).toHaveURL(/\/admin$/);
-  await expect(page.getByRole("heading", { name: /Welcome, .+!/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Welcome Back,/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Launch your own learning academy." })).toHaveCount(0);
 
   await page.goto("/?e2e_session=member");
@@ -73,9 +92,8 @@ test("my courses supports admin visits and zero-total member state", async ({ pa
   await page.goto("/my-courses?e2e=admin");
 
   await expect(page.getByRole("heading", { name: "My Courses" })).toBeVisible();
-  await expect(
-    page.getByRole("complementary").getByRole("link", { name: "Members" }),
-  ).toBeVisible();
+  const navigation = await appNavigation(page);
+  await expect(navigation.getByRole("link", { name: "Members" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Courses I own" })).toBeVisible();
 
   await page.goto("/my-courses?e2e=empty");
