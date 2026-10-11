@@ -1,3 +1,6 @@
+import { AnimatedFade, AnimatedHeading } from "./animated-heading";
+
+import type { HeadingMotionVariant } from "./animated-heading";
 import type { ReactNode } from "react";
 
 export const assetRoot = "/images/landing";
@@ -6,22 +9,33 @@ export function SectionIntro({
   children,
   eyebrow,
   title,
+  variant,
 }: {
   children: ReactNode;
   eyebrow: string;
   title: string;
+  variant: HeadingMotionVariant;
 }) {
   return (
     <div className="grid gap-8 lg:grid-cols-2 lg:items-end">
       <div>
-        <Eyebrow>{eyebrow}</Eyebrow>
-        <h2 className="mt-5 max-w-xl text-4xl font-semibold leading-tight sm:text-5xl">
+        <AnimatedFade className="inline-block">
+          <Eyebrow>{eyebrow}</Eyebrow>
+        </AnimatedFade>
+        <AnimatedHeading
+          className="mt-5 max-w-xl text-4xl font-semibold leading-tight sm:text-5xl"
+          variant={variant}
+        >
           {title}
-        </h2>
+        </AnimatedHeading>
       </div>
-      <p className="max-w-xl text-lg leading-8 text-[var(--color-text-sub-500)] lg:justify-self-end">
+      <AnimatedFade
+        as="p"
+        className="max-w-xl text-lg leading-8 text-[var(--color-text-sub-500)] lg:justify-self-end"
+        delay={250}
+      >
         {children}
-      </p>
+      </AnimatedFade>
     </div>
   );
 }

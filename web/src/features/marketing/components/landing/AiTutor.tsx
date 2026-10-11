@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 
+import { AnimatedFade, AnimatedHeading } from "./animated-heading";
 import { Eyebrow, Pattern } from "./shared";
 
 export function AiTutor() {
@@ -17,15 +18,24 @@ export function AiTutor() {
       <Pattern />
       <div className="landing-container relative">
         <div className="mx-auto max-w-xl text-center">
-          <Eyebrow>AI tutor</Eyebrow>
+          <AnimatedFade className="inline-block">
+            <Eyebrow>AI tutor</Eyebrow>
+          </AnimatedFade>
           <span className="sr-only">Course-grounded AI</span>
-          <h2 className="mt-4 text-3xl font-semibold leading-tight sm:text-4xl">
+          <AnimatedHeading
+            className="mt-4 text-3xl font-semibold leading-tight sm:text-4xl"
+            variant="slide-left"
+          >
             Learning support, grounded in your content.
-          </h2>
-          <p className="mt-4 text-base leading-7 text-[var(--color-text-sub-500)]">
+          </AnimatedHeading>
+          <AnimatedFade
+            as="p"
+            className="mt-4 text-base leading-7 text-[var(--color-text-sub-500)]"
+            delay={250}
+          >
             OmniXtra&apos;s AI tutor helps learners understand course material,
             answer questions and move forward using knowledge from their course.
-          </p>
+          </AnimatedFade>
         </div>
         <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {benefits.map(([title, body]) => (

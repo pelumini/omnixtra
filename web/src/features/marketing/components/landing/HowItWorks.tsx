@@ -33,6 +33,7 @@ export function HowItWorks() {
         <SectionIntro
           eyebrow="How it works"
           title="From idea to learning academy in four steps."
+          variant="rise"
         >
           A direct setup path from the first academy decision to measurable
           learning.

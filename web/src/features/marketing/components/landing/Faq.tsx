@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import { AnimatedFade, AnimatedHeading } from "./animated-heading";
 import { Eyebrow } from "./shared";
 
 const faqs = [
@@ -30,10 +31,15 @@ export function Faq() {
     <section className="relative py-20 sm:py-28 lg:min-h-[1137px]" id="faq">
       <div className="landing-container relative">
         <div className="text-center">
-          <Eyebrow>FAQ</Eyebrow>
-          <h2 className="mx-auto mt-5 max-w-lg text-4xl font-semibold sm:text-5xl">
+          <AnimatedFade className="inline-block">
+            <Eyebrow>FAQ</Eyebrow>
+          </AnimatedFade>
+          <AnimatedHeading
+            className="mx-auto mt-5 max-w-lg text-4xl font-semibold sm:text-5xl"
+            variant="rise"
+          >
             Got questions? We&apos;ve got them answered.
-          </h2>
+          </AnimatedHeading>
         </div>
         <div className="mt-14 divide-y divide-[var(--color-stroke-soft-200)] border-y border-[var(--color-stroke-soft-200)]">
           {faqs.map(([question, answer], index) => (

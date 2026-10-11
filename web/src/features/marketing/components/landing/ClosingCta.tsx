@@ -2,6 +2,7 @@ import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { AnimatedFade, AnimatedHeading } from "./animated-heading";
 import { assetRoot } from "./shared";
 
 export function ClosingCta() {
@@ -29,13 +30,20 @@ export function ClosingCta() {
       </div>
       <div className="landing-container relative grid items-center gap-12 lg:min-h-[560px] lg:grid-cols-2">
         <div className="relative z-10 mx-auto w-full max-w-md py-12 text-center sm:py-16 lg:mx-0 lg:py-0 lg:text-left">
-          <h2 className="text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
+          <AnimatedHeading
+            className="text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl"
+            variant="emphasis"
+          >
             Your academy can start here.
-          </h2>
-          <p className="mt-5 text-lg leading-8 text-[var(--color-primary-lighter)]">
+          </AnimatedHeading>
+          <AnimatedFade
+            as="p"
+            className="mt-5 text-lg leading-8 text-[var(--color-primary-lighter)]"
+            delay={250}
+          >
             Create a branded learning academy and start building your first
             course.
-          </p>
+          </AnimatedFade>
           <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
             <Link
               className="landing-button bg-[var(--color-bg-white-0)] text-[var(--primary)] hover:bg-[var(--color-primary-lighter)]"

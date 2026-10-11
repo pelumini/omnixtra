@@ -1,8 +1,10 @@
 import { Check } from "lucide-react";
 import Image from "next/image";
 
+import { AnimatedFade, AnimatedHeading } from "./animated-heading";
 import { Eyebrow, Pattern, assetRoot } from "./shared";
 
+import type { HeadingMotionVariant } from "./animated-heading";
 import type { ReactNode } from "react";
 
 type FeatureBandProps = {
@@ -18,6 +20,7 @@ type FeatureBandProps = {
   patterned?: boolean;
   reverse?: boolean;
   title: string;
+  titleVariant: HeadingMotionVariant;
 };
 
 export function FeatureBand({
@@ -32,6 +35,7 @@ export function FeatureBand({
   patterned = false,
   reverse = false,
   title,
+  titleVariant,
 }: FeatureBandProps) {
   return (
     <section
@@ -46,13 +50,22 @@ export function FeatureBand({
         className={`landing-container relative grid items-center gap-14 lg:grid-cols-[0.9fr_1.1fr] ${reverse ? "lg:grid-cols-[1.1fr_0.9fr] lg:[&>*:first-child]:order-2" : ""}`}
       >
         <div>
-          <Eyebrow>{eyebrow}</Eyebrow>
-          <h2 className="mt-5 max-w-xl text-4xl font-semibold leading-tight sm:text-5xl">
+          <AnimatedFade className="inline-block">
+            <Eyebrow>{eyebrow}</Eyebrow>
+          </AnimatedFade>
+          <AnimatedHeading
+            className="mt-5 max-w-xl text-4xl font-semibold leading-tight sm:text-5xl"
+            variant={titleVariant}
+          >
             {title}
-          </h2>
-          <p className="mt-5 max-w-xl text-lg leading-8 text-[var(--color-text-sub-500)]">
+          </AnimatedHeading>
+          <AnimatedFade
+            as="p"
+            className="mt-5 max-w-xl text-lg leading-8 text-[var(--color-text-sub-500)]"
+            delay={250}
+          >
             {children}
-          </p>
+          </AnimatedFade>
           {bullets && (
             <ul className="mt-7 flex max-w-xl flex-wrap gap-x-6 gap-y-3">
               {bullets.map((bullet) => (

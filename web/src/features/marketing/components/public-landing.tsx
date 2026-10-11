@@ -31,6 +31,7 @@ export function PublicLanding() {
           imageCrop="wide"
           patterned
           title="Run your academy from one place."
+          titleVariant="slide-left"
         >
           Admins keep courses, people, progress and billing moving without
           switching tools.
@@ -48,6 +49,7 @@ export function PublicLanding() {
           imagePlacement="left-bottom"
           reverse
           title="Make learning feel like yours."
+          titleVariant="rise"
         >
           Give your academy its own identity with learning experiences designed
           around your brand.
@@ -61,6 +63,7 @@ export function PublicLanding() {
           imagePlacement="centered-modal"
           patterned
           title="Build practical courses without the complexity."
+          titleVariant="slide-left"
         >
           Create lessons and add the content your learners actually need.
         </FeatureBand>
@@ -78,6 +81,7 @@ export function PublicLanding() {
           imagePlacement="learner-player"
           reverse
           title="Give learners a clearer way to learn."
+          titleVariant="rise"
         >
           From their first lesson to completion, learners always know where they
           are and what comes next.
