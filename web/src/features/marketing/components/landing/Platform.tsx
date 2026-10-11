@@ -44,6 +44,7 @@ export function Platform() {
         <SectionIntro
           eyebrow="The platform"
           title="Everything you need to launch, manage and grow your academy."
+          variant="slide-left"
         >
           OmniXtra gives teams the building blocks of a learning academy without
           assembling an LMS from scratch.
