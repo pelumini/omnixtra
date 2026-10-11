@@ -8,7 +8,7 @@ import { Eyebrow } from "./shared";
 
 export function Hero() {
   return (
-    <section className="pb-20 pt-0 sm:pb-28 lg:pb-24">
+    <section className="pb-20 pt-12 sm:pb-28 sm:pt-16 lg:pb-24 lg:pt-0">
       <div className="landing-container grid items-center gap-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
         <div>
           <AnimatedFade className="inline-block">

@@ -25,16 +25,16 @@ export function MarketingHeaderNav({
 }: MarketingHeaderNavProps) {
   return (
     <nav className="ml-auto flex items-center gap-4 text-sm text-[var(--color-text-sub-500)] lg:gap-8">
-      <span className="hidden items-center gap-6 lg:flex xl:gap-8">
+      <span className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-6 lg:flex xl:gap-8">
         {publicNavLinks.map((link) => (
           <Link className="hover:text-[var(--primary)]" href={link.href} key={link.href}>
             {link.label}
           </Link>
         ))}
-        <Link className="font-semibold text-[var(--color-text-main-900)] hover:text-[var(--primary)]" href="/auth">
-          Sign in
-        </Link>
       </span>
+      <Link className="hidden font-semibold text-[var(--color-text-main-900)] hover:text-[var(--primary)] lg:inline-flex" href="/auth">
+        Sign in
+      </Link>
       <Link className="landing-button landing-button-primary hidden sm:inline-flex" href="/get-started">
         Create your academy
       </Link>

@@ -130,7 +130,7 @@ export function SessionHeader({ branding, fixtureMode = false, initialSession, r
 
   return (
     <header className={`fixed right-0 top-0 z-50 border-b border-[var(--border)] bg-white transition-[left,box-shadow] ${isShellHeader ? "left-0 h-14 md:left-[var(--app-sidebar-width,13rem)] md:h-16" : "left-0"} ${isScrolled ? "shadow-sm" : "shadow-none"}`}>
-      <div className={`${isShellHeader ? "flex h-full items-center px-4 sm:px-6" : `landing-container flex items-center gap-3 ${isPublicHeader ? "h-20" : "min-h-14"}`}`}>
+      <div className={`${isShellHeader ? "flex h-full items-center px-4 sm:px-6" : `landing-container flex items-center gap-3 ${isPublicHeader ? "relative h-20" : "min-h-14"}`}`}>
         {!isShellHeader ? <Link aria-label={`${branding.tenant_name} home`} className="flex min-w-0 items-center gap-3 text-[var(--foreground)] hover:text-[var(--primary)]" href={homeHref}>
           {isPublicHeader ? <Image alt="OmniXtra" className="h-auto w-36 sm:w-44" height={44} priority src="/images/landing/OmniXtra_logo_brand.svg" width={188} /> : <><span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-md bg-[var(--primary)] bg-contain bg-center bg-no-repeat text-sm font-bold text-[var(--primary-foreground)]" style={branding.logo_url ? ({ backgroundImage: `url(${branding.logo_url})` } as CSSProperties) : undefined}>{branding.logo_url ? null : branding.tenant_name.slice(0, 1).toUpperCase()}</span><span className="max-w-48 truncate text-base font-bold">{branding.tenant_name}</span></>}
         </Link> : null}

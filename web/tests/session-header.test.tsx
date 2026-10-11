@@ -10,6 +10,7 @@ vi.mock("next/navigation", () => ({
 
 import { RouteChrome } from "@/components/layout/route-chrome";
 import { SessionHeader } from "@/components/layout/session-header";
+import { Hero } from "@/features/marketing/components/landing/Hero";
 
 import type { TenantBranding } from "@/lib/schemas/academy";
 import type { SessionResponse } from "@/lib/schemas/auth";
@@ -113,6 +114,16 @@ describe("session header chrome", () => {
     expect(apexHtml).toContain('href="/"');
     expect(apexHtml).toContain('href="/#platform"');
     expect(apexHtml).toContain('href="/get-started"');
+    expect(apexHtml).toContain("relative h-20");
+    expect(apexHtml).toContain("absolute left-1/2 hidden -translate-x-1/2");
     expect(apexHtml).not.toContain('href="/login"');
+  });
+
+  it("adds mobile hero clearance and restores the integrated desktop spacing", () => {
+    const html = renderToStaticMarkup(<Hero />);
+
+    expect(html).toContain("pt-12");
+    expect(html).toContain("sm:pt-16");
+    expect(html).toContain("lg:pt-0");
   });
 });
