@@ -75,6 +75,7 @@ export function SignInView({ academyName }: SignInViewProps = {}) {
       </section>
       <div className="relative hidden min-h-screen overflow-hidden lg:block">
         <Image alt="" className="object-cover" fill priority sizes="40vw" src="/images/auth/login-img.png" />
+        <Image alt="" aria-hidden="true" className="z-10 object-contain object-bottom" fill priority sizes="40vw" src="/images/auth/astronaut.png" />
       </div>
     </main>
   );

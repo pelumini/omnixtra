@@ -68,7 +68,7 @@ export const createUserFormSchema = z.object({
   firstName: firstNameSchema,
   lastName: lastNameSchema,
   phone: phoneSchema,
-  orgRole: z.enum(["member", "tenant_admin"]),
+  orgRole: z.enum(["member", "tenant_admin"], { required_error: "required" }),
 });
 
 export type InvitationAcceptRequest = z.infer<typeof invitationAcceptRequestSchema>;

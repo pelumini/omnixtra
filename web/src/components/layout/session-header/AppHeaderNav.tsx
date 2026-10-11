@@ -54,9 +54,6 @@ export function AppHeaderNav({ membership, onSignOut, session, showAuthLink }: A
           <div className="relative flex h-full w-[min(20rem,85vw)] flex-col overflow-y-auto bg-white px-4 py-5 text-[var(--color-text-sub-500)] shadow-xl">
             <MobileNavGroup items={visibleNavItems(mainItems, membership.org_role)} label="MAIN" onSelect={close} pathname={pathname} />
             <MobileNavGroup items={visibleNavItems(otherItems, membership.org_role)} label="OTHERS" onSelect={close} pathname={pathname} />
-            <button className="mt-2 flex h-11 items-center gap-3 rounded-md px-3 text-sm font-semibold text-[#d3294b] hover:bg-[#fff1f3]" onClick={() => { close(); void onSignOut(); }} role="menuitem" type="button">
-              <LogOut aria-hidden="true" className="size-5" /> Logout Account
-            </button>
           </div>
         </>}
       </Dropdown> : null}

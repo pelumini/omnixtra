@@ -59,9 +59,6 @@ function AcceptForm({ preview, token }: { preview: InvitationPreview; token: str
   });
   const fieldError = (field: keyof AcceptInvitationInput) => {
     const message = errors[field]?.message;
-    if (message === "password_mismatch") {
-      return "Passwords must match.";
-    }
     return message ? resolveMessage(field, message) : undefined;
   };
   const password = watch("password");

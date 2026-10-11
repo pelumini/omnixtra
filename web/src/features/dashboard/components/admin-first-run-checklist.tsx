@@ -16,6 +16,7 @@ export function AdminFirstRunChecklist({
       adminName={adminName}
       completionsCount={0}
       courseCount={courseCount}
+      firstRun
       membersCount={membersCount}
     >
       <DashboardContent courses={[]} />

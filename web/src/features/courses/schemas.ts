@@ -223,7 +223,7 @@ export const blockFormSchema = z.object({
 
 export const mediaFormSchema = z.object({
   byteSize: z.coerce.number().int("number").min(1, "min_value"),
-  contentType: z.enum(["image/png", "image/jpeg", "video/mp4"]),
+  contentType: z.enum(["image/png", "image/jpeg", "video/mp4"], { required_error: "required" }),
   fileName: textSchema(1, 255),
 });
 

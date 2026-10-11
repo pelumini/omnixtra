@@ -8,6 +8,7 @@ import {
   lastNameSchema,
   passwordSchema,
   phoneSchema,
+  requiredUntrimmedTextSchema,
   subdomainSchema,
 } from "@/lib/validation/primitives";
 
@@ -72,7 +73,7 @@ export type CreateAcademyInput = z.infer<typeof createAcademySchema>;
 
 export const signInSchema = z.object({
   email: emailSchema,
-  password: z.string().min(1, "required"),
+  password: requiredUntrimmedTextSchema(128),
 });
 
 export type SignInInput = z.infer<typeof signInSchema>;

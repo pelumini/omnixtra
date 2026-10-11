@@ -79,6 +79,7 @@ describe("session header chrome", () => {
     expect(html).toContain('aria-haspopup="menu"');
     expect(html).toContain('aria-expanded="false"');
     expect(html).toContain('aria-label="Open navigation menu"');
+    expect(html).not.toContain("Logout Account");
     expect(html).not.toContain("<details");
     expect(html).not.toContain("Pastors Academy");
   });

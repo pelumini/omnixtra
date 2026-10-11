@@ -61,6 +61,9 @@ describe("auth UI", () => {
     expect(createAcademyHtml).toContain("Last Name");
     expect(createAcademyHtml).toContain("Phone");
     expect(createAcademyHtml).toContain("At least 12 characters");
+    expect(createAcademyHtml).toContain("Upper &amp; lowercase letters");
+    expect(createAcademyHtml).toContain("A number or symbol");
+    expect(createAcademyHtml).toContain("Password strength: weak");
     expect(createAcademyHtml).toContain("Continue");
     expect(createAcademyHtml).toContain("noValidate");
     const academyStepHtml = renderToStaticMarkup(

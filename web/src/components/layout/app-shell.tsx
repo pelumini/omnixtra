@@ -3,13 +3,11 @@
 import {
   ChevronLeft,
   ChevronRight,
-  LogOut,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { signOutAndRedirect } from "@/lib/auth/sign-out";
 import { homeForOrgRole } from "@/lib/routing/home";
 
 import { mainItems, otherItems, visibleNavItems } from "./nav-items";
@@ -55,10 +53,6 @@ export function AppShell({ branding, children, initialCollapsed = false, viewerR
           <nav className="flex gap-2 overflow-x-auto px-3 py-3 md:grid md:overflow-visible md:py-5">
             <NavGroup collapsed={collapsed} items={visibleNavItems(mainItems, viewerRole)} label="MAIN" pathname={pathname} />
             <NavGroup collapsed={collapsed} items={visibleNavItems(otherItems, viewerRole)} label="OTHERS" pathname={pathname} />
-            <button className={`flex h-11 shrink-0 items-center gap-3 rounded-md px-3 text-sm font-semibold text-[#d3294b] hover:bg-[#fff1f3] ${collapsed ? "md:justify-center" : ""}`} onClick={signOutAndRedirect} title={collapsed ? "Logout Account" : undefined} type="button">
-              <LogOut aria-hidden="true" className="size-5 shrink-0" />
-              {!collapsed ? <span>Logout Account</span> : null}
-            </button>
           </nav>
         </aside>
         <div className="min-w-0 overflow-hidden pt-14 md:pt-16">{children}</div>

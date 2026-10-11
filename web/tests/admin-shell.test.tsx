@@ -43,6 +43,7 @@ describe("admin shell", () => {
     expect(adminHtml).toContain("Courses");
     expect(adminHtml).toContain("Members");
     expect(adminHtml).toContain("Billing");
+    expect(adminHtml).not.toContain("Logout Account");
     expect(adminHtml).toContain("pt-14 md:pt-16");
     expect(memberHtml).toContain('href="/my-courses"');
     expect(memberHtml).toContain("My Courses");
@@ -80,7 +81,8 @@ describe("admin home", () => {
       />,
     );
 
-    expect(html).toContain("Welcome Back, admin");
+    expect(html).toContain("Welcome, admin");
+    expect(html).not.toContain("Welcome Back, admin");
     expect(html).toContain("No Course Yet");
     expect(html).toContain("No Activity");
     expect(html).toContain("empty-state.svg");

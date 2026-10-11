@@ -6,13 +6,13 @@ import { EmptyIllustration } from "./empty-illustration";
 import type { Course } from "@/features/courses/schemas";
 import type { ReactNode } from "react";
 
-type DashboardFrameProps = { adminName: string; children: ReactNode; completionsCount: number; courseCount: number; membersCount: number };
+type DashboardFrameProps = { adminName: string; children: ReactNode; completionsCount: number; courseCount: number; firstRun?: boolean; membersCount: number };
 
-export function DashboardFrame({ adminName, children, completionsCount, courseCount, membersCount }: DashboardFrameProps) {
+export function DashboardFrame({ adminName, children, completionsCount, courseCount, firstRun = false, membersCount }: DashboardFrameProps) {
   return (
     <main className="mx-auto min-h-[calc(100vh-3.5rem)] max-w-[100rem] px-5 pb-24 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:pb-10">
       <header>
-        <h1 className="text-2xl font-bold text-[var(--foreground)] sm:text-3xl">Welcome Back, {firstName(adminName)}</h1>
+        <h1 className="text-2xl font-bold text-[var(--foreground)] sm:text-3xl">{firstRun ? "Welcome" : "Welcome Back"}, {firstName(adminName)}</h1>
         <p className="mt-1 text-sm text-[var(--color-text-sub-500)]">Here&apos;s what&apos;s happening with your academy.</p>
       </header>
       <section aria-label="Quick actions" className="mt-6 hidden gap-3 md:grid lg:grid-cols-3">
