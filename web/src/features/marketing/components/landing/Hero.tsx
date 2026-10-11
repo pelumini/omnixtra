@@ -1,13 +1,14 @@
 import { ArrowRight } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 
-import { Eyebrow, assetRoot } from "./shared";
+import { HeroKnowledgeAnimationGate } from "@/features/landing/components/hero-knowledge-animation-gate";
+
+import { Eyebrow } from "./shared";
 
 export function Hero() {
   return (
-    <section className="pb-20 pt-20 sm:pb-28 sm:pt-28 lg:pb-32 lg:pt-36">
-      <div className="landing-container grid items-center gap-16 lg:grid-cols-[1.05fr_0.95fr]">
+    <section className="pb-20 pt-0 sm:pb-28 lg:pb-24">
+      <div className="landing-container grid items-center gap-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
         <div>
           <Eyebrow>AI-native academies for modern teams</Eyebrow>
           <span className="sr-only">AI-native LMS for branded academies</span>
@@ -30,16 +31,8 @@ export function Hero() {
             </Link>
           </div>
         </div>
-        <div className="mx-auto w-full max-w-lg lg:max-w-xl">
-          <Image
-            alt="An illustration of learning and new ideas"
-            className="h-auto w-full"
-            height={610}
-            priority
-            sizes="(max-width: 1024px) 80vw, 42vw"
-            src={`${assetRoot}/hero-right.png`}
-            width={640}
-          />
+        <div className="hidden h-[500px] w-full lg:block">
+          <HeroKnowledgeAnimationGate />
         </div>
       </div>
     </section>
