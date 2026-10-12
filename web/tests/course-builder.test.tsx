@@ -4,11 +4,13 @@ import { describe, expect, it } from "vitest";
 
 import { CourseBuilder } from "@/features/courses";
 
-import { draftCourse } from "./fixtures";
+import { courseStructure, draftCourse } from "./fixtures";
 
 describe("course builder UI", () => {
   it("renders MVP authoring controls for course details, media, lessons, standard content, and publish", () => {
-    const html = renderToStaticMarkup(<CourseBuilder course={draftCourse} />);
+    const html = renderToStaticMarkup(
+      <CourseBuilder course={draftCourse} initialStructure={courseStructure} />,
+    );
 
     expect(html).toContain("Onboarding Essentials");
     expect(html).toContain("Details");
@@ -24,5 +26,8 @@ describe("course builder UI", () => {
     expect(html).not.toContain("TalentCraft");
     expect(html).not.toContain("Learning Activities");
     expect(html).toContain("Publish");
+    expect(html).toContain("Getting Started");
+    expect(html).toContain("Welcome");
+    expect(html).toContain("1. text");
   });
 });

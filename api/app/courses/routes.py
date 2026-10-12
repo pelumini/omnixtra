@@ -12,15 +12,18 @@ from app.courses.schemas import (
     CourseCreateRequest,
     CourseDetailResponse,
     CourseResponse,
+    CourseStructureResponse,
     CourseUpdateRequest,
     CursorPage,
     LessonCreateRequest,
     LessonResponse,
+    LessonUpdateRequest,
     MediaAssetCreateRequest,
     MediaAssetResponse,
     ReorderRequest,
     SectionCreateRequest,
     SectionResponse,
+    SectionUpdateRequest,
 )
 from app.courses.services import (
     create_block,
@@ -29,12 +32,18 @@ from app.courses.services import (
     create_media_asset,
     create_section,
     delete_course,
+    delete_lesson,
+    delete_section,
     get_course_detail,
+    get_course_structure,
     list_courses,
     list_lessons,
     publish_course,
+    reorder_lessons,
     reorder_sections,
     update_course,
+    update_lesson,
+    update_section,
 )
 from app.learning.permissions import require_course_permission
 from app.shared.responses import Envelope, Meta
@@ -81,6 +90,14 @@ async def get_course_route(
     return Envelope(data=response, error=None, meta=Meta.current())
 
 
+@router.get("/{course_id}/structure")
+async def get_course_structure_route(
+    course_id: UUID, session: SessionDep, _principal: CourseMember
+) -> Envelope[CourseStructureResponse]:
+    response = await get_course_structure(session, course_id)
+    return Envelope(data=response, error=None, meta=Meta.current())
+
+
 @router.patch("/{course_id}")
 async def update_course_route(
     course_id: UUID,
@@ -89,7 +106,10 @@ async def update_course_route(
     principal: CourseMember,
 ) -> Envelope[CourseResponse]:
     await require_course_permission(
-        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+        session,
+        user_id=principal.user_id,
+        course_id=course_id,
+        permission="course.edit",
     )
     response = await update_course(session, course_id, request, actor_id=principal.user_id)
     return Envelope(data=response, error=None, meta=Meta.current())
@@ -102,7 +122,10 @@ async def delete_course_route(
     principal: CourseMember,
 ) -> Envelope[CourseResponse]:
     await require_course_permission(
-        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+        session,
+        user_id=principal.user_id,
+        course_id=course_id,
+        permission="course.edit",
     )
     response = await delete_course(session, course_id, actor_id=principal.user_id)
     return Envelope(data=response, error=None, meta=Meta.current())
@@ -116,7 +139,10 @@ async def create_section_route(
     principal: CourseMember,
 ) -> Envelope[SectionResponse]:
     await require_course_permission(
-        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+        session,
+        user_id=principal.user_id,
+        course_id=course_id,
+        permission="course.edit",
     )
     response = await create_section(session, course_id, request, actor_id=principal.user_id)
     return Envelope(data=response, error=None, meta=Meta.current())
@@ -130,9 +156,68 @@ async def create_lesson_route(
     principal: CourseMember,
 ) -> Envelope[LessonResponse]:
     await require_course_permission(
-        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+        session,
+        user_id=principal.user_id,
+        course_id=course_id,
+        permission="course.edit",
     )
     response = await create_lesson(session, course_id, request, actor_id=principal.user_id)
+    return Envelope(data=response, error=None, meta=Meta.current())
+
+
+@router.patch("/{course_id}/sections/{section_id}")
+async def update_section_route(
+    course_id: UUID,
+    section_id: UUID,
+    request: SectionUpdateRequest,
+    session: SessionDep,
+    principal: CourseMember,
+) -> Envelope[SectionResponse]:
+    await require_course_permission(
+        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+    )
+    response = await update_section(
+        session, course_id, section_id, request, actor_id=principal.user_id
+    )
+    return Envelope(data=response, error=None, meta=Meta.current())
+
+
+@router.delete("/{course_id}/sections/{section_id}")
+async def delete_section_route(
+    course_id: UUID, section_id: UUID, session: SessionDep, principal: CourseMember
+) -> Envelope[SectionResponse]:
+    await require_course_permission(
+        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+    )
+    response = await delete_section(session, course_id, section_id, actor_id=principal.user_id)
+    return Envelope(data=response, error=None, meta=Meta.current())
+
+
+@router.patch("/{course_id}/lessons/{lesson_id}")
+async def update_lesson_route(
+    course_id: UUID,
+    lesson_id: UUID,
+    request: LessonUpdateRequest,
+    session: SessionDep,
+    principal: CourseMember,
+) -> Envelope[LessonResponse]:
+    await require_course_permission(
+        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+    )
+    response = await update_lesson(
+        session, course_id, lesson_id, request, actor_id=principal.user_id
+    )
+    return Envelope(data=response, error=None, meta=Meta.current())
+
+
+@router.delete("/{course_id}/lessons/{lesson_id}")
+async def delete_lesson_route(
+    course_id: UUID, lesson_id: UUID, session: SessionDep, principal: CourseMember
+) -> Envelope[LessonResponse]:
+    await require_course_permission(
+        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+    )
+    response = await delete_lesson(session, course_id, lesson_id, actor_id=principal.user_id)
     return Envelope(data=response, error=None, meta=Meta.current())
 
 
@@ -186,6 +271,23 @@ async def reorder_sections_route(
     )
     response = await reorder_sections(
         session, course_id, request.ordered_ids, actor_id=principal.user_id
+    )
+    return Envelope(data=response, error=None, meta=Meta.current())
+
+
+@router.put("/{course_id}/sections/{section_id}/lessons/order")
+async def reorder_lessons_route(
+    course_id: UUID,
+    section_id: UUID,
+    request: ReorderRequest,
+    session: SessionDep,
+    principal: CourseMember,
+) -> Envelope[list[LessonResponse]]:
+    await require_course_permission(
+        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+    )
+    response = await reorder_lessons(
+        session, course_id, section_id, request.ordered_ids, actor_id=principal.user_id
     )
     return Envelope(data=response, error=None, meta=Meta.current())
 

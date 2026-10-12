@@ -18,14 +18,20 @@ TEST_PASSWORD = "correct horse battery staple"  # noqa: S105
 @covers_isolation("POST", "/api/v1/courses")
 @covers_isolation("GET", "/api/v1/courses")
 @covers_isolation("GET", "/api/v1/courses/{course_id}")
+@covers_isolation("GET", "/api/v1/courses/{course_id}/structure")
 @covers_isolation("PATCH", "/api/v1/courses/{course_id}")
 @covers_isolation("DELETE", "/api/v1/courses/{course_id}")
 @covers_isolation("POST", "/api/v1/courses/{course_id}/sections")
+@covers_isolation("PATCH", "/api/v1/courses/{course_id}/sections/{section_id}")
+@covers_isolation("DELETE", "/api/v1/courses/{course_id}/sections/{section_id}")
 @covers_isolation("POST", "/api/v1/courses/{course_id}/lessons")
+@covers_isolation("PATCH", "/api/v1/courses/{course_id}/lessons/{lesson_id}")
+@covers_isolation("DELETE", "/api/v1/courses/{course_id}/lessons/{lesson_id}")
 @covers_isolation("GET", "/api/v1/courses/{course_id}/lessons")
 @covers_isolation("POST", "/api/v1/courses/{course_id}/blocks")
 @covers_isolation("POST", "/api/v1/courses/{course_id}/media")
 @covers_isolation("PUT", "/api/v1/courses/{course_id}/sections/order")
+@covers_isolation("PUT", "/api/v1/courses/{course_id}/sections/{section_id}/lessons/order")
 @covers_isolation("POST", "/api/v1/courses/{course_id}/publish")
 def test_tenant_b_cannot_attack_tenant_a_course_routes() -> None:
     if os.getenv(APP_DATABASE_URL_ENV) is None:
@@ -101,6 +107,50 @@ def test_tenant_b_cannot_attack_tenant_a_course_routes() -> None:
             headers=headers_b,
         ),
     )
+    _assert_not_found(
+        isolation_client.get(
+            "/api/v1/courses/{course_id}/structure",
+            f"/api/v1/courses/{course_id}/structure",
+            headers=headers_b,
+        ),
+    )
+    for method, template, path, payload in (
+        (
+            "patch",
+            "/api/v1/courses/{course_id}/sections/{section_id}",
+            f"/api/v1/courses/{course_id}/sections/{section_id}",
+            {"title": "Attack"},
+        ),
+        (
+            "delete",
+            "/api/v1/courses/{course_id}/sections/{section_id}",
+            f"/api/v1/courses/{course_id}/sections/{section_id}",
+            None,
+        ),
+        (
+            "patch",
+            "/api/v1/courses/{course_id}/lessons/{lesson_id}",
+            f"/api/v1/courses/{course_id}/lessons/{lesson_id}",
+            {"title": "Attack"},
+        ),
+        (
+            "delete",
+            "/api/v1/courses/{course_id}/lessons/{lesson_id}",
+            f"/api/v1/courses/{course_id}/lessons/{lesson_id}",
+            None,
+        ),
+        (
+            "put",
+            "/api/v1/courses/{course_id}/sections/{section_id}/lessons/order",
+            f"/api/v1/courses/{course_id}/sections/{section_id}/lessons/order",
+            {"ordered_ids": [lesson_id]},
+        ),
+    ):
+        caller = getattr(isolation_client, method)
+        kwargs = {"headers": headers_b}
+        if payload is not None:
+            kwargs["json"] = payload
+        _assert_not_found(caller(template, path, **kwargs))
 
     patch_response = isolation_client.patch(
         "/api/v1/courses/{course_id}",
@@ -275,6 +325,54 @@ def test_course_authoring_slice_creates_owner_and_text_lessons() -> None:
     detail = detail_response.json()["data"]
     assert detail["lesson_count"] == 2
     assert detail["lessons"][0]["body"] == "Welcome to the first lesson."
+
+    structure_response = client.get(f"/api/v1/courses/{course['id']}/structure", headers=headers)
+    assert structure_response.status_code == 200
+    structure = structure_response.json()["data"]
+    assert structure["sections"][0]["lessons"][0]["blocks"][0]["block_type"] == "text"
+    section_id = structure["sections"][0]["id"]
+    lesson_ids = [lesson["id"] for lesson in structure["sections"][0]["lessons"]]
+
+    assert (
+        client.patch(
+            f"/api/v1/courses/{course['id']}/sections/{section_id}",
+            json={"title": "Renamed"},
+            headers=headers,
+        ).json()["data"]["title"]
+        == "Renamed"
+    )
+    assert (
+        client.patch(
+            f"/api/v1/courses/{course['id']}/lessons/{lesson_ids[0]}",
+            json={"title": "Renamed lesson"},
+            headers=headers,
+        ).json()["data"]["title"]
+        == "Renamed lesson"
+    )
+    reordered = client.put(
+        f"/api/v1/courses/{course['id']}/sections/{section_id}/lessons/order",
+        json={"ordered_ids": list(reversed(lesson_ids))},
+        headers=headers,
+    )
+    assert [item["id"] for item in reordered.json()["data"]] == list(reversed(lesson_ids))
+    invalid = client.put(
+        f"/api/v1/courses/{course['id']}/sections/{section_id}/lessons/order",
+        json={"ordered_ids": [lesson_ids[0]]},
+        headers=headers,
+    )
+    assert invalid.status_code == 400
+    assert (
+        client.delete(
+            f"/api/v1/courses/{course['id']}/lessons/{lesson_ids[0]}", headers=headers
+        ).status_code
+        == 200
+    )
+    assert (
+        client.delete(
+            f"/api/v1/courses/{course['id']}/sections/{section_id}", headers=headers
+        ).status_code
+        == 200
+    )
 
 
 class TenantAccount:

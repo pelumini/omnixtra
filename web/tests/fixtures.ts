@@ -3,7 +3,7 @@ import type {
   LearnerProgressReportRow,
 } from "@/features/analytics";
 import type { BillingPlan } from "@/features/billing";
-import type { Course } from "@/features/courses";
+import type { Course, CourseStructure } from "@/features/courses/schemas";
 import type { CoursePlayer } from "@/features/learning";
 
 export const courseId = "00000000-0000-0000-0000-000000000101";
@@ -23,6 +23,38 @@ export const draftCourse: Course = {
 export const publishedCourse: Course = {
   ...draftCourse,
   status: "published",
+};
+
+export const courseStructure: CourseStructure = {
+  ...draftCourse,
+  sections: [
+    {
+      course_id: courseId,
+      id: sectionId,
+      position: 0,
+      title: "Getting Started",
+      lessons: [
+        {
+          blocks: [
+            {
+              block_type: "text",
+              content: { type: "text", markdown: "Welcome content" },
+              course_id: courseId,
+              id: "00000000-0000-0000-0000-000000000601",
+              lesson_id: lessonId,
+              position: 0,
+            },
+          ],
+          body: "Welcome content",
+          course_id: courseId,
+          id: lessonId,
+          position: 0,
+          section_id: sectionId,
+          title: "Welcome",
+        },
+      ],
+    },
+  ],
 };
 
 export const coursePlayer: CoursePlayer = {

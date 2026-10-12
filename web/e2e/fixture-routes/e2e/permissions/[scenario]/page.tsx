@@ -1,7 +1,12 @@
 import { notFound } from "next/navigation";
 
 import { AppShell } from "@/components/layout/app-shell";
-import { AdminCourseList, CourseBuilder, type Course } from "@/features/courses";
+import {
+  AdminCourseList,
+  CourseBuilder,
+  type Course,
+  type CourseStructure,
+} from "@/features/courses";
 import { LearnerCoursePlayer, type CoursePlayer } from "@/features/learning";
 import { MembersView, type Membership } from "@/features/members";
 import { e2eFixturesEnabled } from "@/lib/e2e-fixtures";
@@ -30,6 +35,8 @@ const course: Course = {
   status: "draft",
   title: "Role Gated Onboarding",
 };
+
+const structure: CourseStructure = { ...course, sections: [] };
 
 const memberships: Membership[] = [
   {
@@ -82,7 +89,9 @@ const player: CoursePlayer = {
   title: "Learner Course A",
 };
 
-export default async function PermissionFixturePage({ params }: PermissionFixturePageProps) {
+export default async function PermissionFixturePage({
+  params,
+}: PermissionFixturePageProps) {
   if (!e2eFixturesEnabled()) {
     notFound();
   }
@@ -92,7 +101,11 @@ export default async function PermissionFixturePage({ params }: PermissionFixtur
   if (scenario === "admin") {
     return (
       <AppShell branding={branding} viewerRole="tenant_admin">
-        <AdminCourseList initialCourses={[course]} loadError={null} viewerRole="tenant_admin" />
+        <AdminCourseList
+          initialCourses={[course]}
+          loadError={null}
+          viewerRole="tenant_admin"
+        />
       </AppShell>
     );
   }
@@ -100,7 +113,11 @@ export default async function PermissionFixturePage({ params }: PermissionFixtur
   if (scenario === "member") {
     return (
       <AppShell branding={branding} viewerRole="member">
-        <AdminCourseList initialCourses={[course]} loadError={null} viewerRole="member" />
+        <AdminCourseList
+          initialCourses={[course]}
+          loadError={null}
+          viewerRole="member"
+        />
       </AppShell>
     );
   }
@@ -130,15 +147,33 @@ export default async function PermissionFixturePage({ params }: PermissionFixtur
   }
 
   if (scenario === "learner-course") {
-    return <LearnerCoursePlayer courseId={course.id} initialPlayer={player} loadError={null} />;
+    return (
+      <LearnerCoursePlayer
+        courseId={course.id}
+        initialPlayer={player}
+        loadError={null}
+      />
+    );
   }
 
   if (scenario === "learner-builder") {
-    return <CourseBuilder course={course} courseRole="learner" />;
+    return (
+      <CourseBuilder
+        course={course}
+        courseRole="learner"
+        initialStructure={structure}
+      />
+    );
   }
 
   if (scenario === "course-owner-builder") {
-    return <CourseBuilder course={course} courseRole="course_owner" />;
+    return (
+      <CourseBuilder
+        course={course}
+        courseRole="course_owner"
+        initialStructure={structure}
+      />
+    );
   }
 
   notFound();

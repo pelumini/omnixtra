@@ -63,11 +63,19 @@ class SectionCreateRequest(BaseModel):
     position: int = Field(ge=0)
 
 
+class SectionUpdateRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+
+
 class LessonCreateRequest(BaseModel):
     section_id: UUID | None = None
     title: str = Field(min_length=1, max_length=200)
     position: int | None = Field(default=None, ge=0)
     body: str | None = Field(default=None, min_length=1, max_length=20_000)
+
+
+class LessonUpdateRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
 
 
 class BlockCreateRequest(BaseModel):
@@ -128,6 +136,18 @@ class BlockResponse(BaseModel):
     block_type: str
     content: dict[str, object]
     position: int
+
+
+class LessonNode(LessonResponse):
+    blocks: list[BlockResponse]
+
+
+class SectionNode(SectionResponse):
+    lessons: list[LessonNode]
+
+
+class CourseStructureResponse(CourseResponse):
+    sections: list[SectionNode]
 
 
 class MediaAssetResponse(BaseModel):

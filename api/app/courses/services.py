@@ -15,11 +15,13 @@ from app.courses.models import (
     Lesson,
 )
 from app.courses.repositories import (
+    blocks_for_course,
     course_by_id,
     course_by_slug,
     courses_page,
     lesson_by_id,
     lessons_for_course,
+    lessons_for_section,
     media_asset_by_object_key,
     section_by_id,
     sections_for_course,
@@ -31,14 +33,19 @@ from app.courses.schemas import (
     CourseCreateRequest,
     CourseDetailResponse,
     CourseResponse,
+    CourseStructureResponse,
     CourseUpdateRequest,
     CursorPage,
     LessonCreateRequest,
+    LessonNode,
     LessonResponse,
+    LessonUpdateRequest,
     MediaAssetCreateRequest,
     MediaAssetResponse,
     SectionCreateRequest,
+    SectionNode,
     SectionResponse,
+    SectionUpdateRequest,
 )
 from app.learning.models import CourseRole, Enrolment, EnrolmentStatus
 from app.shared.models import utc_now
@@ -87,6 +94,34 @@ async def get_course_detail(session: AsyncSession, course_id: UUID) -> CourseDet
     return CourseDetailResponse(
         **course_response(course, lesson_count=len(lessons)).model_dump(),
         lessons=lessons,
+    )
+
+
+async def get_course_structure(session: AsyncSession, course_id: UUID) -> CourseStructureResponse:
+    course = await require_course(session, course_id)
+    sections = list((await session.scalars(sections_for_course(course_id))).all())
+    lessons = list((await session.scalars(lessons_for_course(course_id))).all())
+    blocks = list((await session.scalars(blocks_for_course(course_id))).all())
+    blocks_by_lesson: dict[UUID, list[BlockResponse]] = {}
+    for block in blocks:
+        blocks_by_lesson.setdefault(block.lesson_id, []).append(block_response(block))
+    lessons_by_section: dict[UUID, list[LessonNode]] = {}
+    for lesson in lessons:
+        lessons_by_section.setdefault(lesson.section_id, []).append(
+            LessonNode(
+                **lesson_response(lesson).model_dump(),
+                blocks=blocks_by_lesson.get(lesson.id, []),
+            )
+        )
+    return CourseStructureResponse(
+        **course_response(course, lesson_count=len(lessons)).model_dump(),
+        sections=[
+            SectionNode(
+                **section_response(section).model_dump(),
+                lessons=lessons_by_section.get(section.id, []),
+            )
+            for section in sections
+        ],
     )
 
 
@@ -191,6 +226,64 @@ async def create_lesson(
     return lesson_response(lesson, body=request.body)
 
 
+async def update_section(
+    session: AsyncSession,
+    course_id: UUID,
+    section_id: UUID,
+    request: SectionUpdateRequest,
+    actor_id: UUID | None = None,
+) -> SectionResponse:
+    await require_course(session, course_id)
+    section = await require_section(session, section_id, course_id=course_id)
+    section.title = request.title
+    _audit(session, course_id, actor_id, "section.updated", f"Renamed section to {section.title}")
+    await session.commit()
+    return section_response(section)
+
+
+async def delete_section(
+    session: AsyncSession,
+    course_id: UUID,
+    section_id: UUID,
+    actor_id: UUID | None = None,
+) -> SectionResponse:
+    await require_course(session, course_id)
+    section = await require_section(session, section_id, course_id=course_id)
+    section.deleted_at = utc_now()
+    _audit(session, course_id, actor_id, "section.deleted", f"Deleted section {section.title}")
+    await session.commit()
+    return section_response(section)
+
+
+async def update_lesson(
+    session: AsyncSession,
+    course_id: UUID,
+    lesson_id: UUID,
+    request: LessonUpdateRequest,
+    actor_id: UUID | None = None,
+) -> LessonResponse:
+    await require_course(session, course_id)
+    lesson = await require_lesson(session, lesson_id, course_id=course_id)
+    lesson.title = request.title
+    _audit(session, course_id, actor_id, "lesson.updated", f"Renamed lesson to {lesson.title}")
+    await session.commit()
+    return lesson_response(lesson)
+
+
+async def delete_lesson(
+    session: AsyncSession,
+    course_id: UUID,
+    lesson_id: UUID,
+    actor_id: UUID | None = None,
+) -> LessonResponse:
+    await require_course(session, course_id)
+    lesson = await require_lesson(session, lesson_id, course_id=course_id)
+    lesson.deleted_at = utc_now()
+    _audit(session, course_id, actor_id, "lesson.deleted", f"Deleted lesson {lesson.title}")
+    await session.commit()
+    return lesson_response(lesson)
+
+
 async def create_block(
     session: AsyncSession,
     course_id: UUID,
@@ -274,6 +367,30 @@ async def reorder_sections(
     _audit(session, course_id, actor_id, "sections.reordered", "Reordered course sections")
     await session.commit()
     return [section_response(section_by_id[section_id]) for section_id in ordered_ids]
+
+
+async def reorder_lessons(
+    session: AsyncSession,
+    course_id: UUID,
+    section_id: UUID,
+    ordered_ids: list[UUID],
+    actor_id: UUID | None = None,
+) -> list[LessonResponse]:
+    await require_course(session, course_id)
+    await require_section(session, section_id, course_id=course_id)
+    lessons = list((await session.scalars(lessons_for_section(course_id, section_id))).all())
+    lesson_by_id = {lesson.id: lesson for lesson in lessons}
+    if set(lesson_by_id) != set(ordered_ids) or len(ordered_ids) != len(lesson_by_id):
+        msg = "ordered lesson ids must match existing section lessons"
+        raise ValidationAppError(msg)
+    for position, lesson_id in enumerate(ordered_ids):
+        lesson_by_id[lesson_id].position = -(position + 1)
+    await session.flush()
+    for position, lesson_id in enumerate(ordered_ids):
+        lesson_by_id[lesson_id].position = position
+    _audit(session, course_id, actor_id, "lessons.reordered", "Reordered section lessons")
+    await session.commit()
+    return [lesson_response(lesson_by_id[lesson_id]) for lesson_id in ordered_ids]
 
 
 async def publish_course(

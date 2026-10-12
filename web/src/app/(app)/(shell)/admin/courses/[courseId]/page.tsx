@@ -2,7 +2,8 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
 import { InvitationPending } from "@/features/auth";
-import { CourseDetail, getCourse } from "@/features/courses";
+import { CourseBuilder } from "@/features/courses";
+import { getCourseStructure } from "@/features/courses/api";
 import { getSessionOrNull } from "@/lib/auth/session";
 
 type CourseDetailPageProps = {
@@ -28,12 +29,14 @@ export default async function CourseDetailPage({
     return <InvitationPending session={authSession} />;
   }
 
-  const course = await loadCourse(courseId, context);
-  if (course === null) {
+  const structure = await loadCourse(courseId, context);
+  if (structure === null) {
     notFound();
   }
 
-  return <CourseDetail course={course.data} />;
+  return (
+    <CourseBuilder course={structure.data} initialStructure={structure.data} />
+  );
 }
 
 async function loadCourse(
@@ -41,7 +44,7 @@ async function loadCourse(
   context: { cookie?: string; host?: string },
 ) {
   try {
-    return await getCourse(courseId, context);
+    return await getCourseStructure(courseId, context);
   } catch {
     return null;
   }
