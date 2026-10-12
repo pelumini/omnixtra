@@ -1,7 +1,7 @@
 "use client";
 
-import { Mail, ShieldCheck, Users } from "lucide-react";
-import { useState } from "react";
+import { Filter, Mail, Search, ShieldCheck, Users } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { DeniedState } from "@/components/layout/denied-state";
 import { canManageMembers } from "@/lib/permissions";
@@ -29,6 +29,8 @@ type MembersViewProps = {
   viewerRole: OrgRole;
 };
 
+const memberStatusTabs = ["all", "active", "invited"] as const;
+
 export function MembersView({
   initialMembers,
   initialInviteOpen = false,
@@ -40,8 +42,21 @@ export function MembersView({
   const [members, setMembers] = useState(initialMembers);
   const [message, setMessage] = useState(loadError);
   const [activationLink, setActivationLink] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<(typeof memberStatusTabs)[number]>("all");
   const activeCount = members.filter((member) => member.status === "active").length;
   const invitedCount = members.filter((member) => member.status === "invited").length;
+  const filteredMembers = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    return members.filter((member) => {
+      const matchesStatus = status === "all" || member.status === status;
+      const matchesQuery =
+        normalizedQuery.length === 0 ||
+        member.email.toLowerCase().includes(normalizedQuery) ||
+        (member.full_name ?? "").toLowerCase().includes(normalizedQuery);
+      return matchesStatus && matchesQuery;
+    });
+  }, [members, query, status]);
 
   if (!canManageMembers(viewerRole)) {
     return (
@@ -54,28 +69,57 @@ export function MembersView({
 
   return (
     <main className="mx-auto grid min-h-screen max-w-[104rem] content-start gap-5 px-5 py-6 lg:px-8">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--primary)]">
-            Access management
-          </p>
-          <h1 className="mt-2 text-3xl font-bold text-[#0c1726]">Members</h1>
-          <p className="mt-2 text-sm text-[#52657a]">People in your academy and their access.</p>
+      <section className="rounded-lg border border-[var(--border)] bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex h-11 min-w-64 flex-1 items-center gap-3 rounded-md bg-[var(--color-bg-weak-100)] px-3 text-sm text-[var(--color-text-sub-500)] sm:max-w-md">
+            <Search aria-hidden="true" className="size-4 shrink-0" />
+            <span className="sr-only">Search members by name or email</span>
+            <input
+              className="min-w-0 flex-1 bg-transparent text-[var(--color-text-main-900)] outline-none placeholder:text-[var(--color-text-soft-400)]"
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search by name or email"
+              type="search"
+              value={query}
+            />
+          </label>
+          <div className="flex items-center gap-2 text-sm text-[var(--color-text-sub-500)]">
+            <Filter aria-hidden="true" className="size-4" />
+            <span>{filteredMembers.length} visible</span>
+          </div>
+          <div className="ml-auto">
+            <CreateUserDialog
+              initialOpen={initialInviteOpen}
+              initialRole={initialInviteRole}
+              onCreated={(member, link) => {
+                setMembers((current) => [...current.filter((item) => item.id !== member.id), member]);
+                setActivationLink(link);
+                void getMemberships()
+                  .then((response) => setMembers(response.data))
+                  .catch(() => undefined);
+              }}
+              onMessage={setMessage}
+              seats={seats}
+            />
+          </div>
         </div>
-        <CreateUserDialog
-          initialOpen={initialInviteOpen}
-          initialRole={initialInviteRole}
-          onCreated={(member, link) => {
-            setMembers((current) => [...current.filter((item) => item.id !== member.id), member]);
-            setActivationLink(link);
-            void getMemberships()
-              .then((response) => setMembers(response.data))
-              .catch(() => undefined);
-          }}
-          onMessage={setMessage}
-          seats={seats}
-        />
-      </header>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {memberStatusTabs.map((tab) => (
+            <button
+              className={cn(
+                "h-9 rounded-md border px-3 text-sm font-semibold",
+                status === tab
+                  ? "border-[var(--primary)] bg-[var(--primary)] text-white"
+                  : "border-[var(--border)] bg-white text-[var(--color-text-sub-500)] hover:border-[var(--primary)] hover:text-[var(--primary)]",
+              )}
+              key={tab}
+              onClick={() => setStatus(tab)}
+              type="button"
+            >
+              {tab === "invited" ? "Pending" : `${tab.slice(0, 1).toUpperCase()}${tab.slice(1)}`}
+            </button>
+          ))}
+        </div>
+      </section>
 
       {message ? (
         <div className="rounded-md border border-[#cbd5e1] bg-white px-4 py-3 text-sm text-[#52657a]">
@@ -101,7 +145,7 @@ export function MembersView({
         <div className="border-b border-[#d6dee8] px-5 py-4">
           <h2 className="text-lg font-bold text-[#0c1726]">Directory</h2>
         </div>
-        {members.length === 0 ? <EmptyState /> : <MemberTable members={members} />}
+        {filteredMembers.length === 0 ? <EmptyState /> : <MemberTable members={filteredMembers} />}
       </section>
     </main>
   );

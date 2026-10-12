@@ -26,7 +26,9 @@ export function Dialog({ children, description, onClose, open, title }: DialogPr
       return;
     }
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
     const panel = panelRef.current;
+    document.body.style.overflow = "hidden";
     panel?.querySelector<HTMLElement>(focusableSelector)?.focus();
 
     function handleKeyDown(event: KeyboardEvent) {
@@ -58,6 +60,7 @@ export function Dialog({ children, description, onClose, open, title }: DialogPr
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
       previousFocus?.focus();
     };
   }, [onClose, open]);
