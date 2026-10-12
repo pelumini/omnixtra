@@ -19,12 +19,13 @@ import type { CSSProperties } from "react";
 type SessionHeaderProps = {
   branding: TenantBranding;
   initialSession: SessionResponse | null;
+  observeLandingElevation?: boolean;
   fixtureMode?: boolean;
   refreshSession?: boolean;
   showAuthLink?: boolean;
 };
 
-export function SessionHeader({ branding, fixtureMode = false, initialSession, refreshSession = true, showAuthLink = true }: SessionHeaderProps) {
+export function SessionHeader({ branding, fixtureMode = false, initialSession, observeLandingElevation = false, refreshSession = true, showAuthLink = true }: SessionHeaderProps) {
   const [session, setSession] = useState<SessionResponse | null>(initialSession);
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -48,6 +49,17 @@ export function SessionHeader({ branding, fixtureMode = false, initialSession, r
   ];
 
   useEffect(() => {
+    if (observeLandingElevation) {
+      const sentinel = document.getElementById("landing-header-sentinel");
+      if (!sentinel) return undefined;
+
+      const observer = new IntersectionObserver(([entry]) => {
+        setIsScrolled(!entry?.isIntersecting);
+      }, { threshold: 0 });
+      observer.observe(sentinel);
+      return () => observer.disconnect();
+    }
+
     function syncScrollState() {
       setIsScrolled(window.scrollY > 0);
     }
@@ -55,7 +67,7 @@ export function SessionHeader({ branding, fixtureMode = false, initialSession, r
     syncScrollState();
     window.addEventListener("scroll", syncScrollState, { passive: true });
     return () => window.removeEventListener("scroll", syncScrollState);
-  }, []);
+  }, [observeLandingElevation]);
 
   useEffect(() => {
     if (E2E_FIXTURES_ENABLED && fixtureMode) {
@@ -127,9 +139,19 @@ export function SessionHeader({ branding, fixtureMode = false, initialSession, r
   }, [fixtureMode, refreshSession]);
 
   const marketingNavProps = { mobileOpen, onCloseMobile: closeMobile, onSignOut: signOutAndRedirect, onToggleMobile: () => setMobileOpen((open) => !open), publicNavLinks, session };
+  const elevationClass = observeLandingElevation
+    ? isScrolled
+      ? "border-transparent shadow-[0_1px_2px_rgba(10,13,20,0.04),0_8px_24px_-8px_rgba(10,13,20,0.12)]"
+      : "shadow-none"
+    : isScrolled
+      ? "shadow-sm"
+      : "shadow-none";
+  const transitionClass = observeLandingElevation
+    ? "transition-[box-shadow,border-color] duration-200 ease-out motion-reduce:transition-none"
+    : "transition-[left,box-shadow]";
 
   return (
-    <header className={`fixed right-0 top-0 z-50 border-b border-[var(--border)] bg-white transition-[left,box-shadow] ${isShellHeader ? "left-0 h-14 md:left-[var(--app-sidebar-width,13rem)] md:h-16" : "left-0"} ${isScrolled ? "shadow-sm" : "shadow-none"}`}>
+    <header className={`fixed right-0 top-0 z-50 border-b border-[var(--border)] bg-white ${transitionClass} ${isShellHeader ? "left-0 h-14 md:left-[var(--app-sidebar-width,13rem)] md:h-16" : "left-0"} ${elevationClass}`}>
       <div className={`${isShellHeader ? "flex h-full items-center px-4 sm:px-6" : `landing-container flex items-center gap-3 ${isPublicHeader ? "relative h-20" : "min-h-14"}`}`}>
         {!isShellHeader ? <Link aria-label={`${branding.tenant_name} home`} className="flex min-w-0 items-center gap-3 text-[var(--foreground)] hover:text-[var(--primary)]" href={homeHref}>
           {isPublicHeader ? <Image alt="OmniXtra" className="h-auto w-36 sm:w-44" height={44} priority src="/images/landing/OmniXtra_logo_brand.svg" width={188} /> : <><span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-md bg-[var(--primary)] bg-contain bg-center bg-no-repeat text-sm font-bold text-[var(--primary-foreground)]" style={branding.logo_url ? ({ backgroundImage: `url(${branding.logo_url})` } as CSSProperties) : undefined}>{branding.logo_url ? null : branding.tenant_name.slice(0, 1).toUpperCase()}</span><span className="max-w-48 truncate text-base font-bold">{branding.tenant_name}</span></>}

@@ -46,8 +46,8 @@ export function SignInView({ academyName }: SignInViewProps = {}) {
   const [email, password] = watch(["email", "password"]);
 
   return (
-    <main className="grid min-h-screen bg-white lg:grid-cols-[minmax(0,3fr)_minmax(25rem,2fr)]">
-      <section className="relative flex min-h-screen items-center justify-center px-6 py-24 sm:px-10 lg:px-16">
+    <main className="grid min-h-[100dvh] bg-white lg:h-[100dvh] lg:min-h-0 lg:grid-cols-[minmax(0,3fr)_minmax(25rem,2fr)] lg:overflow-hidden">
+      <section className="relative flex min-h-[100dvh] items-center justify-center px-6 py-24 sm:px-10 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:px-16">
         <div className="w-full max-w-[25rem]">
           <h1 className="text-[2rem] font-bold leading-tight text-[var(--foreground)]">{academyName ? `Sign in to ${academyName}` : "Sign in to OmniXtra"}</h1>
           <p className="mt-2 text-sm font-medium text-[var(--color-text-sub-500)]">To continue your academy</p>
@@ -73,7 +73,7 @@ export function SignInView({ academyName }: SignInViewProps = {}) {
           </form>
         </div>
       </section>
-      <div className="relative hidden min-h-screen overflow-hidden lg:block">
+      <div className="relative hidden h-full overflow-hidden lg:block">
         <Image alt="" className="object-cover" fill priority sizes="40vw" src="/images/auth/login-img.png" />
         <Image alt="" aria-hidden="true" className="z-10 object-contain object-bottom" fill priority sizes="40vw" src="/images/auth/astronaut.png" />
       </div>

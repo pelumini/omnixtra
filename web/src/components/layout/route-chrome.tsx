@@ -21,13 +21,16 @@ const fullBleedAuthPaths = new Set(["/auth", "/forgot-password", "/get-started",
 
 export function RouteChrome({ branding, children, fixtureMode, initialSession, refreshSession, showAuthLink }: RouteChromeProps) {
   const pathname = usePathname() ?? "";
+  const isTenantSignIn = pathname === "/" && showAuthLink && initialSession === null;
+  const isLandingPage = pathname === "/" && !showAuthLink;
 
-  if (fullBleedAuthPaths.has(pathname)) {
+  if (fullBleedAuthPaths.has(pathname) || isTenantSignIn) {
     return children;
   }
 
   return <>
-    <SessionHeader branding={branding} fixtureMode={fixtureMode} initialSession={initialSession} refreshSession={refreshSession} showAuthLink={showAuthLink} />
+    {isLandingPage ? <span aria-hidden="true" className="pointer-events-none absolute left-0 top-0 size-px" id="landing-header-sentinel" /> : null}
+    <SessionHeader branding={branding} fixtureMode={fixtureMode} initialSession={initialSession} observeLandingElevation={isLandingPage} refreshSession={refreshSession} showAuthLink={showAuthLink} />
     <div className={showAuthLink ? "pt-14" : "pt-20"}>{children}</div>
   </>;
 }

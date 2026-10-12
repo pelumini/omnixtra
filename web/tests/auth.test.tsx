@@ -37,6 +37,11 @@ describe("auth UI", () => {
     expect(signInHtml).not.toContain("Join an existing one");
     expect(signInHtml).not.toContain("Create an academy");
     expect(signInHtml).toContain("login-img.png");
+    expect(signInHtml).toContain("min-h-[100dvh]");
+    expect(signInHtml).toContain("lg:h-[100dvh]");
+    expect(signInHtml).toContain("lg:overflow-hidden");
+    expect(signInHtml).toContain("relative hidden h-full overflow-hidden lg:block");
+    expect(signInHtml).not.toContain("min-h-screen");
     expect(renderToStaticMarkup(<SignInView academyName="Eap Academy" />)).toContain(
       "Sign in to Eap Academy",
     );

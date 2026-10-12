@@ -61,6 +61,28 @@ describe("session header chrome", () => {
     expect(authHtml).toBe("<main>Login body</main>");
     expect(marketingHtml).toContain("Pastors Academy home");
     expect(marketingHtml).toContain("pt-20");
+    expect(marketingHtml).toContain('id="landing-header-sentinel"');
+    expect(marketingHtml).toContain("transition-[box-shadow,border-color]");
+    expect(marketingHtml).toContain("motion-reduce:transition-none");
+    expect(marketingHtml).not.toContain("shadow-[0_1px_2px");
+  });
+
+  it("suppresses chrome for signed-out tenant root without hiding apex chrome", () => {
+    route.pathname = "/";
+    const tenantHtml = renderToStaticMarkup(
+      <RouteChrome branding={branding} fixtureMode={false} initialSession={null} refreshSession={false} showAuthLink>
+        <main>Tenant sign in</main>
+      </RouteChrome>,
+    );
+    const apexHtml = renderToStaticMarkup(
+      <RouteChrome branding={branding} fixtureMode={false} initialSession={null} refreshSession={false} showAuthLink={false}>
+        <main>Apex landing</main>
+      </RouteChrome>,
+    );
+
+    expect(tenantHtml).toBe("<main>Tenant sign in</main>");
+    expect(apexHtml).toContain("OmniXtra");
+    expect(apexHtml).toContain("Apex landing");
   });
 
   it("renders the admin header in the content column without duplicate branding", () => {
