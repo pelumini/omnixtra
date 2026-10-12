@@ -375,6 +375,113 @@ def test_course_authoring_slice_creates_owner_and_text_lessons() -> None:
     )
 
 
+@pytest.mark.integration
+def test_deleted_structure_positions_can_be_reused_and_reordered() -> None:
+    if os.getenv(APP_DATABASE_URL_ENV) is None:
+        pytest.skip(f"{APP_DATABASE_URL_ENV} is not set")
+
+    client = TestClient(create_app())
+    tenant = _signup(client, "structure-delete")
+    token = _login(client, tenant.slug, tenant.email)
+    headers = _headers(tenant.slug, token)
+
+    course_response = client.post(
+        "/api/v1/courses",
+        json={"title": "Structure deletion regression"},
+        headers=headers,
+    )
+    assert course_response.status_code == 200
+    course_id = course_response.json()["data"]["id"]
+
+    section_ids: list[str] = []
+    for position, title in enumerate(("Keep", "Delete")):
+        response = client.post(
+            f"/api/v1/courses/{course_id}/sections",
+            json={"title": title, "position": position},
+            headers=headers,
+        )
+        assert response.status_code == 200
+        section_ids.append(response.json()["data"]["id"])
+
+    deleted_lesson = client.post(
+        f"/api/v1/courses/{course_id}/lessons",
+        json={
+            "section_id": section_ids[1],
+            "title": "Removed with section",
+            "position": 0,
+        },
+        headers=headers,
+    )
+    assert deleted_lesson.status_code == 200
+    deleted_lesson_id = deleted_lesson.json()["data"]["id"]
+    block_response = client.post(
+        f"/api/v1/courses/{course_id}/blocks",
+        json={
+            "lesson_id": deleted_lesson_id,
+            "block_type": "text",
+            "content": {"type": "text", "markdown": "Must disappear"},
+            "position": 0,
+        },
+        headers=headers,
+    )
+    assert block_response.status_code == 200
+
+    delete_section_response = client.delete(
+        f"/api/v1/courses/{course_id}/sections/{section_ids[1]}",
+        headers=headers,
+    )
+    assert delete_section_response.status_code == 200
+    replacement_response = client.post(
+        f"/api/v1/courses/{course_id}/sections",
+        json={"title": "Replacement", "position": 1},
+        headers=headers,
+    )
+    assert replacement_response.status_code == 200
+
+    remaining_lesson_ids: list[str] = []
+    for position, title in enumerate(("First", "Middle", "Last")):
+        response = client.post(
+            f"/api/v1/courses/{course_id}/lessons",
+            json={
+                "section_id": section_ids[0],
+                "title": title,
+                "position": position,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        remaining_lesson_ids.append(response.json()["data"]["id"])
+
+    delete_lesson_response = client.delete(
+        f"/api/v1/courses/{course_id}/lessons/{remaining_lesson_ids[1]}",
+        headers=headers,
+    )
+    assert delete_lesson_response.status_code == 200
+    reordered_ids = [remaining_lesson_ids[2], remaining_lesson_ids[0]]
+    reorder_response = client.put(
+        f"/api/v1/courses/{course_id}/sections/{section_ids[0]}/lessons/order",
+        json={"ordered_ids": reordered_ids},
+        headers=headers,
+    )
+    assert reorder_response.status_code == 200
+    assert [lesson["id"] for lesson in reorder_response.json()["data"]] == reordered_ids
+
+    structure_response = client.get(
+        f"/api/v1/courses/{course_id}/structure",
+        headers=headers,
+    )
+    assert structure_response.status_code == 200
+    sections = structure_response.json()["data"]["sections"]
+    assert [section["title"] for section in sections] == ["Keep", "Replacement"]
+    assert [lesson["id"] for lesson in sections[0]["lessons"]] == reordered_ids
+    assert all(
+        block["content"].get("markdown") != "Must disappear"
+        for section in sections
+        for lesson in section["lessons"]
+        for block in lesson["blocks"]
+    )
+
+
 class TenantAccount:
     def __init__(self, *, slug: str, email: str, tenant_id: str, user_id: str) -> None:
         self.slug = slug

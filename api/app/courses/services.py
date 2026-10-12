@@ -53,6 +53,7 @@ from app.tenancy.context import require_tenant_id
 
 DEFAULT_PAGE_SIZE = 20
 DEFAULT_SECTION_TITLE = "Start here"
+DELETED_POSITION_START = -1_000_000_000
 
 
 async def create_course(
@@ -249,10 +250,51 @@ async def delete_section(
 ) -> SectionResponse:
     await require_course(session, course_id)
     section = await require_section(session, section_id, course_id=course_id)
+    response = section_response(section)
+    siblings = list(
+        (
+            await session.scalars(
+                select(CourseSection).where(CourseSection.course_id == course_id).with_for_update()
+            )
+        ).all()
+    )
+    lowest_position = min(
+        (sibling.position for sibling in siblings),
+        default=DELETED_POSITION_START + 1,
+    )
+    section.position = min(lowest_position, DELETED_POSITION_START + 1) - 1
     section.deleted_at = utc_now()
+    lessons = list(
+        (
+            await session.scalars(
+                select(Lesson).where(
+                    Lesson.course_id == course_id,
+                    Lesson.section_id == section_id,
+                    Lesson.deleted_at.is_(None),
+                )
+            )
+        ).all()
+    )
+    deleted_at = utc_now()
+    for lesson in lessons:
+        lesson.deleted_at = deleted_at
+    lesson_ids = [lesson.id for lesson in lessons]
+    if lesson_ids:
+        blocks = list(
+            (
+                await session.scalars(
+                    select(CourseBlock).where(
+                        CourseBlock.lesson_id.in_(lesson_ids),
+                        CourseBlock.deleted_at.is_(None),
+                    )
+                )
+            ).all()
+        )
+        for block in blocks:
+            block.deleted_at = deleted_at
     _audit(session, course_id, actor_id, "section.deleted", f"Deleted section {section.title}")
     await session.commit()
-    return section_response(section)
+    return response
 
 
 async def update_lesson(
@@ -278,10 +320,35 @@ async def delete_lesson(
 ) -> LessonResponse:
     await require_course(session, course_id)
     lesson = await require_lesson(session, lesson_id, course_id=course_id)
+    response = lesson_response(lesson)
+    siblings = list(
+        (
+            await session.scalars(
+                select(Lesson).where(Lesson.section_id == lesson.section_id).with_for_update()
+            )
+        ).all()
+    )
+    lowest_position = min(
+        (sibling.position for sibling in siblings),
+        default=DELETED_POSITION_START + 1,
+    )
+    lesson.position = min(lowest_position, DELETED_POSITION_START + 1) - 1
     lesson.deleted_at = utc_now()
+    blocks = list(
+        (
+            await session.scalars(
+                select(CourseBlock).where(
+                    CourseBlock.lesson_id == lesson_id,
+                    CourseBlock.deleted_at.is_(None),
+                )
+            )
+        ).all()
+    )
+    for block in blocks:
+        block.deleted_at = lesson.deleted_at
     _audit(session, course_id, actor_id, "lesson.deleted", f"Deleted lesson {lesson.title}")
     await session.commit()
-    return lesson_response(lesson)
+    return response
 
 
 async def create_block(
