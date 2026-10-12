@@ -50,16 +50,13 @@ describe("course detail authoring slice", () => {
     expect(html).not.toContain("First content type");
   });
 
-  it("shows standard content choices when a new academy starts its first course", () => {
+  it("does not auto-open course creation for a new academy", () => {
     const html = renderToStaticMarkup(
       <AdminCourseList initialCourses={[]} loadError={null} viewerRole="tenant_admin" />,
     );
 
-    expect(html).toContain("First content type");
-    expect(html).toContain("Content");
-    expect(html).toContain("Web content");
-    expect(html).toContain("Video");
-    expect(html).toContain("Image");
-    expect(html).toContain("Quiz");
+    expect(html).toContain("Add course");
+    expect(html).not.toContain('role="dialog"');
+    expect(html).not.toContain("First content type");
   });
 });

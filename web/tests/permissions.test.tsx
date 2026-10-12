@@ -131,8 +131,8 @@ describe("ADR-003 frontend permissions", () => {
     expect(html).toContain("Pending Member");
     expect(html).toContain("Pending");
     expect(html).toContain('placeholder="Search by name or email"');
-    expect(html).toContain(">All<");
-    expect(html).toContain(">Active<");
+    expect(html).toContain('aria-label="Filter members by status"');
+    expect(html).not.toContain('role="menu"');
     expect(html).not.toContain("Access management");
     expect(html).not.toContain("People in your academy and their access.");
     expect(html).not.toContain("Copy invite link");
@@ -166,7 +166,7 @@ describe("ADR-003 frontend permissions", () => {
     expect(html).not.toContain("Create");
   });
 
-  it("renders course controls once and moves the complete creation form into the shared dialog", () => {
+  it("renders course controls once and keeps the creation dialog closed on entry", () => {
     const listHtml = renderToStaticMarkup(
       <AdminCourseList initialCourses={[draftCourse]} loadError={null} />,
     );
@@ -176,18 +176,13 @@ describe("ADR-003 frontend permissions", () => {
 
     expect(listHtml.match(/placeholder="Search courses"/g)).toHaveLength(1);
     expect(listHtml).toContain("Add course");
+    expect(listHtml).toContain("Filter by status");
     expect(listHtml).toContain("1 visible");
     expect(listHtml).not.toContain("Course operations");
     expect(listHtml).not.toContain('role="dialog"');
-    expect(emptyHtml).toContain('role="dialog"');
-    expect(emptyHtml).toContain("Create a course");
-    expect(emptyHtml).toContain("First content type");
-    expect(emptyHtml).toContain("Course title");
-    expect(emptyHtml).toContain("Course description");
-    expect(emptyHtml).toContain("First lesson title");
-    expect(emptyHtml).toContain("First lesson content");
-    expect(emptyHtml).toContain("Create course");
-    expect(emptyHtml).toContain("Cancel");
+    expect(emptyHtml).toContain("Add course");
+    expect(emptyHtml).not.toContain('role="dialog"');
+    expect(emptyHtml).not.toContain("First content type");
   });
 
   it("denies authoring controls to non-owner course roles", () => {

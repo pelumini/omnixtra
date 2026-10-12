@@ -4,6 +4,7 @@ import { Filter, Mail, ShieldCheck, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { DeniedState } from "@/components/layout/denied-state";
+import { Dropdown } from "@/components/ui/dropdown";
 import { SearchInput } from "@/components/ui/input";
 import { canManageMembers } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
@@ -78,10 +79,51 @@ export function MembersView({
             placeholder="Search by name or email"
             value={query}
           />
-          <div className="flex items-center gap-2 text-sm text-[var(--color-text-sub-500)]">
-            <Filter aria-hidden="true" className="size-4" />
-            <span>{filteredMembers.length} visible</span>
-          </div>
+          <Dropdown
+            panelClassName="absolute left-0 z-30 mt-2 min-w-44 rounded-md border border-[var(--border)] bg-white p-1.5 shadow-lg"
+            trigger={(
+              <>
+                <Filter aria-hidden="true" className="size-4" />
+                <span>{status === "all" ? "Filter" : `Filter: ${status === "invited" ? "Pending" : "Active"}`}</span>
+              </>
+            )}
+            triggerClassName="inline-flex h-11 items-center gap-2 rounded-md border border-[var(--border)] bg-white px-3 text-sm font-semibold text-[var(--color-text-sub-500)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
+            triggerLabel="Filter members by status"
+          >
+            {(close) => memberStatusTabs.map((option) => {
+              const label = option === "invited"
+                ? "Pending"
+                : `${option.slice(0, 1).toUpperCase()}${option.slice(1)}`;
+              return (
+                <button
+                  aria-checked={status === option}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm",
+                    status === option
+                      ? "bg-[var(--color-primary-lighter)] font-semibold text-[var(--primary)]"
+                      : "text-[var(--color-text-sub-500)] hover:bg-[var(--color-bg-weak-100)]",
+                  )}
+                  key={option}
+                  onClick={() => {
+                    setStatus(option);
+                    close();
+                  }}
+                  role="menuitemradio"
+                  type="button"
+                >
+                  {label}
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "size-2 rounded-full",
+                      status === option ? "bg-[var(--primary)]" : "bg-transparent",
+                    )}
+                  />
+                </button>
+              );
+            })}
+          </Dropdown>
+          <span className="text-sm text-[var(--color-text-sub-500)]">{filteredMembers.length} visible</span>
           <div className="ml-auto">
             <CreateUserDialog
               initialOpen={initialInviteOpen}
@@ -97,23 +139,6 @@ export function MembersView({
               seats={seats}
             />
           </div>
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {memberStatusTabs.map((tab) => (
-            <button
-              className={cn(
-                "h-9 rounded-md border px-3 text-sm font-semibold",
-                status === tab
-                  ? "border-[var(--primary)] bg-[var(--primary)] text-white"
-                  : "border-[var(--border)] bg-white text-[var(--color-text-sub-500)] hover:border-[var(--primary)] hover:text-[var(--primary)]",
-              )}
-              key={tab}
-              onClick={() => setStatus(tab)}
-              type="button"
-            >
-              {tab === "invited" ? "Pending" : `${tab.slice(0, 1).toUpperCase()}${tab.slice(1)}`}
-            </button>
-          ))}
         </div>
       </section>
 
