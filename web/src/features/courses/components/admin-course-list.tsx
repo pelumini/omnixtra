@@ -7,19 +7,17 @@ import {
   ExternalLink,
   FilePlus2,
   Filter,
-  Globe,
-  Image,
-  ListChecks,
   MoreHorizontal,
-  PlaySquare,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 import { Dialog } from "@/components/ui/dialog";
-import { Field, FormError, SubmitButton, TextareaField } from "@/components/ui/form-controls";
+import { Dropdown } from "@/components/ui/dropdown";
+import { Field, FormError, SelectField, SubmitButton, TextareaField } from "@/components/ui/form-controls";
 import { SearchInput } from "@/components/ui/input";
 import { resolveMessage } from "@/lib/forms/messages";
 import { useFormSubmit } from "@/lib/forms/use-form-submit";
@@ -46,34 +44,33 @@ const starterTypes = [
     value: "content",
     label: "Content",
     description: "Start with learner-readable text.",
-    icon: BookOpen,
   },
   {
     value: "web_content",
     label: "Web content",
     description: "Start from a URL or external resource.",
-    icon: Globe,
   },
   {
     value: "video",
     label: "Video",
     description: "Start with a video lesson.",
-    icon: PlaySquare,
   },
   {
     value: "image",
     label: "Image",
     description: "Start with an image-led lesson.",
-    icon: Image,
   },
   {
     value: "quiz",
     label: "Quiz",
     description: "Start with a check question.",
-    icon: ListChecks,
   },
 ] as const;
 type StarterType = (typeof starterTypes)[number]["value"];
+type NewCourseFormValues = CourseWithFirstLessonFormInput & { starterType: StarterType };
+const newCourseFormSchema = courseWithFirstLessonFormSchema.extend({
+  starterType: z.enum(["content", "web_content", "video", "image", "quiz"]),
+});
 
 export function AdminCourseList({
   initialCourses,
@@ -82,7 +79,7 @@ export function AdminCourseList({
 }: AdminCourseListProps) {
   const [courses, setCourses] = useState(initialCourses);
   const [query, setQuery] = useState("");
-  const [showCreate, setShowCreate] = useState(initialCourses.length === 0);
+  const [showCreate, setShowCreate] = useState(false);
   const [status, setStatus] = useState<(typeof statusTabs)[number]>("all");
   const [message, setMessage] = useState(loadError);
   const canAuthor = canCreateCourse(viewerRole);
@@ -110,10 +107,13 @@ export function AdminCourseList({
             placeholder="Search courses"
             value={query}
           />
-          <div className="flex items-center gap-2 text-sm text-[var(--color-text-sub-500)]">
-            <Filter aria-hidden="true" className="size-4" />
-            <span>{filteredCourses.length} visible</span>
-          </div>
+          <StatusFilter
+            labels={{ all: "All", archived: "Archived", draft: "Draft", published: "Published" }}
+            onChange={setStatus}
+            options={statusTabs}
+            value={status}
+          />
+          <span className="text-sm text-[var(--color-text-sub-500)]">{filteredCourses.length} visible</span>
           {canAuthor ? (
             <button
               className="ml-auto inline-flex h-11 items-center gap-2 rounded-md bg-[var(--primary)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)]"
@@ -126,22 +126,6 @@ export function AdminCourseList({
           ) : null}
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          {statusTabs.map((tab) => (
-            <button
-              className={`h-9 rounded-md border px-3 text-sm font-semibold capitalize ${
-                status === tab
-                  ? "border-[var(--primary)] bg-[var(--primary)] text-white"
-                  : "border-[var(--border)] bg-white text-[var(--color-text-sub-500)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
-              }`}
-              key={tab}
-              onClick={() => setStatus(tab)}
-              type="button"
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
       </section>
 
       {message ? (
@@ -245,26 +229,28 @@ function NewCourseForm({
   onCreated: (course: Course) => void;
 }) {
   const router = useRouter();
-  const [starterType, setStarterType] = useState<StarterType>("content");
   const {
     formState: { errors, isSubmitting },
     handleSubmit,
     register,
     reset,
     setError,
-  } = useForm<CourseWithFirstLessonFormInput>({
+    watch,
+  } = useForm<NewCourseFormValues>({
     defaultValues: {
       courseDescription: "",
       courseTitle: "",
       lessonBody: "",
       lessonTitle: "",
+      starterType: "content",
     },
     mode: "onTouched",
     reValidateMode: "onChange",
-    resolver: zodResolver(courseWithFirstLessonFormSchema),
+    resolver: zodResolver(newCourseFormSchema),
   });
+  const starterType = watch("starterType");
   const { formError, submit } = useFormSubmit({
-    action: async (input: CourseWithFirstLessonFormInput) => {
+    action: async (input: NewCourseFormValues) => {
       const courseResponse = await createCourse({
         description: input.courseDescription === "" ? null : input.courseDescription,
         title: input.courseTitle,
@@ -298,36 +284,14 @@ function NewCourseForm({
     >
       <FormError>{formError}</FormError>
       <fieldset className="grid gap-4" disabled={isSubmitting}>
-        <fieldset className="grid gap-2">
-          <legend className="text-xs font-medium text-slate-600">First content type</legend>
-          <div className="grid gap-2">
-            {starterTypes.map((type) => {
-              const Icon = type.icon;
-              const selected = starterType === type.value;
-
-              return (
-                <button
-                  className={`grid grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-md border px-3 py-3 text-left ${
-                    selected
-                      ? "border-[var(--primary)] bg-[var(--color-primary-lighter)]"
-                      : "border-[var(--border)] bg-white hover:border-[var(--primary)]"
-                  }`}
-                  key={type.value}
-                  onClick={() => setStarterType(type.value)}
-                  type="button"
-                >
-                  <Icon aria-hidden="true" className="mt-0.5 size-5 text-[var(--primary)]" />
-                  <span className="min-w-0">
-                    <span className="block text-sm font-semibold text-[#0c1726]">{type.label}</span>
-                    <span className="mt-1 block text-xs leading-5 text-[#52657a]">
-                      {type.description}
-                    </span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </fieldset>
+        <SelectField label="First content type" registration={register("starterType")}>
+          {starterTypes.map((type) => (
+            <option key={type.value} value={type.value}>{type.label}</option>
+          ))}
+        </SelectField>
+        <p className="text-xs leading-5 text-[var(--color-text-sub-500)]">
+          {starterTypes.find((type) => type.value === starterType)?.description}
+        </p>
         <Field
           error={fieldError("courseTitle")}
           label="Course title"
@@ -380,6 +344,52 @@ function starterBodyLabel(starterType: StarterType) {
     return "First quiz question";
   }
   return "First lesson content";
+}
+
+function StatusFilter<T extends string>({
+  labels,
+  onChange,
+  options,
+  value,
+}: {
+  labels: Record<T, string>;
+  onChange: (value: T) => void;
+  options: readonly T[];
+  value: T;
+}) {
+  return (
+    <Dropdown
+      panelClassName="absolute left-0 z-30 mt-2 min-w-44 rounded-md border border-[var(--border)] bg-white p-1.5 shadow-lg"
+      trigger={(
+        <>
+          <Filter aria-hidden="true" className="size-4" />
+          <span>{value === options[0] ? "Filter" : `Filter: ${labels[value]}`}</span>
+        </>
+      )}
+      triggerClassName="inline-flex h-11 items-center gap-2 rounded-md border border-[var(--border)] bg-white px-3 text-sm font-semibold text-[var(--color-text-sub-500)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
+      triggerLabel="Filter by status"
+    >
+      {(close) => options.map((option) => (
+        <button
+          aria-checked={value === option}
+          className={`flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm ${value === option ? "bg-[var(--color-primary-lighter)] font-semibold text-[var(--primary)]" : "text-[var(--color-text-sub-500)] hover:bg-[var(--color-bg-weak-100)]"}`}
+          key={option}
+          onClick={() => {
+            onChange(option);
+            close();
+          }}
+          role="menuitemradio"
+          type="button"
+        >
+          {labels[option]}
+          <span
+            aria-hidden="true"
+            className={`size-2 rounded-full ${value === option ? "bg-[var(--primary)]" : "bg-transparent"}`}
+          />
+        </button>
+      ))}
+    </Dropdown>
+  );
 }
 
 function CourseStatus({ status }: { status: Course["status"] }) {
