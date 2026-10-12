@@ -141,7 +141,7 @@ export function SessionHeader({ branding, fixtureMode = false, initialSession, o
   const marketingNavProps = { mobileOpen, onCloseMobile: closeMobile, onSignOut: signOutAndRedirect, onToggleMobile: () => setMobileOpen((open) => !open), publicNavLinks, session };
   const elevationClass = observeLandingElevation
     ? isScrolled
-      ? "border-transparent shadow-[0_1px_2px_rgba(10,13,20,0.04),0_8px_24px_-8px_rgba(10,13,20,0.12)]"
+      ? "border-transparent shadow-[0_2px_4px_-2px_rgba(88,76,225,0.10),0_8px_24px_-8px_rgba(88,76,225,0.16)]"
       : "shadow-none"
     : isScrolled
       ? "shadow-sm"

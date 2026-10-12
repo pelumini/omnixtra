@@ -36,7 +36,7 @@ export function AdminDashboard({
       membersCount={membersCount}
     >
       {loadError ? (
-        <div className="mt-5 rounded-md border border-[#efb4b4] bg-[#fff3f3] px-4 py-3 text-sm text-[#9f1d1d]">
+        <div className="mt-5 rounded-md border border-[var(--color-state-error)] bg-[var(--color-red-lighter)] px-4 py-3 text-sm text-[var(--color-state-error)]">
           {loadError}
         </div>
       ) : null}

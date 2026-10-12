@@ -17,17 +17,17 @@ export function controlSurface({
   hasError = false,
 }: ControlSurfaceOptions = {}) {
   return cn(
-    "rounded-[10px] border bg-[var(--color-bg-white-0)] shadow-[var(--shadow-x-small)] transition-[border-color,box-shadow] hover:border-[var(--color-stroke-soft-200)]",
+    "rounded-[10px] border border-transparent bg-[var(--color-bg-weak-100)] text-[var(--color-text-main-900)] transition-[background-color,border-color,box-shadow] hover:shadow-[var(--shadow-button-stroke-primary)]",
     hasError && !focusWithin &&
-      "border-[var(--color-state-error)] focus:border-[var(--color-state-error)] focus:shadow-[var(--shadow-button-focus-error)]",
+      "border-[var(--color-state-error)] shadow-[var(--shadow-button-focus-error)] focus-visible:border-[var(--color-state-error)] focus-visible:bg-[var(--color-bg-white-0)] focus-visible:shadow-[var(--shadow-button-focus-error)]",
     hasError && focusWithin &&
-      "border-[var(--color-state-error)] focus-within:border-[var(--color-state-error)] focus-within:shadow-[var(--shadow-button-focus-error)]",
+      "border-[var(--color-state-error)] shadow-[var(--shadow-button-focus-error)] focus-within:border-[var(--color-state-error)] focus-within:bg-[var(--color-bg-white-0)] focus-within:shadow-[var(--shadow-button-focus-error)]",
     !hasError && !focusWithin &&
-      "border-[var(--color-stroke-soft-200)] focus:border-[var(--color-stroke-strong-900)] focus:shadow-[var(--shadow-button-focus-important)]",
+      "focus-visible:border-[var(--color-primary-base)] focus-visible:bg-[var(--color-bg-white-0)] focus-visible:shadow-[var(--shadow-button-focus-primary)]",
     !hasError && focusWithin &&
-      "border-[var(--color-stroke-soft-200)] focus-within:border-[var(--color-stroke-strong-900)] focus-within:shadow-[var(--shadow-button-focus-important)]",
+      "focus-within:border-[var(--color-primary-base)] focus-within:bg-[var(--color-bg-white-0)] focus-within:shadow-[var(--shadow-button-focus-primary)]",
     disabled &&
-      "border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-weak-100)] text-[var(--color-text-disabled-300)] shadow-none",
+      "border-transparent bg-[var(--color-bg-weak-100)] text-[var(--color-text-disabled-300)] shadow-none hover:shadow-none",
   );
 }
 
@@ -115,7 +115,6 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(functi
       className={cn(
         "flex h-11 min-w-64 flex-1 items-center gap-3 px-3 text-sm text-[var(--color-text-sub-500)] sm:max-w-md",
         controlSurface({ disabled, focusWithin: true, hasError }),
-        "rounded-md bg-[var(--color-bg-weak-100)] shadow-none",
         className,
       )}
     >

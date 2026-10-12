@@ -15,7 +15,7 @@ export function EmptyIllustration({ kind }: EmptyIllustrationProps) {
   if (failed) {
     const FallbackIcon = kind === "courses" ? GraduationCap : CheckCircle2;
     return (
-      <span className="grid size-16 place-items-center rounded-full bg-white text-[var(--primary)]">
+      <span className="grid size-16 place-items-center rounded-full bg-[var(--color-bg-white-0)] text-[var(--color-primary-base)]">
         <FallbackIcon aria-hidden="true" className="size-9" />
       </span>
     );

@@ -14,7 +14,7 @@ export default function MembersLoading() {
       <section className="grid gap-4 md:grid-cols-3">
         {Array.from({ length: 3 }).map((_, index) => (
           <div
-            className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 rounded-lg border border-[#cbd5e1] bg-white p-5 shadow-sm"
+            className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 rounded-lg border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-5 shadow-sm"
             key={index}
           >
             <Skeleton className="size-11" />
@@ -25,8 +25,8 @@ export default function MembersLoading() {
           </div>
         ))}
       </section>
-      <section className="rounded-lg border border-[#cbd5e1] bg-white shadow-sm">
-        <div className="border-b border-[var(--border)] px-5 py-4">
+      <section className="rounded-lg border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] shadow-sm">
+        <div className="border-b border-[var(--color-stroke-soft-200)] px-5 py-4">
           <Skeleton className="h-5 w-24" />
         </div>
         <ListSkeleton rows={4} />

@@ -71,7 +71,7 @@ export function MembersView({
 
   return (
     <main className="mx-auto grid min-h-screen max-w-[104rem] content-start gap-5 px-5 py-6 lg:px-8">
-      <section className="rounded-lg border border-[var(--border)] bg-white p-4 shadow-sm">
+      <section className="rounded-lg border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-3">
           <SearchInput
             label="Search members by name or email"
@@ -80,14 +80,14 @@ export function MembersView({
             value={query}
           />
           <Dropdown
-            panelClassName="absolute left-0 z-30 mt-2 min-w-44 rounded-md border border-[var(--border)] bg-white p-1.5 shadow-lg"
+            panelClassName="absolute left-0 z-30 mt-2 min-w-44 rounded-md border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-1.5 shadow-lg"
             trigger={(
               <>
                 <Filter aria-hidden="true" className="size-4" />
                 <span>{status === "all" ? "Filter" : `Filter: ${status === "invited" ? "Pending" : "Active"}`}</span>
               </>
             )}
-            triggerClassName="inline-flex h-11 items-center gap-2 rounded-md border border-[var(--border)] bg-white px-3 text-sm font-semibold text-[var(--color-text-sub-500)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
+            triggerClassName="inline-flex h-11 items-center gap-2 rounded-md border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] px-3 text-sm font-semibold text-[var(--color-text-sub-500)] hover:border-[var(--color-primary-base)] hover:text-[var(--color-primary-base)]"
             triggerLabel="Filter members by status"
           >
             {(close) => memberStatusTabs.map((option) => {
@@ -100,7 +100,7 @@ export function MembersView({
                   className={cn(
                     "flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm",
                     status === option
-                      ? "bg-[var(--color-primary-lighter)] font-semibold text-[var(--primary)]"
+                      ? "bg-[var(--color-primary-lighter)] font-semibold text-[var(--color-primary-base)]"
                       : "text-[var(--color-text-sub-500)] hover:bg-[var(--color-bg-weak-100)]",
                   )}
                   key={option}
@@ -116,7 +116,7 @@ export function MembersView({
                     aria-hidden="true"
                     className={cn(
                       "size-2 rounded-full",
-                      status === option ? "bg-[var(--primary)]" : "bg-transparent",
+                      status === option ? "bg-[var(--color-primary-base)]" : "bg-transparent",
                     )}
                   />
                 </button>
@@ -143,7 +143,7 @@ export function MembersView({
       </section>
 
       {message ? (
-        <div className="rounded-md border border-[#cbd5e1] bg-white px-4 py-3 text-sm text-[#52657a]">
+        <div className="rounded-md border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] px-4 py-3 text-sm text-[var(--color-text-sub-500)]">
           {message}
         </div>
       ) : null}
@@ -162,9 +162,9 @@ export function MembersView({
         />
       </section>
 
-      <section className="rounded-lg border border-[#cbd5e1] bg-white shadow-sm">
-        <div className="border-b border-[#d6dee8] px-5 py-4">
-          <h2 className="text-lg font-bold text-[#0c1726]">Directory</h2>
+      <section className="rounded-lg border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] shadow-sm">
+        <div className="border-b border-[var(--color-stroke-soft-200)] px-5 py-4">
+          <h2 className="text-lg font-bold text-[var(--color-text-main-900)]">Directory</h2>
         </div>
         {filteredMembers.length === 0 ? <EmptyState /> : <MemberTable members={filteredMembers} />}
       </section>
@@ -174,13 +174,13 @@ export function MembersView({
 
 function SummaryCard({ icon, label, value }: { icon: ReactNode; label: string; value: ReactNode }) {
   return (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 rounded-lg border border-[#cbd5e1] bg-white p-5 shadow-sm">
-      <span className="grid size-11 place-items-center rounded-md bg-[var(--color-primary-lighter)] text-[var(--primary)]">
+    <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 rounded-lg border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-5 shadow-sm">
+      <span className="grid size-11 place-items-center rounded-md bg-[var(--color-primary-lighter)] text-[var(--color-primary-base)]">
         {icon}
       </span>
       <span>
-        <span className="block text-sm font-semibold uppercase text-[#51647d]">{label}</span>
-        <span className="mt-1 block text-2xl font-bold text-[#0c1726]">{value}</span>
+        <span className="block text-sm font-semibold uppercase text-[var(--color-text-sub-500)]">{label}</span>
+        <span className="mt-1 block text-2xl font-bold text-[var(--color-text-main-900)]">{value}</span>
       </span>
     </div>
   );
@@ -190,26 +190,26 @@ function MemberTable({ members }: { members: Membership[] }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[760px] text-left text-sm">
-        <thead className="border-b border-[#d6dee8] bg-[#f6f8fb] text-xs uppercase tracking-wide text-[#51647d]">
+        <thead className="border-b border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-weak-100)] text-xs uppercase tracking-wide text-[var(--color-text-sub-500)]">
           <tr>
             <th className="px-5 py-3 font-semibold">Member</th>
             <th className="px-5 py-3 font-semibold">Role</th>
             <th className="px-5 py-3 font-semibold">Status</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-[#edf1f5]">
+        <tbody className="divide-y divide-[var(--color-stroke-soft-200)]">
           {members.map((member) => (
-            <tr className="hover:bg-[#f8fbf9]" key={member.id}>
+            <tr className="hover:bg-[var(--color-bg-weak-100)]" key={member.id}>
               <td className="px-5 py-4">
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-md bg-[var(--color-primary-lighter)] text-sm font-bold text-[var(--primary)]">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-md bg-[var(--color-primary-lighter)] text-sm font-bold text-[var(--color-primary-base)]">
                     {(member.full_name ?? member.email).slice(0, 1).toUpperCase()}
                   </span>
                   <span className="min-w-0">
-                    <span className="block truncate font-semibold text-[#0c1726]">
+                    <span className="block truncate font-semibold text-[var(--color-text-main-900)]">
                       {member.full_name ?? "Invited member"}
                     </span>
-                    <span className="block truncate text-xs text-[#52657a]">{member.email}</span>
+                    <span className="block truncate text-xs text-[var(--color-text-sub-500)]">{member.email}</span>
                   </span>
                 </div>
               </td>
@@ -235,8 +235,8 @@ function RoleBadge({ role }: { role: OrgRole }) {
       className={cn(
         "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
         role === "tenant_admin"
-          ? "bg-[var(--color-primary-lighter)] text-[var(--primary)]"
-          : "bg-slate-100 text-slate-600",
+          ? "bg-[var(--color-primary-lighter)] text-[var(--color-primary-base)]"
+          : "bg-[var(--color-bg-weak-100)] text-[var(--color-text-sub-500)]",
       )}
     >
       {label}
@@ -248,11 +248,11 @@ function StatusBadge({ status }: { status: Membership["status"] }) {
   const active = status === "active";
 
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#52657a]">
+    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--color-text-sub-500)]">
       <span
         className={cn(
           "h-2 w-2 rounded-full",
-          active ? "bg-[var(--primary)]" : "bg-[var(--color-state-warning)]",
+          active ? "bg-[var(--color-primary-base)]" : "bg-[var(--color-state-warning)]",
         )}
       />
       {active ? "Active" : "Pending"}
@@ -263,11 +263,11 @@ function StatusBadge({ status }: { status: Membership["status"] }) {
 function EmptyState() {
   return (
     <div className="px-6 py-16 text-center">
-      <div className="mx-auto grid size-14 place-items-center rounded-md bg-[var(--color-primary-lighter)] text-[var(--primary)]">
+      <div className="mx-auto grid size-14 place-items-center rounded-md bg-[var(--color-primary-lighter)] text-[var(--color-primary-base)]">
         <Users aria-hidden="true" className="size-7" />
       </div>
-      <h2 className="mt-5 text-base font-bold text-[#0c1726]">No members yet</h2>
-      <p className="mx-auto mt-2 max-w-sm text-sm text-[#52657a]">
+      <h2 className="mt-5 text-base font-bold text-[var(--color-text-main-900)]">No members yet</h2>
+      <p className="mx-auto mt-2 max-w-sm text-sm text-[var(--color-text-sub-500)]">
         Create the first user in your academy and assign their access.
       </p>
     </div>

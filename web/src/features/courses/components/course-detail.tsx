@@ -31,9 +31,9 @@ export function CourseDetail({ course }: CourseDetailProps) {
 
   return (
     <main className="mx-auto grid min-h-screen max-w-6xl content-start gap-6 px-5 py-5">
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border)] pb-5">
+      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-stroke-soft-200)] pb-5">
         <div className="min-w-0">
-          <Link className="text-sm text-slate-600 hover:text-[var(--primary)]" href="/admin/courses">
+          <Link className="text-sm text-[var(--color-text-sub-500)] hover:text-[var(--color-primary-base)]" href="/admin/courses">
             Courses
           </Link>
           <h1 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">{course.title}</h1>
@@ -49,7 +49,7 @@ export function CourseDetail({ course }: CourseDetailProps) {
       <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         <section className="grid content-start gap-4">
           <div className="flex items-center gap-2">
-            <BookOpen aria-hidden="true" className="size-5 text-[var(--primary)]" />
+            <BookOpen aria-hidden="true" className="size-5 text-[var(--color-primary-base)]" />
             <h2 className="text-base font-semibold">Lessons</h2>
           </div>
 
@@ -58,7 +58,7 @@ export function CourseDetail({ course }: CourseDetailProps) {
           ))}
 
           {orderedLessons.length === 0 ? (
-            <div className="border border-[var(--border)] bg-white px-4 py-10 text-center text-sm text-slate-600">
+            <div className="border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] px-4 py-10 text-center text-sm text-[var(--color-text-sub-500)]">
               No lessons yet
             </div>
           ) : null}
@@ -77,8 +77,8 @@ export function CourseDetail({ course }: CourseDetailProps) {
 
 function LessonCard({ index, lesson }: { index: number; lesson: Lesson }) {
   return (
-    <article className="border border-[var(--border)] bg-white">
-      <div className="flex flex-wrap items-center gap-3 border-b border-[var(--border)] px-4 py-3">
+    <article className="border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)]">
+      <div className="flex flex-wrap items-center gap-3 border-b border-[var(--color-stroke-soft-200)] px-4 py-3">
         <span className="grid size-8 place-items-center bg-slate-100 text-sm font-semibold text-slate-700">
           {index}
         </span>
@@ -89,7 +89,7 @@ function LessonCard({ index, lesson }: { index: number; lesson: Lesson }) {
       </div>
       <div className="grid gap-3 px-4 py-4">
         <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
-          <FileText aria-hidden="true" className="size-4 text-[var(--primary)]" />
+          <FileText aria-hidden="true" className="size-4 text-[var(--color-primary-base)]" />
           Text content
         </div>
         <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
@@ -140,7 +140,7 @@ function AddLessonForm({
 
   return (
     <form
-      className="grid content-start gap-3 border border-[var(--border)] bg-white p-4"
+      className="grid content-start gap-3 border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-4"
       noValidate
       onSubmit={handleSubmit(submit)}
     >
