@@ -1,6 +1,13 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+const router = vi.hoisted(() => ({ push: vi.fn() }));
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/admin/courses",
+  useRouter: () => router,
+}));
 
 import { SessionHeader } from "@/components/layout/session-header";
 import { AdminCourseList, CourseBuilder } from "@/features/courses";
@@ -123,6 +130,11 @@ describe("ADR-003 frontend permissions", () => {
     expect(html).toContain("pending@example.com");
     expect(html).toContain("Pending Member");
     expect(html).toContain("Pending");
+    expect(html).toContain('placeholder="Search by name or email"');
+    expect(html).toContain(">All<");
+    expect(html).toContain(">Active<");
+    expect(html).not.toContain("Access management");
+    expect(html).not.toContain("People in your academy and their access.");
     expect(html).not.toContain("Copy invite link");
     expect(html).not.toContain("00000000-0000-0000-0000-000000000122");
     expect(html).not.toContain("00000000-0000-0000-0000-000000000131");
@@ -152,6 +164,30 @@ describe("ADR-003 frontend permissions", () => {
     expect(html).toContain("Onboarding Essentials");
     expect(html).not.toContain("New Course");
     expect(html).not.toContain("Create");
+  });
+
+  it("renders course controls once and moves the complete creation form into the shared dialog", () => {
+    const listHtml = renderToStaticMarkup(
+      <AdminCourseList initialCourses={[draftCourse]} loadError={null} />,
+    );
+    const emptyHtml = renderToStaticMarkup(
+      <AdminCourseList initialCourses={[]} loadError={null} />,
+    );
+
+    expect(listHtml.match(/placeholder="Search courses"/g)).toHaveLength(1);
+    expect(listHtml).toContain("Add course");
+    expect(listHtml).toContain("1 visible");
+    expect(listHtml).not.toContain("Course operations");
+    expect(listHtml).not.toContain('role="dialog"');
+    expect(emptyHtml).toContain('role="dialog"');
+    expect(emptyHtml).toContain("Create a course");
+    expect(emptyHtml).toContain("First content type");
+    expect(emptyHtml).toContain("Course title");
+    expect(emptyHtml).toContain("Course description");
+    expect(emptyHtml).toContain("First lesson title");
+    expect(emptyHtml).toContain("First lesson content");
+    expect(emptyHtml).toContain("Create course");
+    expect(emptyHtml).toContain("Cancel");
   });
 
   it("denies authoring controls to non-owner course roles", () => {

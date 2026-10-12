@@ -12,14 +12,15 @@ import {
   ListChecks,
   MoreHorizontal,
   PlaySquare,
-  Search,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
+import { Dialog } from "@/components/ui/dialog";
 import { Field, FormError, SubmitButton, TextareaField } from "@/components/ui/form-controls";
+import { SearchInput } from "@/components/ui/input";
 import { resolveMessage } from "@/lib/forms/messages";
 import { useFormSubmit } from "@/lib/forms/use-form-submit";
 import { canCreateCourse } from "@/lib/permissions";
@@ -101,24 +102,47 @@ export function AdminCourseList({
 
   return (
     <main className="mx-auto grid min-h-screen max-w-[104rem] content-start gap-5 px-5 py-6 lg:px-8">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--primary)]">
-            Course operations
-          </p>
-          <h1 className="mt-2 text-3xl font-bold text-[#0c1726]">Courses</h1>
+      <section className="rounded-lg border border-[var(--border)] bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3">
+          <SearchInput
+            label="Search courses"
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search courses"
+            value={query}
+          />
+          <div className="flex items-center gap-2 text-sm text-[var(--color-text-sub-500)]">
+            <Filter aria-hidden="true" className="size-4" />
+            <span>{filteredCourses.length} visible</span>
+          </div>
+          {canAuthor ? (
+            <button
+              className="ml-auto inline-flex h-11 items-center gap-2 rounded-md bg-[var(--primary)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)]"
+              onClick={() => setShowCreate(true)}
+              type="button"
+            >
+              <FilePlus2 aria-hidden="true" className="size-4" />
+              Add course
+            </button>
+          ) : null}
         </div>
-        {canAuthor ? (
-          <button
-            className="inline-flex h-11 items-center gap-2 rounded-md bg-[var(--primary)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)]"
-            onClick={() => setShowCreate(true)}
-            type="button"
-          >
-            <FilePlus2 aria-hidden="true" className="size-4" />
-            Add course
-          </button>
-        ) : null}
-      </header>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {statusTabs.map((tab) => (
+            <button
+              className={`h-9 rounded-md border px-3 text-sm font-semibold capitalize ${
+                status === tab
+                  ? "border-[var(--primary)] bg-[var(--primary)] text-white"
+                  : "border-[var(--border)] bg-white text-[var(--color-text-sub-500)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
+              }`}
+              key={tab}
+              onClick={() => setStatus(tab)}
+              type="button"
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </section>
 
       {message ? (
         <div className="flex items-start gap-2 rounded-md border border-[#cbd5e1] bg-white px-4 py-3 text-sm text-[#52657a]">
@@ -127,51 +151,9 @@ export function AdminCourseList({
         </div>
       ) : null}
 
-      <section
-        className={`grid gap-5 ${
-          canAuthor && showCreate ? "xl:grid-cols-[minmax(0,1fr)_430px]" : ""
-        }`}
-      >
-        <div className="grid content-start gap-4">
-          <div className="rounded-lg border border-[#cbd5e1] bg-white p-4 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <label className="flex h-11 min-w-64 flex-1 items-center gap-3 rounded-md bg-[#f3f6f9] px-3 text-sm text-[#52657a] sm:max-w-md">
-                <Search aria-hidden="true" className="size-4 shrink-0" />
-                <span className="sr-only">Search courses</span>
-                <input
-                  className="min-w-0 flex-1 bg-transparent text-[#0c1726] outline-none placeholder:text-[#7a8899]"
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search courses"
-                  type="search"
-                  value={query}
-                />
-              </label>
-              <div className="flex items-center gap-2 text-sm text-[#52657a]">
-                <Filter aria-hidden="true" className="size-4" />
-                <span>{filteredCourses.length} visible</span>
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {statusTabs.map((tab) => (
-                <button
-                  className={`h-9 rounded-md border px-3 text-sm font-semibold capitalize ${
-                    status === tab
-                      ? "border-[var(--primary)] bg-[var(--primary)] text-white"
-                      : "border-[var(--border)] bg-white text-[var(--color-text-sub-500)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
-                  }`}
-                  key={tab}
-                  onClick={() => setStatus(tab)}
-                  type="button"
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="overflow-hidden rounded-lg border border-[#cbd5e1] bg-white shadow-sm">
-            <table className="w-full min-w-[760px] border-collapse text-left text-sm">
+      <section className="grid content-start gap-4">
+        <div className="overflow-x-auto rounded-lg border border-[#cbd5e1] bg-white shadow-sm">
+          <table className="w-full min-w-[760px] border-collapse text-left text-sm">
               <thead className="border-b border-[#cbd5e1] bg-[#f6f8fb] text-xs uppercase text-[#51647d]">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Course</th>
@@ -227,23 +209,30 @@ export function AdminCourseList({
                   </tr>
                 ))}
               </tbody>
-            </table>
-            {filteredCourses.length === 0 ? (
-              <div className="px-4 py-14 text-center text-sm text-[#52657a]">No courses found</div>
-            ) : null}
-          </div>
+          </table>
+          {filteredCourses.length === 0 ? (
+            <div className="px-4 py-14 text-center text-sm text-[#52657a]">No courses found</div>
+          ) : null}
         </div>
+      </section>
 
-        {canAuthor && showCreate ? (
+      {canAuthor ? (
+        <Dialog
+          description="Choose the first content type, then create the course and its first lesson."
+          onClose={() => setShowCreate(false)}
+          open={showCreate}
+          title="Create a course"
+        >
           <NewCourseForm
             onCancel={() => setShowCreate(false)}
             onCreated={(course) => {
               setCourses((current) => [course, ...current]);
               setMessage("Course and first lesson created");
+              setShowCreate(false);
             }}
           />
-        ) : null}
-      </section>
+        </Dialog>
+      ) : null}
     </main>
   );
 }
@@ -302,20 +291,11 @@ function NewCourseForm({
 
   return (
     <form
-      className="grid content-start gap-4 rounded-lg border border-[#cbd5e1] bg-white p-5 shadow-sm"
+      className="grid max-h-[calc(100dvh-12rem)] content-start gap-4 overflow-y-auto pr-1"
       id="new-course"
       noValidate
       onSubmit={handleSubmit(submit)}
     >
-      <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--primary)]">
-          New course
-        </p>
-        <h2 className="mt-2 text-xl font-bold text-[#0c1726]">Start with one lesson</h2>
-        <p className="mt-2 text-sm leading-6 text-[#52657a]">
-          Choose the first standard content type, then create the course shell and first lesson.
-        </p>
-      </div>
       <FormError>{formError}</FormError>
       <fieldset className="grid gap-4" disabled={isSubmitting}>
         <fieldset className="grid gap-2">
