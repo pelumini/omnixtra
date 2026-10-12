@@ -12,6 +12,7 @@ import { InvitationPending } from "@/features/auth";
 import { getCourses } from "@/features/courses";
 import { AdminHome } from "@/features/dashboard";
 import { getMemberships } from "@/features/members";
+import { DEFAULT_BRANDING } from "@/lib/auth/branding";
 import { getSessionOrNull } from "@/lib/auth/session";
 import { e2eFixturesEnabled } from "@/lib/e2e-enabled";
 
@@ -23,11 +24,8 @@ import type { Course } from "@/features/courses/schemas";
 import type { TenantBranding } from "@/lib/schemas/academy";
 
 const fallbackBranding: TenantBranding = {
-  locale: "en",
-  logo_url: null,
-  primary_color: "#584ce1",
+  ...DEFAULT_BRANDING,
   tenant_name: "Academy",
-  time_zone: "UTC",
 };
 
 export default async function AdminDashboardPage() {

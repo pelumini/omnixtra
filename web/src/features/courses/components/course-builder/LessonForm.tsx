@@ -21,7 +21,7 @@ export function LessonForm({ courseId, disabled, lessons, onCreated, onSectionCh
   });
   const fieldError = formFieldError(errors);
   return (
-    <form className="grid gap-3 border border-[var(--border)] bg-white p-4" noValidate onSubmit={handleSubmit(submit)}>
+    <form className="grid gap-3 border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-4" noValidate onSubmit={handleSubmit(submit)}>
       <div className="flex items-center gap-2"><FileText aria-hidden="true" className="size-4 text-gray-500" /><h2 className="text-sm font-semibold">Lesson</h2></div>
       <FormError>{formError}</FormError>
       <fieldset className="grid gap-3" disabled={isSubmitting || disabled}>

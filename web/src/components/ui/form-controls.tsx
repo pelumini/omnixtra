@@ -51,13 +51,13 @@ export function Field({
     <div className="grid gap-1">
       <div
         className={cn(
-          "relative mt-2 flex h-10 items-stretch",
+          "group relative mt-2 flex h-10 items-stretch",
           controlSurface({ disabled, focusWithin: true, hasError: Boolean(error) }),
         )}
       >
         <label
           className={cn(
-            "absolute -top-2 left-3 z-10 bg-[var(--color-bg-white-0)] px-1 text-xs font-medium leading-4 text-[var(--color-text-main-900)]",
+            "absolute -top-2 left-3 z-10 bg-[var(--color-bg-weak-100)] px-1 text-xs font-medium leading-4 text-[var(--color-text-main-900)] group-focus-within:bg-[var(--color-bg-white-0)]",
             disabled ? "bg-[var(--color-bg-weak-100)] text-[var(--color-text-disabled-300)]" : "",
           )}
           htmlFor={registration.name}

@@ -25,7 +25,7 @@ export function SectionForm({ courseId, onCreated, position }: { courseId: strin
   const fieldError = formFieldError(errors);
 
   return (
-    <form className="flex flex-wrap items-end gap-3 border border-[var(--border)] bg-white p-4" noValidate onSubmit={handleSubmit(submit)}>
+    <form className="flex flex-wrap items-end gap-3 border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-4" noValidate onSubmit={handleSubmit(submit)}>
       <div className="min-w-56 flex-1"><FormError>{formError}</FormError><fieldset disabled={isSubmitting}><Field error={fieldError("title")} label="Section" registration={register("title")} /></fieldset></div>
       <SubmitButton className="w-auto gap-2" isSubmitting={isSubmitting} pendingLabel="Adding..."><Plus aria-hidden="true" className="size-4" />Add</SubmitButton>
     </form>

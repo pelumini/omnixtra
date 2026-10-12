@@ -138,13 +138,13 @@ export function ActivationSuccess({ activationLink, onDismiss }: { activationLin
     <section className="rounded-lg border border-[var(--color-stroke-soft-200)] bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="font-bold text-[#0c1726]">Activation email sent</h2>
-          <p className="mt-1 text-sm text-[#52657a]">The user should activate from their email. Keep this one-time link only as a fallback.</p>
+          <h2 className="font-bold text-[var(--color-text-main-900)]">Activation email sent</h2>
+          <p className="mt-1 text-sm text-[var(--color-text-sub-500)]">The user should activate from their email. Keep this one-time link only as a fallback.</p>
         </div>
         <Button onClick={onDismiss} size="small" variant="secondary">Dismiss</Button>
       </div>
       <div className="mt-4 flex min-w-0 items-center gap-2">
-        <code className="min-w-0 flex-1 truncate rounded-md bg-[#f6f8fb] px-3 py-2 text-xs text-[#52657a]">{activationLink}</code>
+        <code className="min-w-0 flex-1 truncate rounded-md bg-[var(--color-bg-weak-100)] px-3 py-2 text-xs text-[var(--color-text-sub-500)]">{activationLink}</code>
         <Button aria-label="Copy activation link" iconOnly onClick={async () => { await navigator.clipboard.writeText(activationLink); feedbackToast.success("Activation link copied"); }} size="small" variant="secondary">
           <Copy aria-hidden="true" />
         </Button>

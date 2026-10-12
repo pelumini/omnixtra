@@ -32,7 +32,7 @@ export function BlockForm({ blocks, courseId, disabled, lessons, onCreated, onLe
   });
   const fieldError = formFieldError(errors);
   return (
-    <form className="grid gap-3 border border-[var(--border)] bg-white p-4" noValidate onSubmit={handleSubmit(submit)}>
+    <form className="grid gap-3 border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-4" noValidate onSubmit={handleSubmit(submit)}>
       <div className="flex items-center gap-2"><Boxes aria-hidden="true" className="size-4 text-gray-500" /><h2 className="text-sm font-semibold">Add standard content</h2></div>
       <p className="text-xs leading-5 text-slate-500">Choose the exact content type you want to add. OmniXtra does not group these behind separate course categories.</p>
       <FormError>{formError}</FormError>
@@ -42,9 +42,9 @@ export function BlockForm({ blocks, courseId, disabled, lessons, onCreated, onLe
         </SelectField>
         <fieldset className="grid gap-2"><legend className="text-xs font-medium text-slate-600">Content type</legend>
           {blockTypes.map((blockType) => { const Icon = blockType.icon; return (
-            <label className="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-md border border-[var(--border)] bg-white px-3 py-3 text-sm hover:border-[var(--primary)] hover:bg-[var(--color-primary-lighter)]" key={blockType.value}>
+            <label className="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-md border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] px-3 py-3 text-sm hover:border-[var(--color-primary-base)] hover:bg-[var(--color-primary-lighter)]" key={blockType.value}>
               <Input bare className="mt-1" {...register("blockType")} type="radio" value={blockType.value} />
-              <span className="min-w-0"><span className="flex items-center gap-2 font-medium text-[var(--foreground)]"><Icon aria-hidden="true" className="size-4 text-[var(--primary)]" />{blockType.label}</span><span className="mt-1 block text-xs leading-5 text-slate-500">{blockType.hint}</span></span>
+              <span className="min-w-0"><span className="flex items-center gap-2 font-medium text-[var(--color-text-main-900)]"><Icon aria-hidden="true" className="size-4 text-[var(--color-primary-base)]" />{blockType.label}</span><span className="mt-1 block text-xs leading-5 text-[var(--color-text-sub-500)]">{blockType.hint}</span></span>
             </label>
           ); })}
         </fieldset>
