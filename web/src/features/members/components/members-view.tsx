@@ -1,9 +1,10 @@
 "use client";
 
-import { Filter, Mail, Search, ShieldCheck, Users } from "lucide-react";
+import { Filter, Mail, ShieldCheck, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { DeniedState } from "@/components/layout/denied-state";
+import { SearchInput } from "@/components/ui/input";
 import { canManageMembers } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
@@ -71,17 +72,12 @@ export function MembersView({
     <main className="mx-auto grid min-h-screen max-w-[104rem] content-start gap-5 px-5 py-6 lg:px-8">
       <section className="rounded-lg border border-[var(--border)] bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-3">
-          <label className="flex h-11 min-w-64 flex-1 items-center gap-3 rounded-md bg-[var(--color-bg-weak-100)] px-3 text-sm text-[var(--color-text-sub-500)] sm:max-w-md">
-            <Search aria-hidden="true" className="size-4 shrink-0" />
-            <span className="sr-only">Search members by name or email</span>
-            <input
-              className="min-w-0 flex-1 bg-transparent text-[var(--color-text-main-900)] outline-none placeholder:text-[var(--color-text-soft-400)]"
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search by name or email"
-              type="search"
-              value={query}
-            />
-          </label>
+          <SearchInput
+            label="Search members by name or email"
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search by name or email"
+            value={query}
+          />
           <div className="flex items-center gap-2 text-sm text-[var(--color-text-sub-500)]">
             <Filter aria-hidden="true" className="size-4" />
             <span>{filteredMembers.length} visible</span>

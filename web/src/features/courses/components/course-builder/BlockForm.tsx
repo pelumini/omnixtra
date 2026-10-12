@@ -5,6 +5,7 @@ import { Boxes, FileText, Globe, Image, ListChecks, PlaySquare, Plus } from "luc
 import { useForm } from "react-hook-form";
 
 import { FieldError, FormError, SelectField, SubmitButton, TextareaField } from "@/components/ui/form-controls";
+import { Input } from "@/components/ui/input";
 import { useFormSubmit } from "@/lib/forms/use-form-submit";
 
 import { createBlock } from "../../api";
@@ -42,7 +43,7 @@ export function BlockForm({ blocks, courseId, disabled, lessons, onCreated, onLe
         <fieldset className="grid gap-2"><legend className="text-xs font-medium text-slate-600">Content type</legend>
           {blockTypes.map((blockType) => { const Icon = blockType.icon; return (
             <label className="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-md border border-[var(--border)] bg-white px-3 py-3 text-sm hover:border-[var(--primary)] hover:bg-[var(--color-primary-lighter)]" key={blockType.value}>
-              <input className="mt-1" {...register("blockType")} type="radio" value={blockType.value} />
+              <Input bare className="mt-1" {...register("blockType")} type="radio" value={blockType.value} />
               <span className="min-w-0"><span className="flex items-center gap-2 font-medium text-[var(--foreground)]"><Icon aria-hidden="true" className="size-4 text-[var(--primary)]" />{blockType.label}</span><span className="mt-1 block text-xs leading-5 text-slate-500">{blockType.hint}</span></span>
             </label>
           ); })}

@@ -3,6 +3,7 @@
 import { useFormStatus } from "react-dom";
 
 import { Button } from "@/components/ui/button";
+import { Input, Select, Textarea, controlSurface } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 import type { ReactNode } from "react";
@@ -50,11 +51,8 @@ export function Field({
     <div className="grid gap-1">
       <div
         className={cn(
-          "relative mt-2 flex h-10 items-stretch rounded-[10px] border bg-[var(--color-bg-white-0)] shadow-[var(--shadow-x-small)] transition-[border-color,box-shadow] hover:border-[var(--color-stroke-soft-200)] focus-within:border-[var(--color-stroke-strong-900)] focus-within:shadow-[var(--shadow-button-focus-important)]",
-          fieldBorderColor(Boolean(error)),
-          disabled
-            ? "border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-weak-100)] shadow-none"
-            : "",
+          "relative mt-2 flex h-10 items-stretch",
+          controlSurface({ disabled, focusWithin: true, hasError: Boolean(error) }),
         )}
       >
         <label
@@ -66,10 +64,11 @@ export function Field({
         >
           {label}
         </label>
-        <input
+        <Input
           {...registration}
           aria-describedby={describedBy}
-          aria-invalid={Boolean(error)}
+          bare
+          hasError={Boolean(error)}
           autoComplete={autoComplete}
           className={cn(
             "min-w-0 flex-1 rounded-[10px] bg-transparent py-2.5 pl-3 pr-2.5 text-xs leading-4 text-[var(--color-text-main-900)] placeholder:text-[var(--color-text-soft-400)] focus:outline-none disabled:cursor-not-allowed disabled:text-[var(--color-text-disabled-300)] disabled:placeholder:text-[var(--color-text-disabled-300)]",
@@ -124,15 +123,11 @@ export function TextareaField({
       >
         {label}
       </label>
-      <textarea
+      <Textarea
         {...registration}
         aria-describedby={describedBy}
-        aria-invalid={Boolean(error)}
+        hasError={Boolean(error)}
         autoComplete={autoComplete}
-        className={cn(
-          "min-h-24 w-full resize-y rounded-[10px] border bg-[var(--color-bg-white-0)] px-3 py-2.5 text-xs leading-4 text-[var(--color-text-main-900)] shadow-[var(--shadow-x-small)] transition-[border-color,box-shadow] placeholder:text-[var(--color-text-soft-400)] hover:border-[var(--color-stroke-soft-200)] focus:outline-none disabled:cursor-not-allowed disabled:border-[var(--color-stroke-soft-200)] disabled:bg-[var(--color-bg-weak-100)] disabled:text-[var(--color-text-disabled-300)] disabled:shadow-none disabled:placeholder:text-[var(--color-text-disabled-300)]",
-          controlBorderColor(Boolean(error)),
-        )}
         disabled={disabled}
         id={registration.name}
         placeholder={placeholder}
@@ -174,19 +169,15 @@ export function SelectField({
       >
         {label}
       </label>
-      <select
+      <Select
         {...registration}
         aria-describedby={describedBy}
-        aria-invalid={Boolean(error)}
-        className={cn(
-          "h-10 w-full rounded-[10px] border bg-[var(--color-bg-white-0)] px-3 text-xs leading-4 text-[var(--color-text-main-900)] shadow-[var(--shadow-x-small)] transition-[border-color,box-shadow] hover:border-[var(--color-stroke-soft-200)] focus:outline-none disabled:cursor-not-allowed disabled:border-[var(--color-stroke-soft-200)] disabled:bg-[var(--color-bg-weak-100)] disabled:text-[var(--color-text-disabled-300)] disabled:shadow-none",
-          controlBorderColor(Boolean(error)),
-        )}
+        hasError={Boolean(error)}
         disabled={disabled}
         id={registration.name}
       >
         {children}
-      </select>
+      </Select>
       {error ? (
         <FieldError id={`${registration.name}-error`}>{error}</FieldError>
       ) : hint ? (
@@ -250,16 +241,4 @@ export function SubmitButton({
       {children}
     </Button>
   );
-}
-
-function controlBorderColor(hasError: boolean) {
-  return hasError
-    ? "border-[var(--color-state-error)] focus:border-[var(--color-state-error)] focus:shadow-[var(--shadow-button-focus-error)]"
-    : "border-[var(--color-stroke-soft-200)] focus:border-[var(--color-stroke-strong-900)] focus:shadow-[var(--shadow-button-focus-important)]";
-}
-
-function fieldBorderColor(hasError: boolean) {
-  return hasError
-    ? "border-[var(--color-state-error)] focus-within:border-[var(--color-state-error)] focus-within:shadow-[var(--shadow-button-focus-error)]"
-    : "border-[var(--color-stroke-soft-200)]";
 }

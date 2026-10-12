@@ -12,7 +12,6 @@ import {
   ListChecks,
   MoreHorizontal,
   PlaySquare,
-  Search,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -21,6 +20,7 @@ import { useForm } from "react-hook-form";
 
 import { Dialog } from "@/components/ui/dialog";
 import { Field, FormError, SubmitButton, TextareaField } from "@/components/ui/form-controls";
+import { SearchInput } from "@/components/ui/input";
 import { resolveMessage } from "@/lib/forms/messages";
 import { useFormSubmit } from "@/lib/forms/use-form-submit";
 import { canCreateCourse } from "@/lib/permissions";
@@ -104,17 +104,12 @@ export function AdminCourseList({
     <main className="mx-auto grid min-h-screen max-w-[104rem] content-start gap-5 px-5 py-6 lg:px-8">
       <section className="rounded-lg border border-[var(--border)] bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-3">
-          <label className="flex h-11 min-w-64 flex-1 items-center gap-3 rounded-md bg-[var(--color-bg-weak-100)] px-3 text-sm text-[var(--color-text-sub-500)] sm:max-w-md">
-            <Search aria-hidden="true" className="size-4 shrink-0" />
-            <span className="sr-only">Search courses</span>
-            <input
-              className="min-w-0 flex-1 bg-transparent text-[var(--color-text-main-900)] outline-none placeholder:text-[var(--color-text-soft-400)]"
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search courses"
-              type="search"
-              value={query}
-            />
-          </label>
+          <SearchInput
+            label="Search courses"
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search courses"
+            value={query}
+          />
           <div className="flex items-center gap-2 text-sm text-[var(--color-text-sub-500)]">
             <Filter aria-hidden="true" className="size-4" />
             <span>{filteredCourses.length} visible</span>

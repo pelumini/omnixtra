@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { FieldError, FormError, SubmitButton } from "@/components/ui/form-controls";
+import { Input } from "@/components/ui/input";
 import { login } from "@/lib/api/auth";
 import { resolveMessage } from "@/lib/forms/messages";
 import { useFormSubmit } from "@/lib/forms/use-form-submit";
@@ -55,11 +56,11 @@ export function SignInView({ academyName }: SignInViewProps = {}) {
           <form className="mt-10 space-y-5" noValidate onSubmit={handleSubmit(submit)}>
             <fieldset className="space-y-5" disabled={isSubmitting}>
               <LoginField error={fieldError("email")} label="Email Address" name="email">
-                <input {...register("email")} aria-invalid={Boolean(fieldError("email"))} autoComplete="email" className="h-10 w-full rounded-lg border border-[var(--border)] bg-white px-3 text-sm text-[var(--foreground)] outline-none placeholder:text-[#868c98] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15" id="email" placeholder="Enter email" type="email" />
+                <Input {...register("email")} autoComplete="email" className="text-sm" hasError={Boolean(fieldError("email"))} id="email" placeholder="Enter email" type="email" />
               </LoginField>
               <LoginField error={fieldError("password")} label="Password" name="password">
                 <div className="relative">
-                  <input {...register("password")} aria-invalid={Boolean(fieldError("password"))} autoComplete="current-password" className="h-10 w-full rounded-lg border border-[var(--border)] bg-white px-3 pr-11 text-sm text-[var(--foreground)] outline-none placeholder:text-[#868c98] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15" id="password" placeholder="Enter password" type={showPassword ? "text" : "password"} />
+                  <Input {...register("password")} autoComplete="current-password" className="pr-11 text-sm" hasError={Boolean(fieldError("password"))} id="password" placeholder="Enter password" type={showPassword ? "text" : "password"} />
                   <button aria-label={showPassword ? "Hide password" : "Show password"} className="absolute inset-y-0 right-0 grid w-10 place-items-center text-[var(--color-text-soft-400)] hover:text-[var(--foreground)]" onClick={() => setShowPassword((visible) => !visible)} type="button">
                     {showPassword ? <EyeOff aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
                   </button>
