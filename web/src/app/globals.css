@@ -2,6 +2,7 @@
 @import "../styles/tokens/tokens.css";
 
 :root {
+  --font-mulish: "Mulish Variable", "Mulish", ui-sans-serif, system-ui, sans-serif;
   --background: var(--color-bg-weak-100);
   --foreground: var(--color-text-main-900);
   --primary: var(--color-primary-base);
