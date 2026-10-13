@@ -28,11 +28,20 @@ const branding: TenantBranding = {
 };
 
 const course: Course = {
+  category: null,
   description: "Role-gated onboarding course",
+  delivery_format: null,
+  difficulty: null,
+  estimated_duration_minutes: null,
   id: "00000000-0000-0000-0000-000000000901",
+  language: null,
+  learning_outcomes: [],
   lesson_count: 1,
   slug: "role-gated-onboarding",
   status: "draft",
+  tags: [],
+  target_audience: null,
+  thumbnail_url: null,
   title: "Role Gated Onboarding",
 };
 

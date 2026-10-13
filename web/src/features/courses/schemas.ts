@@ -12,6 +12,17 @@ export const courseSchema = z.object({
   title: z.string().min(3).max(200),
   slug: z.string(),
   description: z.string().nullable(),
+  thumbnail_url: z.string().url().nullable(),
+  category: z.string().nullable(),
+  tags: z.array(z.string()),
+  language: z.string().nullable(),
+  learning_outcomes: z.array(z.string()),
+  target_audience: z.string().nullable(),
+  difficulty: z.enum(["beginner", "intermediate", "advanced"]).nullable(),
+  delivery_format: z
+    .enum(["self_paced", "instructor_led", "blended"])
+    .nullable(),
+  estimated_duration_minutes: z.number().int().nonnegative().nullable(),
   status: courseStatusSchema,
   lesson_count: z.number().int().nonnegative().default(0),
 });
@@ -28,6 +39,35 @@ export const courseCreateRequestSchema = z.object({
 export const courseUpdateRequestSchema = z.object({
   title: z.string().min(3).max(200).optional(),
   description: z.string().max(2000).nullable().optional(),
+  thumbnail_url: z.string().url().max(700).nullable().optional(),
+  category: z.string().max(120).nullable().optional(),
+  tags: z.array(z.string().min(1).max(50)).max(20).nullable().optional(),
+  language: z
+    .string()
+    .regex(/^[a-z]{2,3}(?:-[A-Z]{2})?$/)
+    .max(16)
+    .nullable()
+    .optional(),
+  learning_outcomes: z
+    .array(z.string().min(1).max(500))
+    .max(20)
+    .nullable()
+    .optional(),
+  target_audience: z.string().max(2000).nullable().optional(),
+  difficulty: z
+    .enum(["beginner", "intermediate", "advanced"])
+    .nullable()
+    .optional(),
+  delivery_format: z
+    .enum(["self_paced", "instructor_led", "blended"])
+    .nullable()
+    .optional(),
+  estimated_duration_minutes: z
+    .number()
+    .int()
+    .nonnegative()
+    .nullable()
+    .optional(),
 });
 
 export const sectionCreateRequestSchema = z.object({
@@ -235,18 +275,33 @@ export const courseFormSchema = z.object({
   title: textSchema(3, 200),
 });
 
-export const courseDetailsFormSchema = courseFormSchema;
+const optionalUrlSchema = optionalTextSchema(700).refine(
+  (value) => value === "" || z.string().url().safeParse(value).success,
+  "url",
+);
+
+export const courseDetailsFormSchema = courseFormSchema.extend({
+  category: optionalTextSchema(120),
+  deliveryFormat: z.enum(["", "self_paced", "instructor_led", "blended"]),
+  difficulty: z.enum(["", "beginner", "intermediate", "advanced"]),
+  durationUnit: z.enum(["minutes", "hours"]),
+  durationValue: z
+    .string()
+    .refine(
+      (value) =>
+        value === "" || (Number.isFinite(Number(value)) && Number(value) >= 0),
+      "min_value",
+    ),
+  language: z.enum(["", "en", "fr", "es", "de", "pt"]),
+  learningOutcomes: z.array(z.string().min(1).max(500)).max(20),
+  tags: z.array(z.string().min(1).max(50)).max(20),
+  targetAudience: optionalTextSchema(2000),
+  thumbnailUrl: optionalUrlSchema,
+});
 
 export const firstLessonFormSchema = z.object({
   body: textSchema(1, 20000),
   title: textSchema(2, 200),
-});
-
-export const courseWithFirstLessonFormSchema = z.object({
-  courseDescription: optionalTextSchema(2000),
-  courseTitle: textSchema(3, 200),
-  lessonBody: textSchema(1, 20000),
-  lessonTitle: textSchema(2, 200),
 });
 
 export const sectionFormSchema = z.object({
@@ -282,9 +337,6 @@ export type CourseDetail = z.infer<typeof courseDetailSchema>;
 export type CourseDetailsFormInput = z.infer<typeof courseDetailsFormSchema>;
 export type CourseFormInput = z.infer<typeof courseFormSchema>;
 export type CourseUpdateRequest = z.infer<typeof courseUpdateRequestSchema>;
-export type CourseWithFirstLessonFormInput = z.infer<
-  typeof courseWithFirstLessonFormSchema
->;
 export type FirstLessonFormInput = z.infer<typeof firstLessonFormSchema>;
 export type Lesson = z.infer<typeof lessonSchema>;
 export type LessonCreateRequest = z.infer<typeof lessonCreateRequestSchema>;

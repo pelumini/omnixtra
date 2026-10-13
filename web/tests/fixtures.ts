@@ -12,11 +12,20 @@ export const lessonId = "00000000-0000-0000-0000-000000000301";
 export const learnerId = "00000000-0000-0000-0000-000000000401";
 
 export const draftCourse: Course = {
+  category: null,
   description: "New hire onboarding",
+  delivery_format: null,
+  difficulty: null,
+  estimated_duration_minutes: null,
   id: courseId,
+  language: null,
+  learning_outcomes: [],
   lesson_count: 1,
   slug: "onboarding",
   status: "draft",
+  tags: [],
+  target_audience: null,
+  thumbnail_url: null,
   title: "Onboarding Essentials",
 };
 

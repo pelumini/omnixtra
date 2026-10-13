@@ -41,18 +41,27 @@ describe("course detail authoring slice", () => {
 
   it("renders created courses with lesson count on the admin course list", () => {
     const html = renderToStaticMarkup(
-      <AdminCourseList initialCourses={[draftCourse]} loadError={null} viewerRole="tenant_admin" />,
+      <AdminCourseList
+        initialCourses={[draftCourse]}
+        loadError={null}
+        viewerRole="tenant_admin"
+      />,
     );
 
     expect(html).toContain("Onboarding Essentials");
     expect(html).toContain("1 lesson");
     expect(html).toContain("Add course");
     expect(html).not.toContain("First content type");
+    expect(html).not.toContain("First lesson title");
   });
 
   it("does not auto-open course creation for a new academy", () => {
     const html = renderToStaticMarkup(
-      <AdminCourseList initialCourses={[]} loadError={null} viewerRole="tenant_admin" />,
+      <AdminCourseList
+        initialCourses={[]}
+        loadError={null}
+        viewerRole="tenant_admin"
+      />,
     );
 
     expect(html).toContain("Add course");

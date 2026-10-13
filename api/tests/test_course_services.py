@@ -31,6 +31,15 @@ def test_course_response_maps_public_fields() -> None:
         title="Security Basics",
         slug="security-basics",
         description="Required onboarding",
+        thumbnail_url="https://cdn.example.com/course.png",
+        category="Security",
+        tags=["required"],
+        language="en",
+        learning_outcomes=["Recognize threats"],
+        target_audience="All employees",
+        difficulty="beginner",
+        delivery_format="self_paced",
+        estimated_duration_minutes=45,
         status=CourseStatus.draft.value,
     )
 
@@ -39,6 +48,8 @@ def test_course_response_maps_public_fields() -> None:
     assert response.id == COURSE_ID
     assert response.slug == "security-basics"
     assert response.status == "draft"
+    assert response.category == "Security"
+    assert response.estimated_duration_minutes == 45
 
 
 def test_nested_course_authoring_responses_map_parent_fields() -> None:

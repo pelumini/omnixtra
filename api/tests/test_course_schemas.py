@@ -3,6 +3,7 @@ from pydantic import ValidationError
 
 from app.courses.schemas import (
     BlockCreateRequest,
+    CourseUpdateRequest,
     ImageBlockContent,
     MediaAssetCreateRequest,
     QuizBlockContent,
@@ -70,3 +71,37 @@ def test_media_asset_schema_accepts_image_and_video_metadata() -> None:
 
     assert image.content_type == "image/png"
     assert video.checksum_sha256 == "a" * 64
+
+
+def test_course_setup_metadata_accepts_valid_optional_values() -> None:
+    request = CourseUpdateRequest(
+        thumbnail_url="https://cdn.example.com/course.png",
+        category="Security",
+        tags=["required", "onboarding"],
+        language="en-GB",
+        learning_outcomes=["Recognize a phishing attempt"],
+        target_audience="New team members",
+        difficulty="beginner",
+        delivery_format="self_paced",
+        estimated_duration_minutes=90,
+    )
+
+    assert request.estimated_duration_minutes == 90
+    assert request.tags == ["required", "onboarding"]
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("thumbnail_url", "not-a-url"),
+        ("language", "english"),
+        ("difficulty", "expert"),
+        ("delivery_format", "live"),
+        ("estimated_duration_minutes", -1),
+        ("tags", ["x"] * 21),
+        ("learning_outcomes", ["x"] * 21),
+    ],
+)
+def test_course_setup_metadata_rejects_invalid_values(field: str, value: object) -> None:
+    with pytest.raises(ValidationError):
+        CourseUpdateRequest.model_validate({field: value})
