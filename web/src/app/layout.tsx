@@ -1,4 +1,3 @@
-import { Mulish } from "next/font/google";
 import { headers } from "next/headers";
 
 
@@ -13,13 +12,8 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import type { CSSProperties } from "react";
 
+import "@fontsource-variable/mulish";
 import "./globals.css";
-
-const mulish = Mulish({
-  subsets: ["latin"],
-  variable: "--font-mulish",
-  weight: ["400", "500", "600", "700"],
-});
 
 export const metadata: Metadata = {
   title: "OmniXtra",
@@ -41,7 +35,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang={branding.locale}>
       <body
-        className={`${mulish.variable} font-sans`}
+        className="font-sans"
         style={{ "--tenant-primary": branding.primary_color } as CSSProperties}
       >
         <RouteChrome
