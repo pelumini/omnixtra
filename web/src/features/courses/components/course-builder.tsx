@@ -17,7 +17,6 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { canAuthorCourse } from "@/lib/permissions";
 
-
 import {
   deleteLesson,
   deleteSection,
@@ -237,7 +236,7 @@ export function CourseBuilder({
           {message}
         </div>
       ) : null}
-      <section className="grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)_300px]">
+      <section className="grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)_300px]">
         <aside className="grid content-start gap-4">
           <CourseDetailsForm
             course={course}

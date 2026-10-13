@@ -13,7 +13,11 @@ describe("course builder UI", () => {
     );
 
     expect(html).toContain("Onboarding Essentials");
-    expect(html).toContain("Details");
+    expect(html).toContain("Course Setup");
+    expect(html).toContain("Thumbnail URL");
+    expect(html).toContain("Difficulty");
+    expect(html).toContain("Delivery format");
+    expect(html).toContain("Learning outcomes");
     expect(html).toContain("Media");
     expect(html).toContain("Section");
     expect(html).toContain("Lesson");

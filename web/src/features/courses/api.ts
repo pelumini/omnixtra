@@ -14,6 +14,7 @@ import {
   courseEnvelopeSchema,
   coursePageEnvelopeSchema,
   courseStructureEnvelopeSchema,
+  courseUpdateRequestSchema,
   lessonCreateRequestSchema,
   lessonEnvelopeSchema,
   lessonUpdateRequestSchema,
@@ -190,8 +191,9 @@ export async function updateCourse(
   courseId: string,
   request: CourseUpdateRequest,
 ) {
+  const requestBody = courseUpdateRequestSchema.parse(request);
   const response = await fetch(`${apiUrl()}/api/v1/courses/${courseId}`, {
-    body: JSON.stringify(request),
+    body: JSON.stringify(requestBody),
     cache: "no-store",
     credentials: "include",
     headers: { "Content-Type": "application/json" },

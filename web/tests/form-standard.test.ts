@@ -3,13 +3,15 @@ import { describe, expect, it } from "vitest";
 import {
   blockFormSchema,
   courseFormSchema,
-  courseWithFirstLessonFormSchema,
   firstLessonFormSchema,
   lessonFormSchema,
   mediaFormSchema,
   sectionFormSchema,
 } from "@/features/courses";
-import { quizAttemptFormSchema, tutorQuestionFormSchema } from "@/features/learning";
+import {
+  quizAttemptFormSchema,
+  tutorQuestionFormSchema,
+} from "@/features/learning";
 import { createUserFormSchema } from "@/features/members";
 import { resolveMessage } from "@/lib/forms/messages";
 import { partitionServerError } from "@/lib/forms/server-errors";
@@ -22,21 +24,43 @@ import { passwordSchema } from "@/lib/validation/primitives";
 
 describe("form standard helpers", () => {
   it("resolves field-specific validation messages before generic fallbacks", () => {
-    expect(resolveMessage("password", "min_length")).toBe("Use at least 12 characters.");
-    expect(resolveMessage("firstName", "required")).toBe("Enter your first name.");
-    expect(resolveMessage("lastName", "required")).toBe("Enter your last name.");
+    expect(resolveMessage("password", "min_length")).toBe(
+      "Use at least 12 characters.",
+    );
+    expect(resolveMessage("firstName", "required")).toBe(
+      "Enter your first name.",
+    );
+    expect(resolveMessage("lastName", "required")).toBe(
+      "Enter your last name.",
+    );
     expect(resolveMessage("phone", "required")).toBe("Enter a phone number.");
-    expect(resolveMessage("email", "required")).toBe("Enter your email address.");
-    expect(resolveMessage("email", "email")).toBe("Enter a valid email address.");
+    expect(resolveMessage("email", "required")).toBe(
+      "Enter your email address.",
+    );
+    expect(resolveMessage("email", "email")).toBe(
+      "Enter a valid email address.",
+    );
     expect(resolveMessage("password", "required")).toBe("Create a password.");
-    expect(resolveMessage("academyName", "required")).toBe("Give your academy a name.");
+    expect(resolveMessage("academyName", "required")).toBe(
+      "Give your academy a name.",
+    );
     expect(resolveMessage("subdomain", "required")).toBe("Choose a subdomain.");
-    expect(resolveMessage("subdomain", "min_length")).toBe("Use at least 2 characters.");
+    expect(resolveMessage("subdomain", "min_length")).toBe(
+      "Use at least 2 characters.",
+    );
     expect(resolveMessage("orgRole", "required")).toBe("Choose a role.");
-    expect(resolveMessage("confirmPassword", "password_mismatch")).toBe("Passwords must match.");
-    expect(resolveMessage("unknown", "required")).toBe("This field can't be blank.");
-    expect(resolveMessage("token", "required")).toBe("Enter your invitation code.");
-    expect(resolveMessage("unknown", "unknown")).toBe("Please check this field.");
+    expect(resolveMessage("confirmPassword", "password_mismatch")).toBe(
+      "Passwords must match.",
+    );
+    expect(resolveMessage("unknown", "required")).toBe(
+      "This field can't be blank.",
+    );
+    expect(resolveMessage("token", "required")).toBe(
+      "Enter your invitation code.",
+    );
+    expect(resolveMessage("unknown", "unknown")).toBe(
+      "Please check this field.",
+    );
   });
 
   it("splits field errors from form-level errors", () => {
@@ -74,7 +98,10 @@ describe("form standard helpers", () => {
     const messages = result.error.issues.map((issue) =>
       resolveMessage(String(issue.path[0]), String(issue.message)),
     );
-    expect(messages).toEqual(["Enter your email address.", "Create a password."]);
+    expect(messages).toEqual([
+      "Enter your email address.",
+      "Create a password.",
+    ]);
     expect(messages).not.toContain("This field can't be blank.");
   });
 
@@ -94,7 +121,10 @@ describe("form standard helpers", () => {
     }
 
     const blankConstraints = Object.fromEntries(
-      blank.error.issues.map((issue) => [String(issue.path[0]), String(issue.message)]),
+      blank.error.issues.map((issue) => [
+        String(issue.path[0]),
+        String(issue.message),
+      ]),
     );
     expect(blankConstraints).toMatchObject({
       academyName: "required",
@@ -121,7 +151,10 @@ describe("form standard helpers", () => {
     }
 
     const shortConstraints = Object.fromEntries(
-      short.error.issues.map((issue) => [String(issue.path[0]), String(issue.message)]),
+      short.error.issues.map((issue) => [
+        String(issue.path[0]),
+        String(issue.message),
+      ]),
     );
     expect(shortConstraints).toMatchObject({
       academyName: "min_length",
@@ -141,18 +174,21 @@ describe("form standard helpers", () => {
     const forms = [
       {
         field: "academyName",
-        input: { academyName: "", email: "", firstName: "", lastName: "", password: "", phone: "", subdomain: "" },
+        input: {
+          academyName: "",
+          email: "",
+          firstName: "",
+          lastName: "",
+          password: "",
+          phone: "",
+          subdomain: "",
+        },
         schema: createAcademySchema,
       },
       {
         field: "password",
         input: { confirmPassword: "", password: "" },
         schema: acceptInvitationSchema,
-      },
-      {
-        field: "courseTitle",
-        input: { courseDescription: "", courseTitle: "", lessonBody: "", lessonTitle: "" },
-        schema: courseWithFirstLessonFormSchema,
       },
       {
         field: "title",
@@ -186,12 +222,23 @@ describe("form standard helpers", () => {
       },
       {
         field: "email",
-        input: { email: "", firstName: "", lastName: "", phone: "", orgRole: "member" },
+        input: {
+          email: "",
+          firstName: "",
+          lastName: "",
+          phone: "",
+          orgRole: "member",
+        },
         schema: createUserFormSchema,
       },
       {
         field: "orgRole",
-        input: { email: "person@example.com", firstName: "A", lastName: "B", phone: "1" },
+        input: {
+          email: "person@example.com",
+          firstName: "A",
+          lastName: "B",
+          phone: "1",
+        },
         schema: createUserFormSchema,
       },
       {
@@ -212,10 +259,14 @@ describe("form standard helpers", () => {
       if (result.success) {
         continue;
       }
-      const issue = result.error.issues.find((item) => item.path[0] === form.field);
+      const issue = result.error.issues.find(
+        (item) => item.path[0] === form.field,
+      );
       expect(issue).toBeDefined();
       expect(issue?.message).toBe("required");
-      expect(resolveMessage(form.field, String(issue?.message))).not.toBe("Please check this field.");
+      expect(resolveMessage(form.field, String(issue?.message))).not.toBe(
+        "Please check this field.",
+      );
     }
   });
 });

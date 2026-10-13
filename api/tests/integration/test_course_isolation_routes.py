@@ -296,6 +296,33 @@ def test_course_authoring_slice_creates_owner_and_text_lessons() -> None:
     assert course["lesson_count"] == 0
     _assert_course_role(tenant.tenant_id, tenant.user_id, course["id"], "course_owner")
 
+    setup_response = client.patch(
+        f"/api/v1/courses/{course['id']}",
+        json={
+            "thumbnail_url": "https://cdn.example.com/first-course.png",
+            "category": "Onboarding",
+            "tags": ["new hires", "required"],
+            "language": "en",
+            "learning_outcomes": ["Complete the first-day checklist"],
+            "target_audience": "New team members",
+            "difficulty": "beginner",
+            "delivery_format": "self_paced",
+            "estimated_duration_minutes": 90,
+        },
+        headers=headers,
+    )
+    assert setup_response.status_code == 200
+    setup = setup_response.json()["data"]
+    assert setup["tags"] == ["new hires", "required"]
+    assert setup["estimated_duration_minutes"] == 90
+
+    reloaded_response = client.get(f"/api/v1/courses/{course['id']}", headers=headers)
+    assert reloaded_response.status_code == 200
+    reloaded = reloaded_response.json()["data"]
+    assert reloaded["thumbnail_url"] == "https://cdn.example.com/first-course.png"
+    assert reloaded["learning_outcomes"] == ["Complete the first-day checklist"]
+    assert reloaded["delivery_format"] == "self_paced"
+
     lesson_a_response = client.post(
         f"/api/v1/courses/{course['id']}/lessons",
         json={"title": "Welcome", "body": "Welcome to the first lesson."},

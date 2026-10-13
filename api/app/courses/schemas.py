@@ -3,6 +3,11 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, HttpUrl, model_validator
 
+from app.courses.models import CourseDeliveryFormat, CourseDifficulty
+
+TAG_MAX_LENGTH = 50
+LEARNING_OUTCOME_MAX_LENGTH = 500
+
 
 class TextBlockContent(BaseModel):
     type: Literal["text"] = "text"
@@ -56,6 +61,33 @@ class CourseCreateRequest(BaseModel):
 class CourseUpdateRequest(BaseModel):
     title: str | None = Field(default=None, min_length=3, max_length=200)
     description: str | None = Field(default=None, max_length=2_000)
+    thumbnail_url: HttpUrl | None = None
+    category: str | None = Field(default=None, max_length=120)
+    tags: list[str] | None = Field(default=None, max_length=20)
+    language: str | None = Field(
+        default=None,
+        max_length=16,
+        pattern=r"^[a-z]{2,3}(?:-[A-Z]{2})?$",
+    )
+    learning_outcomes: list[str] | None = Field(default=None, max_length=20)
+    target_audience: str | None = Field(default=None, max_length=2_000)
+    difficulty: Literal["beginner", "intermediate", "advanced"] | None = None
+    delivery_format: Literal["self_paced", "instructor_led", "blended"] | None = None
+    estimated_duration_minutes: int | None = Field(default=None, ge=0)
+
+    @model_validator(mode="after")
+    def validate_list_items(self) -> Self:
+        if self.tags is not None and any(
+            not item or len(item) > TAG_MAX_LENGTH for item in self.tags
+        ):
+            msg = "tags must contain non-empty values no longer than 50 characters"
+            raise ValueError(msg)
+        if self.learning_outcomes is not None and any(
+            not item or len(item) > LEARNING_OUTCOME_MAX_LENGTH for item in self.learning_outcomes
+        ):
+            msg = "learning outcomes must contain non-empty values no longer than 500 characters"
+            raise ValueError(msg)
+        return self
 
 
 class SectionCreateRequest(BaseModel):
@@ -109,6 +141,15 @@ class CourseResponse(BaseModel):
     title: str
     slug: str
     description: str | None
+    thumbnail_url: HttpUrl | None
+    category: str | None
+    tags: list[str]
+    language: str | None
+    learning_outcomes: list[str]
+    target_audience: str | None
+    difficulty: CourseDifficulty | None
+    delivery_format: CourseDeliveryFormat | None
+    estimated_duration_minutes: int | None
     status: str
     lesson_count: int = 0
 

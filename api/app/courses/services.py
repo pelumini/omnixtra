@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from pydantic import HttpUrl
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,6 +10,8 @@ from app.courses.models import (
     Course,
     CourseAuditEvent,
     CourseBlock,
+    CourseDeliveryFormat,
+    CourseDifficulty,
     CourseMediaAsset,
     CourseSection,
     CourseStatus,
@@ -133,10 +136,27 @@ async def update_course(
     actor_id: UUID | None = None,
 ) -> CourseResponse:
     course = await require_course(session, course_id)
-    if request.title is not None:
-        course.title = request.title
-    if request.description is not None:
-        course.description = request.description
+    fields = request.model_fields_set
+    for field in (
+        "title",
+        "description",
+        "thumbnail_url",
+        "category",
+        "tags",
+        "language",
+        "learning_outcomes",
+        "target_audience",
+        "difficulty",
+        "delivery_format",
+        "estimated_duration_minutes",
+    ):
+        if field in fields:
+            value = getattr(request, field)
+            if field == "title" and value is None:
+                continue
+            if isinstance(value, HttpUrl):
+                value = str(value)
+            setattr(course, field, value)
     _audit(session, course.id, actor_id, "course.updated", f"Updated course {course.slug}")
     await session.commit()
     return course_response(course)
@@ -532,6 +552,17 @@ def course_response(course: Course, *, lesson_count: int = 0) -> CourseResponse:
         title=course.title,
         slug=course.slug,
         description=course.description,
+        thumbnail_url=HttpUrl(course.thumbnail_url) if course.thumbnail_url else None,
+        category=course.category,
+        tags=course.tags or [],
+        language=course.language,
+        learning_outcomes=course.learning_outcomes or [],
+        target_audience=course.target_audience,
+        difficulty=CourseDifficulty(course.difficulty) if course.difficulty else None,
+        delivery_format=(
+            CourseDeliveryFormat(course.delivery_format) if course.delivery_format else None
+        ),
+        estimated_duration_minutes=course.estimated_duration_minutes,
         status=course.status,
         lesson_count=lesson_count,
     )
