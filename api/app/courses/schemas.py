@@ -26,6 +26,19 @@ class ImageBlockContent(BaseModel):
     alt_text: str = Field(min_length=1, max_length=300)
 
 
+class AudioBlockContent(BaseModel):
+    type: Literal["audio"] = "audio"
+    url: HttpUrl
+    caption: str | None = Field(default=None, max_length=500)
+
+
+class FileBlockContent(BaseModel):
+    type: Literal["file"] = "file"
+    url: HttpUrl
+    file_name: str = Field(min_length=1, max_length=255)
+    size_bytes: int | None = Field(default=None, gt=0)
+
+
 class QuizOption(BaseModel):
     id: str = Field(min_length=1, max_length=64)
     text: str = Field(min_length=1, max_length=500)
@@ -49,7 +62,14 @@ class QuizBlockContent(BaseModel):
         return self
 
 
-BlockContent = TextBlockContent | VideoBlockContent | ImageBlockContent | QuizBlockContent
+BlockContent = (
+    TextBlockContent
+    | VideoBlockContent
+    | ImageBlockContent
+    | AudioBlockContent
+    | FileBlockContent
+    | QuizBlockContent
+)
 
 
 class CourseCreateRequest(BaseModel):
@@ -112,7 +132,7 @@ class LessonUpdateRequest(BaseModel):
 
 class BlockCreateRequest(BaseModel):
     lesson_id: UUID
-    block_type: Literal["text", "video", "image", "quiz"]
+    block_type: Literal["text", "video", "image", "audio", "file", "quiz"]
     content: BlockContent
     position: int = Field(ge=0)
 
@@ -122,6 +142,10 @@ class BlockCreateRequest(BaseModel):
             msg = "block_type must match content type"
             raise ValueError(msg)
         return self
+
+
+class BlockUpdateRequest(BaseModel):
+    content: BlockContent
 
 
 class MediaAssetCreateRequest(BaseModel):

@@ -75,6 +75,35 @@ def blocks_for_course(course_id: UUID) -> Select[tuple[CourseBlock]]:
     )
 
 
+def block_by_id(
+    block_id: UUID,
+    *,
+    course_id: UUID | None = None,
+    lesson_id: UUID | None = None,
+) -> Select[tuple[CourseBlock]]:
+    statement = select(CourseBlock).where(
+        CourseBlock.id == block_id,
+        CourseBlock.deleted_at.is_(None),
+    )
+    if course_id is not None:
+        statement = statement.where(CourseBlock.course_id == course_id)
+    if lesson_id is not None:
+        statement = statement.where(CourseBlock.lesson_id == lesson_id)
+    return statement
+
+
+def blocks_for_lesson(course_id: UUID, lesson_id: UUID) -> Select[tuple[CourseBlock]]:
+    return (
+        select(CourseBlock)
+        .where(
+            CourseBlock.course_id == course_id,
+            CourseBlock.lesson_id == lesson_id,
+            CourseBlock.deleted_at.is_(None),
+        )
+        .order_by(CourseBlock.position, CourseBlock.id)
+    )
+
+
 def text_blocks_for_course(course_id: UUID) -> Select[tuple[CourseBlock]]:
     return (
         select(CourseBlock)
@@ -106,7 +135,9 @@ def media_asset_by_object_key(object_key: str) -> Select[tuple[CourseMediaAsset]
 
 
 __all__ = [
+    "block_by_id",
     "blocks_for_course",
+    "blocks_for_lesson",
     "course_by_id",
     "course_by_slug",
     "courses_page",

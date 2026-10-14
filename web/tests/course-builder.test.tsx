@@ -7,31 +7,21 @@ import { CourseBuilder } from "@/features/courses";
 import { courseStructure, draftCourse } from "./fixtures";
 
 describe("course builder UI", () => {
-  it("renders MVP authoring controls for course details, media, lessons, standard content, and publish", () => {
+  it("renders the full-screen outline and node-based lesson composer", () => {
     const html = renderToStaticMarkup(
       <CourseBuilder course={draftCourse} initialStructure={courseStructure} />,
     );
 
     expect(html).toContain("Onboarding Essentials");
-    expect(html).toContain("Course Setup");
-    expect(html).toContain("Thumbnail URL");
-    expect(html).toContain("Difficulty");
-    expect(html).toContain("Delivery format");
-    expect(html).toContain("Learning outcomes");
-    expect(html).toContain("Media");
-    expect(html).toContain("Section");
-    expect(html).toContain("Lesson");
-    expect(html).toContain("Add standard content");
-    expect(html).toContain("Content");
-    expect(html).toContain("Web content");
-    expect(html).toContain("Video");
-    expect(html).toContain("Image");
-    expect(html).toContain("Quiz");
-    expect(html).not.toContain("TalentCraft");
-    expect(html).not.toContain("Learning Activities");
+    expect(html).toContain("Course outline");
+    expect(html).toContain("Chapters and lessons");
+    expect(html).toContain("Lesson editor");
+    expect(html).toContain("Add content");
+    expect(html).toContain("Preview");
     expect(html).toContain("Publish");
     expect(html).toContain("Getting Started");
     expect(html).toContain("Welcome");
-    expect(html).toContain("1. text");
+    expect(html).toContain("Text content");
+    expect(html).toContain("Save");
   });
 });

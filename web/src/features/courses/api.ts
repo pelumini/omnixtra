@@ -9,6 +9,8 @@ import {
 import {
   blockCreateRequestSchema,
   blockEnvelopeSchema,
+  blocksEnvelopeSchema,
+  blockUpdateRequestSchema,
   courseCreateRequestSchema,
   courseDetailEnvelopeSchema,
   courseEnvelopeSchema,
@@ -241,6 +243,48 @@ export async function createBlock(courseId: string, request: unknown) {
   const response = await postJson(`/api/v1/courses/${courseId}/blocks`, body);
 
   return blockEnvelopeSchema.parse(response);
+}
+
+export async function updateBlock(
+  courseId: string,
+  lessonId: string,
+  blockId: string,
+  content: unknown,
+) {
+  return blockEnvelopeSchema.parse(
+    await mutate(
+      `/api/v1/courses/${courseId}/lessons/${lessonId}/blocks/${blockId}`,
+      "PATCH",
+      blockUpdateRequestSchema.parse({ content }),
+    ),
+  );
+}
+
+export async function deleteBlock(
+  courseId: string,
+  lessonId: string,
+  blockId: string,
+) {
+  return blockEnvelopeSchema.parse(
+    await mutate(
+      `/api/v1/courses/${courseId}/lessons/${lessonId}/blocks/${blockId}`,
+      "DELETE",
+    ),
+  );
+}
+
+export async function reorderBlocks(
+  courseId: string,
+  lessonId: string,
+  orderedIds: string[],
+) {
+  return blocksEnvelopeSchema.parse(
+    await mutate(
+      `/api/v1/courses/${courseId}/lessons/${lessonId}/blocks/order`,
+      "PUT",
+      { ordered_ids: orderedIds },
+    ),
+  );
 }
 
 export async function createMediaAsset(
