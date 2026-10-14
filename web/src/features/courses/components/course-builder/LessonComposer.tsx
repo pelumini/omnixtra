@@ -94,7 +94,7 @@ export function LessonComposer({ blocks, courseId, lesson, onBlocksChange, onMes
   }
 
   return (
-    <section className="min-w-0 p-4 sm:p-6 lg:p-8">
+    <section className="min-w-0 p-4 sm:p-6 lg:h-full lg:overflow-y-auto lg:p-8">
       <div className="mx-auto max-w-3xl">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>

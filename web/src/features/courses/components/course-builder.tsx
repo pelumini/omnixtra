@@ -80,14 +80,14 @@ export function CourseBuilder({ course: initialCourse, courseRole = "course_owne
   }
   if (!canAuthorCourse(courseRole)) return <DeniedState description="Authoring this course is available to its course owner." title="This course is not yours to edit" />;
 
-  return <main className="min-h-screen bg-[var(--color-bg-weak-100)] text-[var(--color-text-main-900)]">
-    <header className="sticky top-0 z-20 flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] px-4 py-3 sm:px-6">
+  return <main className="flex h-[100dvh] w-full flex-col overflow-hidden bg-[var(--color-bg-weak-100)] text-[var(--color-text-main-900)]">
+    <header className="z-20 flex min-h-16 shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] px-4 py-3 sm:px-6">
       <div className="flex min-w-0 items-center gap-3"><Link aria-label="Back to courses" className="grid size-9 shrink-0 place-items-center rounded-full border border-[var(--color-stroke-soft-200)] text-[var(--color-text-sub-500)] hover:bg-[var(--color-bg-weak-100)]" href="/admin/courses"><ArrowLeft className="size-4" /></Link><div className="min-w-0"><h1 className="truncate text-base font-semibold">{course.title}</h1><CourseStatus status={course.status} /></div></div>
       <div className="flex gap-2"><Button className="gap-2" onClick={() => setMessage("Preview will be available in phase 2d")} variant="secondary"><Eye /> Preview</Button><Button isProcessing={pending} onClick={() => run(async () => { const response = await publishCourse(course.id); setCourse(response.data); setMessage("Course published"); }, "Course could not be published")}>Publish</Button></div>
     </header>
-    {message ? <div aria-live="polite" className="border-b border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] px-6 py-2 text-sm text-[var(--color-text-sub-500)]">{message}</div> : null}
-    <div className="grid min-h-[calc(100vh-4rem)] lg:grid-cols-[22rem_minmax(0,1fr)]">
-      <aside className="border-b border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-4 lg:border-b-0 lg:border-r">
+    {message ? <div aria-live="polite" className="shrink-0 border-b border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] px-6 py-2 text-sm text-[var(--color-text-sub-500)]">{message}</div> : null}
+    <div className="grid min-h-0 flex-1 overflow-auto lg:grid-cols-[22rem_minmax(0,1fr)] lg:overflow-hidden">
+      <aside className="border-b border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-4 lg:overflow-y-auto lg:border-b-0 lg:border-r">
         <h2 className="text-sm font-semibold">Course outline</h2><p className="mt-1 text-xs text-[var(--color-text-sub-500)]">Chapters and lessons</p>
         <div className="mt-4 flex gap-2"><Input aria-label="New chapter title" onChange={(e) => setNewChapterTitle(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addChapter(); }} placeholder="New chapter" value={newChapterTitle} /><IconButton label="Add chapter" onClick={addChapter}><Plus /></IconButton></div>
         <div className="mt-4 grid gap-3">{orderedSections.map((section, sectionIndex) => {

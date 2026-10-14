@@ -18,13 +18,14 @@ type RouteChromeProps = {
 };
 
 const fullBleedAuthPaths = new Set(["/auth", "/forgot-password", "/get-started", "/join", "/login"]);
+const courseBuilderPath = /^\/admin\/courses\/[^/]+$/;
 
 export function RouteChrome({ branding, children, fixtureMode, initialSession, refreshSession, showAuthLink }: RouteChromeProps) {
   const pathname = usePathname() ?? "";
   const isTenantSignIn = pathname === "/" && showAuthLink && initialSession === null;
   const isLandingPage = pathname === "/" && !showAuthLink;
 
-  if (fullBleedAuthPaths.has(pathname) || isTenantSignIn) {
+  if (fullBleedAuthPaths.has(pathname) || courseBuilderPath.test(pathname) || isTenantSignIn) {
     return children;
   }
 
