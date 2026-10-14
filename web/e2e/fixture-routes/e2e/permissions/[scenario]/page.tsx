@@ -28,7 +28,10 @@ const branding: TenantBranding = {
 };
 
 const course: Course = {
+  access: "enrolled_only",
+  certificate_on_completion: false,
   category: null,
+  complete_in_order: false,
   description: "Role-gated onboarding course",
   delivery_format: null,
   difficulty: null,
@@ -45,7 +48,7 @@ const course: Course = {
   title: "Role Gated Onboarding",
 };
 
-const structure: CourseStructure = { ...course, sections: [] };
+const structure: CourseStructure = { ...course, rolled_duration_minutes: 0, sections: [] };
 
 const memberships: Membership[] = [
   {

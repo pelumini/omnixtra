@@ -1,5 +1,5 @@
 import pytest
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from app.courses.schemas import (
     AudioBlockContent,
@@ -7,9 +7,11 @@ from app.courses.schemas import (
     CourseUpdateRequest,
     FileBlockContent,
     ImageBlockContent,
+    LessonUpdateRequest,
     MediaAssetCreateRequest,
     QuizBlockContent,
     QuizOption,
+    SectionUpdateRequest,
     TextBlockContent,
     VideoBlockContent,
 )
@@ -121,3 +123,38 @@ def test_course_setup_metadata_accepts_valid_optional_values() -> None:
 def test_course_setup_metadata_rejects_invalid_values(field: str, value: object) -> None:
     with pytest.raises(ValidationError):
         CourseUpdateRequest.model_validate({field: value})
+
+
+def test_builder_metadata_accepts_partial_updates() -> None:
+    course = CourseUpdateRequest(
+        access="link", complete_in_order=True, certificate_on_completion=True
+    )
+    section = SectionUpdateRequest(
+        description="Core concepts", image_url="https://cdn.example.com/chapter.png"
+    )
+    lesson = LessonUpdateRequest(
+        summary="A concise introduction",
+        image_url="https://cdn.example.com/lesson.png",
+        estimated_duration_minutes=75,
+        required_for_completion=True,
+    )
+
+    assert course.access == "link"
+    assert section.title is None
+    assert lesson.estimated_duration_minutes == 75
+
+
+@pytest.mark.parametrize(
+    ("schema", "payload"),
+    [
+        (CourseUpdateRequest, {"access": "public"}),
+        (SectionUpdateRequest, {"description": "x" * 2001}),
+        (LessonUpdateRequest, {"image_url": "not-a-url"}),
+        (LessonUpdateRequest, {"estimated_duration_minutes": -1}),
+    ],
+)
+def test_builder_metadata_rejects_invalid_values(
+    schema: type[BaseModel], payload: dict[str, object]
+) -> None:
+    with pytest.raises(ValidationError):
+        schema.model_validate(payload)

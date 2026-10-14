@@ -1,7 +1,7 @@
 from enum import StrEnum
 from uuid import UUID, uuid4
 
-from sqlalchemy import ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -26,6 +26,11 @@ class CourseDeliveryFormat(StrEnum):
     blended = "blended"
 
 
+class CourseAccess(StrEnum):
+    enrolled_only = "enrolled_only"
+    link = "link"
+
+
 class Course(TenantOwnedMixin, TimestampMixin, Base):
     __tablename__ = "courses"
     __table_args__ = (UniqueConstraint("tenant_id", "slug", name="uq_courses_tenant_slug"),)
@@ -43,6 +48,11 @@ class Course(TenantOwnedMixin, TimestampMixin, Base):
     difficulty: Mapped[str | None] = mapped_column(String(32), nullable=True)
     delivery_format: Mapped[str | None] = mapped_column(String(32), nullable=True)
     estimated_duration_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    access: Mapped[str] = mapped_column(
+        String(32), nullable=False, default=CourseAccess.enrolled_only.value
+    )
+    complete_in_order: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    certificate_on_completion: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     status: Mapped[str] = mapped_column(
         String(32), nullable=False, default=CourseStatus.draft.value
     )
@@ -58,6 +68,8 @@ class CourseSection(TenantOwnedMixin, TimestampMixin, Base):
     course_id: Mapped[UUID] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"))
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     position: Mapped[int] = mapped_column(Integer, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    image_url: Mapped[str | None] = mapped_column(String(700), nullable=True)
 
 
 class Lesson(TenantOwnedMixin, TimestampMixin, Base):
@@ -71,6 +83,10 @@ class Lesson(TenantOwnedMixin, TimestampMixin, Base):
     section_id: Mapped[UUID] = mapped_column(ForeignKey("course_sections.id", ondelete="CASCADE"))
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     position: Mapped[int] = mapped_column(Integer, nullable=False)
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    image_url: Mapped[str | None] = mapped_column(String(700), nullable=True)
+    estimated_duration_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    required_for_completion: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 
 class CourseBlock(TenantOwnedMixin, TimestampMixin, Base):

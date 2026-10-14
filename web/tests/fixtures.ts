@@ -12,7 +12,10 @@ export const lessonId = "00000000-0000-0000-0000-000000000301";
 export const learnerId = "00000000-0000-0000-0000-000000000401";
 
 export const draftCourse: Course = {
+  access: "enrolled_only",
+  certificate_on_completion: false,
   category: null,
+  complete_in_order: false,
   description: "New hire onboarding",
   delivery_format: null,
   difficulty: null,
@@ -36,12 +39,16 @@ export const publishedCourse: Course = {
 
 export const courseStructure: CourseStructure = {
   ...draftCourse,
+  rolled_duration_minutes: 0,
   sections: [
     {
       course_id: courseId,
+      description: null,
       id: sectionId,
+      image_url: null,
       position: 0,
       title: "Getting Started",
+      rolled_duration_minutes: 0,
       lessons: [
         {
           blocks: [
@@ -56,9 +63,13 @@ export const courseStructure: CourseStructure = {
           ],
           body: "Welcome content",
           course_id: courseId,
+          estimated_duration_minutes: null,
           id: lessonId,
+          image_url: null,
           position: 0,
           section_id: sectionId,
+          summary: null,
+          required_for_completion: false,
           title: "Welcome",
         },
       ],

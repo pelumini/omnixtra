@@ -23,6 +23,9 @@ export const courseSchema = z.object({
     .enum(["self_paced", "instructor_led", "blended"])
     .nullable(),
   estimated_duration_minutes: z.number().int().nonnegative().nullable(),
+  access: z.enum(["enrolled_only", "link"]).default("enrolled_only"),
+  complete_in_order: z.boolean().default(false),
+  certificate_on_completion: z.boolean().default(false),
   status: courseStatusSchema,
   lesson_count: z.number().int().nonnegative().default(0),
 });
@@ -68,6 +71,9 @@ export const courseUpdateRequestSchema = z.object({
     .nonnegative()
     .nullable()
     .optional(),
+  access: z.enum(["enrolled_only", "link"]).optional(),
+  complete_in_order: z.boolean().optional(),
+  certificate_on_completion: z.boolean().optional(),
 });
 
 export const sectionCreateRequestSchema = z.object({
@@ -80,10 +86,14 @@ export const sectionSchema = z.object({
   course_id: z.string().uuid(),
   title: z.string(),
   position: z.number().int().nonnegative(),
+  description: z.string().nullable().default(null),
+  image_url: z.string().url().nullable().default(null),
 });
 
 export const sectionUpdateRequestSchema = z.object({
-  title: z.string().min(1).max(200),
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().max(2000).nullable().optional(),
+  image_url: z.string().url().max(700).nullable().optional(),
 });
 
 export const lessonCreateRequestSchema = z.object({
@@ -100,10 +110,18 @@ export const lessonSchema = z.object({
   title: z.string(),
   position: z.number().int().nonnegative(),
   body: z.string().nullable().default(null),
+  summary: z.string().nullable().default(null),
+  image_url: z.string().url().nullable().default(null),
+  estimated_duration_minutes: z.number().int().nonnegative().nullable().default(null),
+  required_for_completion: z.boolean().default(false),
 });
 
 export const lessonUpdateRequestSchema = z.object({
-  title: z.string().min(1).max(200),
+  title: z.string().min(1).max(200).optional(),
+  summary: z.string().max(2000).nullable().optional(),
+  image_url: z.string().url().max(700).nullable().optional(),
+  estimated_duration_minutes: z.number().int().nonnegative().nullable().optional(),
+  required_for_completion: z.boolean().optional(),
 });
 
 export const courseDetailSchema = courseSchema.extend({
@@ -248,9 +266,11 @@ export const lessonNodeSchema = lessonSchema.extend({
 });
 export const sectionNodeSchema = sectionSchema.extend({
   lessons: z.array(lessonNodeSchema),
+  rolled_duration_minutes: z.number().int().nonnegative().default(0),
 });
 export const courseStructureSchema = courseSchema.extend({
   sections: z.array(sectionNodeSchema),
+  rolled_duration_minutes: z.number().int().nonnegative().default(0),
 });
 export const courseStructureEnvelopeSchema = z.object({
   data: courseStructureSchema,
@@ -304,7 +324,10 @@ const optionalUrlSchema = optionalTextSchema(700).refine(
 );
 
 export const courseDetailsFormSchema = courseFormSchema.extend({
+  access: z.enum(["enrolled_only", "link"]),
+  certificateOnCompletion: z.boolean(),
   category: optionalTextSchema(120),
+  completeInOrder: z.boolean(),
   deliveryFormat: z.enum(["", "self_paced", "instructor_led", "blended"]),
   difficulty: z.enum(["", "beginner", "intermediate", "advanced"]),
   durationUnit: z.enum(["minutes", "hours"]),
@@ -364,6 +387,7 @@ export type CourseUpdateRequest = z.infer<typeof courseUpdateRequestSchema>;
 export type FirstLessonFormInput = z.infer<typeof firstLessonFormSchema>;
 export type Lesson = z.infer<typeof lessonSchema>;
 export type LessonCreateRequest = z.infer<typeof lessonCreateRequestSchema>;
+export type LessonUpdateRequest = z.infer<typeof lessonUpdateRequestSchema>;
 export type LessonFormInput = z.infer<typeof lessonFormSchema>;
 export type MediaAsset = z.infer<typeof mediaAssetSchema>;
 export type MediaAssetCreateRequest = z.infer<
@@ -372,5 +396,6 @@ export type MediaAssetCreateRequest = z.infer<
 export type MediaFormInput = z.infer<typeof mediaFormSchema>;
 export type Section = z.infer<typeof sectionSchema>;
 export type SectionCreateRequest = z.infer<typeof sectionCreateRequestSchema>;
+export type SectionUpdateRequest = z.infer<typeof sectionUpdateRequestSchema>;
 export type SectionFormInput = z.infer<typeof sectionFormSchema>;
 export type CourseStructure = z.infer<typeof courseStructureSchema>;
