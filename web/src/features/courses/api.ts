@@ -30,8 +30,10 @@ import {
   type CourseCreateRequest,
   type CourseUpdateRequest,
   type LessonCreateRequest,
+  type LessonUpdateRequest,
   type MediaAssetCreateRequest,
   type SectionCreateRequest,
+  type SectionUpdateRequest,
 } from "./schemas";
 
 export async function getCourses(context: RequestContext = {}) {
@@ -98,13 +100,13 @@ async function mutate(
 export async function updateSection(
   courseId: string,
   sectionId: string,
-  title: string,
+  request: SectionUpdateRequest,
 ) {
   return sectionEnvelopeSchema.parse(
     await mutate(
       `/api/v1/courses/${courseId}/sections/${sectionId}`,
       "PATCH",
-      sectionUpdateRequestSchema.parse({ title }),
+      sectionUpdateRequestSchema.parse(request),
     ),
   );
 }
@@ -118,13 +120,13 @@ export async function deleteSection(courseId: string, sectionId: string) {
 export async function updateLesson(
   courseId: string,
   lessonId: string,
-  title: string,
+  request: LessonUpdateRequest,
 ) {
   return lessonEnvelopeSchema.parse(
     await mutate(
       `/api/v1/courses/${courseId}/lessons/${lessonId}`,
       "PATCH",
-      lessonUpdateRequestSchema.parse({ title }),
+      lessonUpdateRequestSchema.parse(request),
     ),
   );
 }

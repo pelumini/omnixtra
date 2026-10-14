@@ -9,6 +9,8 @@ import { Input, Textarea } from "@/components/ui/input";
 
 import { createBlock, deleteBlock, reorderBlocks, updateBlock } from "../../api";
 
+import { LessonMetadataForm } from "./MetadataForms";
+
 import type { Block, BlockContent, Lesson } from "../../schemas";
 import type { ReactNode } from "react";
 
@@ -18,6 +20,7 @@ type Props = {
   courseId: string;
   lesson: Lesson | null;
   onBlocksChange: (blocks: Block[]) => void;
+  onLessonChange: (lesson: Lesson) => void;
   onMessage: (message: string) => void;
 };
 
@@ -29,7 +32,7 @@ const choices = [
   { icon: File, label: "File", type: "file" },
 ] as const;
 
-export function LessonComposer({ blocks, courseId, lesson, onBlocksChange, onMessage }: Props) {
+export function LessonComposer({ blocks, courseId, lesson, onBlocksChange, onLessonChange, onMessage }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Block | null>(null);
   const [pending, startTransition] = useTransition();
@@ -94,8 +97,9 @@ export function LessonComposer({ blocks, courseId, lesson, onBlocksChange, onMes
   }
 
   return (
-    <section className="min-w-0 p-4 sm:p-6 lg:p-8">
+    <section className="min-w-0 p-4 sm:p-6 lg:h-full lg:overflow-y-auto lg:p-8">
       <div className="mx-auto max-w-3xl">
+        {lesson ? <LessonMetadataForm courseId={courseId} lesson={lesson} onSaved={onLessonChange} /> : null}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase text-[var(--color-primary-base)]">Lesson editor</p>

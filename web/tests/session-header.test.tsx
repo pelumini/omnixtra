@@ -85,6 +85,33 @@ describe("session header chrome", () => {
     expect(apexHtml).toContain("Apex landing");
   });
 
+  it("makes only the exact dynamic course builder path full-bleed", () => {
+    route.pathname = "/admin/courses/00000000-0000-0000-0000-000000000101";
+    const builderHtml = renderToStaticMarkup(
+      <RouteChrome branding={branding} fixtureMode={false} initialSession={adminSession} refreshSession={false} showAuthLink>
+        <main>Builder body</main>
+      </RouteChrome>,
+    );
+    route.pathname = "/admin/courses";
+    const listHtml = renderToStaticMarkup(
+      <RouteChrome branding={branding} fixtureMode={false} initialSession={adminSession} refreshSession={false} showAuthLink>
+        <main>Course list</main>
+      </RouteChrome>,
+    );
+    route.pathname = "/admin/courses/course-id/settings";
+    const deeperHtml = renderToStaticMarkup(
+      <RouteChrome branding={branding} fixtureMode={false} initialSession={adminSession} refreshSession={false} showAuthLink>
+        <main>Course settings</main>
+      </RouteChrome>,
+    );
+
+    expect(builderHtml).toBe("<main>Builder body</main>");
+    expect(listHtml).toContain("Course list");
+    expect(listHtml).toContain("pt-14");
+    expect(deeperHtml).toContain("Course settings");
+    expect(deeperHtml).toContain("pt-14");
+  });
+
   it("renders the admin header in the content column without duplicate branding", () => {
     route.pathname = "/admin";
     const html = renderToStaticMarkup(

@@ -8,6 +8,7 @@ from app.billing.services import ensure_storage_capacity
 from app.core.exceptions import ConflictError, NotFoundError, ValidationAppError
 from app.courses.models import (
     Course,
+    CourseAccess,
     CourseAuditEvent,
     CourseBlock,
     CourseDeliveryFormat,
@@ -120,15 +121,21 @@ async def get_course_structure(session: AsyncSession, course_id: UUID) -> Course
                 blocks=blocks_by_lesson.get(lesson.id, []),
             )
         )
+    section_nodes = [
+        SectionNode(
+            **section_response(section).model_dump(),
+            lessons=lessons_by_section.get(section.id, []),
+            rolled_duration_minutes=sum(
+                lesson.estimated_duration_minutes or 0
+                for lesson in lessons_by_section.get(section.id, [])
+            ),
+        )
+        for section in sections
+    ]
     return CourseStructureResponse(
         **course_response(course, lesson_count=len(lessons)).model_dump(),
-        sections=[
-            SectionNode(
-                **section_response(section).model_dump(),
-                lessons=lessons_by_section.get(section.id, []),
-            )
-            for section in sections
-        ],
+        sections=section_nodes,
+        rolled_duration_minutes=sum(section.rolled_duration_minutes for section in section_nodes),
     )
 
 
@@ -152,6 +159,9 @@ async def update_course(
         "difficulty",
         "delivery_format",
         "estimated_duration_minutes",
+        "access",
+        "complete_in_order",
+        "certificate_on_completion",
     ):
         if field in fields:
             value = getattr(request, field)
@@ -259,8 +269,13 @@ async def update_section(
 ) -> SectionResponse:
     await require_course(session, course_id)
     section = await require_section(session, section_id, course_id=course_id)
-    section.title = request.title
-    _audit(session, course_id, actor_id, "section.updated", f"Renamed section to {section.title}")
+    for field in ("title", "description", "image_url"):
+        if field in request.model_fields_set:
+            value = getattr(request, field)
+            if field == "title" and value is None:
+                continue
+            setattr(section, field, str(value) if isinstance(value, HttpUrl) else value)
+    _audit(session, course_id, actor_id, "section.updated", f"Updated section {section.title}")
     await session.commit()
     return section_response(section)
 
@@ -329,8 +344,19 @@ async def update_lesson(
 ) -> LessonResponse:
     await require_course(session, course_id)
     lesson = await require_lesson(session, lesson_id, course_id=course_id)
-    lesson.title = request.title
-    _audit(session, course_id, actor_id, "lesson.updated", f"Renamed lesson to {lesson.title}")
+    for field in (
+        "title",
+        "summary",
+        "image_url",
+        "estimated_duration_minutes",
+        "required_for_completion",
+    ):
+        if field in request.model_fields_set:
+            value = getattr(request, field)
+            if field == "title" and value is None:
+                continue
+            setattr(lesson, field, str(value) if isinstance(value, HttpUrl) else value)
+    _audit(session, course_id, actor_id, "lesson.updated", f"Updated lesson {lesson.title}")
     await session.commit()
     return lesson_response(lesson)
 
@@ -653,6 +679,9 @@ def course_response(course: Course, *, lesson_count: int = 0) -> CourseResponse:
             CourseDeliveryFormat(course.delivery_format) if course.delivery_format else None
         ),
         estimated_duration_minutes=course.estimated_duration_minutes,
+        access=CourseAccess(course.access or CourseAccess.enrolled_only.value),
+        complete_in_order=course.complete_in_order or False,
+        certificate_on_completion=course.certificate_on_completion or False,
         status=course.status,
         lesson_count=lesson_count,
     )
@@ -664,6 +693,8 @@ def section_response(section: CourseSection) -> SectionResponse:
         course_id=section.course_id,
         title=section.title,
         position=section.position,
+        description=section.description,
+        image_url=HttpUrl(section.image_url) if section.image_url else None,
     )
 
 
@@ -675,6 +706,10 @@ def lesson_response(lesson: Lesson, *, body: str | None = None) -> LessonRespons
         title=lesson.title,
         position=lesson.position,
         body=body,
+        summary=lesson.summary,
+        image_url=HttpUrl(lesson.image_url) if lesson.image_url else None,
+        estimated_duration_minutes=lesson.estimated_duration_minutes,
+        required_for_completion=lesson.required_for_completion or False,
     )
 
 

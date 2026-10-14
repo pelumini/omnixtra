@@ -22,9 +22,13 @@ describe("course detail authoring slice", () => {
             {
               body: "This is the learner-readable first lesson.",
               course_id: courseId,
+              estimated_duration_minutes: null,
               id: lessonId,
+              image_url: null,
               position: 0,
               section_id: sectionId,
+              summary: null,
+              required_for_completion: false,
               title: "Welcome",
             },
           ],

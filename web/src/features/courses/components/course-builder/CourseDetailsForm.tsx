@@ -57,7 +57,10 @@ export function CourseDetailsForm({
     watch,
   } = useForm<CourseDetailsFormInput>({
     defaultValues: {
+      access: course.access,
+      certificateOnCompletion: course.certificate_on_completion,
       category: course.category ?? "",
+      completeInOrder: course.complete_in_order,
       deliveryFormat: course.delivery_format ?? "",
       description: course.description ?? "",
       difficulty: course.difficulty ?? "",
@@ -88,7 +91,10 @@ export function CourseDetailsForm({
       const durationValue =
         input.durationValue === "" ? null : Number(input.durationValue);
       return updateCourse(course.id, {
+        access: input.access,
+        certificate_on_completion: input.certificateOnCompletion,
         category: input.category === "" ? null : input.category,
+        complete_in_order: input.completeInOrder,
         delivery_format:
           input.deliveryFormat === "" ? null : input.deliveryFormat,
         description: input.description === "" ? null : input.description,
@@ -157,6 +163,12 @@ export function CourseDetailsForm({
           registration={register("description")}
           rows={3}
         />
+        <div className="grid gap-3 border border-[var(--color-stroke-soft-200)] p-4">
+          <SelectField label="Course access" registration={register("access")}><option value="enrolled_only">Enrolled learners only</option><option value="link">Anyone with the link</option></SelectField>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" {...register("completeInOrder")} /> Complete lessons in order</label>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" {...register("certificateOnCompletion")} /> Issue a certificate on completion</label>
+          <p className="text-xs text-[var(--color-text-sub-500)]">These settings are saved now and take effect when learner delivery ships.</p>
+        </div>
         <Field
           error={fieldError("thumbnailUrl")}
           label="Thumbnail URL"

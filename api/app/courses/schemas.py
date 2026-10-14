@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, HttpUrl, model_validator
 
-from app.courses.models import CourseDeliveryFormat, CourseDifficulty
+from app.courses.models import CourseAccess, CourseDeliveryFormat, CourseDifficulty
 
 TAG_MAX_LENGTH = 50
 LEARNING_OUTCOME_MAX_LENGTH = 500
@@ -94,6 +94,9 @@ class CourseUpdateRequest(BaseModel):
     difficulty: Literal["beginner", "intermediate", "advanced"] | None = None
     delivery_format: Literal["self_paced", "instructor_led", "blended"] | None = None
     estimated_duration_minutes: int | None = Field(default=None, ge=0)
+    access: Literal["enrolled_only", "link"] | None = None
+    complete_in_order: bool | None = None
+    certificate_on_completion: bool | None = None
 
     @model_validator(mode="after")
     def validate_list_items(self) -> Self:
@@ -116,7 +119,9 @@ class SectionCreateRequest(BaseModel):
 
 
 class SectionUpdateRequest(BaseModel):
-    title: str = Field(min_length=1, max_length=200)
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    description: str | None = Field(default=None, max_length=2_000)
+    image_url: HttpUrl | None = None
 
 
 class LessonCreateRequest(BaseModel):
@@ -127,7 +132,11 @@ class LessonCreateRequest(BaseModel):
 
 
 class LessonUpdateRequest(BaseModel):
-    title: str = Field(min_length=1, max_length=200)
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    summary: str | None = Field(default=None, max_length=2_000)
+    image_url: HttpUrl | None = None
+    estimated_duration_minutes: int | None = Field(default=None, ge=0)
+    required_for_completion: bool | None = None
 
 
 class BlockCreateRequest(BaseModel):
@@ -174,6 +183,9 @@ class CourseResponse(BaseModel):
     difficulty: CourseDifficulty | None
     delivery_format: CourseDeliveryFormat | None
     estimated_duration_minutes: int | None
+    access: CourseAccess
+    complete_in_order: bool
+    certificate_on_completion: bool
     status: str
     lesson_count: int = 0
 
@@ -183,6 +195,8 @@ class SectionResponse(BaseModel):
     course_id: UUID
     title: str
     position: int
+    description: str | None
+    image_url: HttpUrl | None
 
 
 class LessonResponse(BaseModel):
@@ -192,6 +206,10 @@ class LessonResponse(BaseModel):
     title: str
     position: int
     body: str | None = None
+    summary: str | None
+    image_url: HttpUrl | None
+    estimated_duration_minutes: int | None
+    required_for_completion: bool
 
 
 class BlockResponse(BaseModel):
@@ -209,10 +227,12 @@ class LessonNode(LessonResponse):
 
 class SectionNode(SectionResponse):
     lessons: list[LessonNode]
+    rolled_duration_minutes: int
 
 
 class CourseStructureResponse(CourseResponse):
     sections: list[SectionNode]
+    rolled_duration_minutes: int
 
 
 class MediaAssetResponse(BaseModel):
