@@ -9,6 +9,7 @@ from app.core.database import get_session
 from app.courses.schemas import (
     BlockCreateRequest,
     BlockResponse,
+    BlockUpdateRequest,
     CourseCreateRequest,
     CourseDetailResponse,
     CourseResponse,
@@ -31,6 +32,7 @@ from app.courses.services import (
     create_lesson,
     create_media_asset,
     create_section,
+    delete_block,
     delete_course,
     delete_lesson,
     delete_section,
@@ -39,8 +41,10 @@ from app.courses.services import (
     list_courses,
     list_lessons,
     publish_course,
+    reorder_blocks,
     reorder_lessons,
     reorder_sections,
+    update_block,
     update_course,
     update_lesson,
     update_section,
@@ -242,6 +246,58 @@ async def create_block_route(
         session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
     )
     response = await create_block(session, course_id, request, actor_id=principal.user_id)
+    return Envelope(data=response, error=None, meta=Meta.current())
+
+
+@router.patch("/{course_id}/lessons/{lesson_id}/blocks/{block_id}")
+async def update_block_route(  # noqa: PLR0913, PLR0917
+    course_id: UUID,
+    lesson_id: UUID,
+    block_id: UUID,
+    request: BlockUpdateRequest,
+    session: SessionDep,
+    principal: CourseMember,
+) -> Envelope[BlockResponse]:
+    await require_course_permission(
+        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+    )
+    response = await update_block(
+        session, course_id, lesson_id, block_id, request, actor_id=principal.user_id
+    )
+    return Envelope(data=response, error=None, meta=Meta.current())
+
+
+@router.delete("/{course_id}/lessons/{lesson_id}/blocks/{block_id}")
+async def delete_block_route(
+    course_id: UUID,
+    lesson_id: UUID,
+    block_id: UUID,
+    session: SessionDep,
+    principal: CourseMember,
+) -> Envelope[BlockResponse]:
+    await require_course_permission(
+        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+    )
+    response = await delete_block(
+        session, course_id, lesson_id, block_id, actor_id=principal.user_id
+    )
+    return Envelope(data=response, error=None, meta=Meta.current())
+
+
+@router.put("/{course_id}/lessons/{lesson_id}/blocks/order")
+async def reorder_blocks_route(
+    course_id: UUID,
+    lesson_id: UUID,
+    request: ReorderRequest,
+    session: SessionDep,
+    principal: CourseMember,
+) -> Envelope[list[BlockResponse]]:
+    await require_course_permission(
+        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+    )
+    response = await reorder_blocks(
+        session, course_id, lesson_id, request.ordered_ids, actor_id=principal.user_id
+    )
     return Envelope(data=response, error=None, meta=Meta.current())
 
 

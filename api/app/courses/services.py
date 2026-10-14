@@ -18,7 +18,9 @@ from app.courses.models import (
     Lesson,
 )
 from app.courses.repositories import (
+    block_by_id,
     blocks_for_course,
+    blocks_for_lesson,
     course_by_id,
     course_by_slug,
     courses_page,
@@ -33,6 +35,7 @@ from app.courses.repositories import (
 from app.courses.schemas import (
     BlockCreateRequest,
     BlockResponse,
+    BlockUpdateRequest,
     CourseCreateRequest,
     CourseDetailResponse,
     CourseResponse,
@@ -393,6 +396,79 @@ async def create_block(
     return block_response(block)
 
 
+async def update_block(  # noqa: PLR0913, PLR0917
+    session: AsyncSession,
+    course_id: UUID,
+    lesson_id: UUID,
+    block_id: UUID,
+    request: BlockUpdateRequest,
+    actor_id: UUID | None = None,
+) -> BlockResponse:
+    await require_course(session, course_id)
+    await require_lesson(session, lesson_id, course_id=course_id)
+    block = await require_block(session, block_id, course_id=course_id, lesson_id=lesson_id)
+    if block.block_type != request.content.type:
+        msg = "block content type must match the immutable block type"
+        raise ValidationAppError(msg)
+    block.content = request.content.model_dump(mode="json")
+    _audit(session, course_id, actor_id, "block.updated", f"Updated {block.block_type} block")
+    await session.commit()
+    return block_response(block)
+
+
+async def delete_block(
+    session: AsyncSession,
+    course_id: UUID,
+    lesson_id: UUID,
+    block_id: UUID,
+    actor_id: UUID | None = None,
+) -> BlockResponse:
+    await require_course(session, course_id)
+    await require_lesson(session, lesson_id, course_id=course_id)
+    block = await require_block(session, block_id, course_id=course_id, lesson_id=lesson_id)
+    response = block_response(block)
+    siblings = list(
+        (
+            await session.scalars(
+                select(CourseBlock).where(CourseBlock.lesson_id == lesson_id).with_for_update()
+            )
+        ).all()
+    )
+    lowest_position = min(
+        (sibling.position for sibling in siblings),
+        default=DELETED_POSITION_START + 1,
+    )
+    block.position = min(lowest_position, DELETED_POSITION_START + 1) - 1
+    block.deleted_at = utc_now()
+    _audit(session, course_id, actor_id, "block.deleted", f"Deleted {block.block_type} block")
+    await session.commit()
+    return response
+
+
+async def reorder_blocks(
+    session: AsyncSession,
+    course_id: UUID,
+    lesson_id: UUID,
+    ordered_ids: list[UUID],
+    actor_id: UUID | None = None,
+) -> list[BlockResponse]:
+    await require_course(session, course_id)
+    await require_lesson(session, lesson_id, course_id=course_id)
+    blocks = list((await session.scalars(blocks_for_lesson(course_id, lesson_id))).all())
+    block_by_identifier = {block.id: block for block in blocks}
+    if set(block_by_identifier) != set(ordered_ids) or len(ordered_ids) != len(block_by_identifier):
+        msg = "ordered block ids must match existing lesson blocks"
+        raise ValidationAppError(msg)
+    for position, current_id in enumerate(ordered_ids):
+        block_by_identifier[current_id].position = -(position + 1)
+    await session.flush()
+    for position, current_id in enumerate(ordered_ids):
+        block_by_identifier[current_id].position = position
+    _audit(session, course_id, actor_id, "blocks.reordered", "Reordered lesson blocks")
+    await session.commit()
+    return [block_response(block_by_identifier[current_id]) for current_id in ordered_ids]
+
+
 async def create_media_asset(
     session: AsyncSession,
     course_id: UUID,
@@ -544,6 +620,20 @@ async def require_lesson(
         msg = "lesson not found"
         raise NotFoundError(msg)
     return lesson
+
+
+async def require_block(
+    session: AsyncSession,
+    block_id: UUID,
+    *,
+    course_id: UUID,
+    lesson_id: UUID,
+) -> CourseBlock:
+    block = await session.scalar(block_by_id(block_id, course_id=course_id, lesson_id=lesson_id))
+    if block is None:
+        msg = "block not found"
+        raise NotFoundError(msg)
+    return block
 
 
 def course_response(course: Course, *, lesson_count: int = 0) -> CourseResponse:

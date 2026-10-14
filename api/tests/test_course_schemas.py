@@ -2,8 +2,10 @@ import pytest
 from pydantic import ValidationError
 
 from app.courses.schemas import (
+    AudioBlockContent,
     BlockCreateRequest,
     CourseUpdateRequest,
+    FileBlockContent,
     ImageBlockContent,
     MediaAssetCreateRequest,
     QuizBlockContent,
@@ -18,6 +20,15 @@ def test_course_block_content_schemas_cover_mvp_block_types() -> None:
     assert VideoBlockContent(url="https://cdn.example.com/intro.mp4").type == "video"
     assert (
         ImageBlockContent(url="https://cdn.example.com/hero.png", alt_text="Hero").type == "image"
+    )
+    assert AudioBlockContent(url="https://cdn.example.com/intro.mp3").type == "audio"
+    assert (
+        FileBlockContent(
+            url="https://cdn.example.com/guide.pdf",
+            file_name="guide.pdf",
+            size_bytes=1024,
+        ).type
+        == "file"
     )
     assert (
         QuizBlockContent(
@@ -52,6 +63,11 @@ def test_block_type_must_match_content_type() -> None:
             content=ImageBlockContent(url="https://cdn.example.com/hero.png", alt_text="Hero"),
             position=0,
         )
+
+
+def test_file_block_rejects_empty_name_and_non_positive_size() -> None:
+    with pytest.raises(ValidationError):
+        FileBlockContent(url="https://cdn.example.com/guide.pdf", file_name="", size_bytes=0)
 
 
 def test_media_asset_schema_accepts_image_and_video_metadata() -> None:

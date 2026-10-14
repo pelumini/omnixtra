@@ -29,11 +29,14 @@ TEST_PASSWORD = "correct horse battery staple"  # noqa: S105
 @covers_isolation("DELETE", "/api/v1/courses/{course_id}/lessons/{lesson_id}")
 @covers_isolation("GET", "/api/v1/courses/{course_id}/lessons")
 @covers_isolation("POST", "/api/v1/courses/{course_id}/blocks")
+@covers_isolation("PATCH", "/api/v1/courses/{course_id}/lessons/{lesson_id}/blocks/{block_id}")
+@covers_isolation("DELETE", "/api/v1/courses/{course_id}/lessons/{lesson_id}/blocks/{block_id}")
+@covers_isolation("PUT", "/api/v1/courses/{course_id}/lessons/{lesson_id}/blocks/order")
 @covers_isolation("POST", "/api/v1/courses/{course_id}/media")
 @covers_isolation("PUT", "/api/v1/courses/{course_id}/sections/order")
 @covers_isolation("PUT", "/api/v1/courses/{course_id}/sections/{section_id}/lessons/order")
 @covers_isolation("POST", "/api/v1/courses/{course_id}/publish")
-def test_tenant_b_cannot_attack_tenant_a_course_routes() -> None:
+def test_tenant_b_cannot_attack_tenant_a_course_routes() -> None:  # noqa: PLR0915
     if os.getenv(APP_DATABASE_URL_ENV) is None:
         pytest.skip(f"{APP_DATABASE_URL_ENV} is not set")
 
@@ -79,6 +82,19 @@ def test_tenant_b_cannot_attack_tenant_a_course_routes() -> None:
     )
     assert lesson_response.status_code == 200
     lesson_id = lesson_response.json()["data"]["id"]
+    block_response = isolation_client.post(
+        "/api/v1/courses/{course_id}/blocks",
+        f"/api/v1/courses/{course_id}/blocks",
+        json={
+            "lesson_id": lesson_id,
+            "block_type": "text",
+            "content": {"type": "text", "markdown": "Tenant A content"},
+            "position": 1,
+        },
+        headers=headers_a,
+    )
+    assert block_response.status_code == 200
+    block_id = block_response.json()["data"]["id"]
 
     detail_response = isolation_client.get(
         "/api/v1/courses/{course_id}",
@@ -178,6 +194,29 @@ def test_tenant_b_cannot_attack_tenant_a_course_routes() -> None:
         ),
     )
     _assert_not_found(
+        isolation_client.patch(
+            "/api/v1/courses/{course_id}/lessons/{lesson_id}/blocks/{block_id}",
+            f"/api/v1/courses/{course_id}/lessons/{lesson_id}/blocks/{block_id}",
+            json={"content": {"type": "text", "markdown": "Attack"}},
+            headers=headers_b,
+        ),
+    )
+    _assert_not_found(
+        isolation_client.delete(
+            "/api/v1/courses/{course_id}/lessons/{lesson_id}/blocks/{block_id}",
+            f"/api/v1/courses/{course_id}/lessons/{lesson_id}/blocks/{block_id}",
+            headers=headers_b,
+        ),
+    )
+    _assert_not_found(
+        isolation_client.put(
+            "/api/v1/courses/{course_id}/lessons/{lesson_id}/blocks/order",
+            f"/api/v1/courses/{course_id}/lessons/{lesson_id}/blocks/order",
+            json={"ordered_ids": [block_id]},
+            headers=headers_b,
+        ),
+    )
+    _assert_not_found(
         isolation_client.post(
             "/api/v1/courses/{course_id}/lessons",
             f"/api/v1/courses/{course_id}/lessons",
@@ -263,7 +302,7 @@ def test_course_role_is_per_enrolment_through_publish_route() -> None:
 
 
 @pytest.mark.integration
-def test_course_authoring_slice_creates_owner_and_text_lessons() -> None:
+def test_course_authoring_slice_creates_owner_and_text_lessons() -> None:  # noqa: PLR0915
     if os.getenv(APP_DATABASE_URL_ENV) is None:
         pytest.skip(f"{APP_DATABASE_URL_ENV} is not set")
 
@@ -507,6 +546,73 @@ def test_deleted_structure_positions_can_be_reused_and_reordered() -> None:
         for lesson in section["lessons"]
         for block in lesson["blocks"]
     )
+
+
+@pytest.mark.integration
+def test_blocks_can_be_updated_reordered_deleted_and_replaced() -> None:
+    if os.getenv(APP_DATABASE_URL_ENV) is None:
+        pytest.skip(f"{APP_DATABASE_URL_ENV} is not set")
+    client = TestClient(create_app())
+    tenant = _signup(client, "block-crud")
+    headers = _headers(tenant.slug, _login(client, tenant.slug, tenant.email))
+    course_id = _draft_course_with_lesson(client, headers, "Block CRUD")
+    structure = client.get(f"/api/v1/courses/{course_id}/structure", headers=headers).json()["data"]
+    lesson_id = structure["sections"][0]["lessons"][0]["id"]
+    block_ids: list[str] = []
+    for position, text in enumerate(("First", "Second")):
+        response = client.post(
+            f"/api/v1/courses/{course_id}/blocks",
+            json={
+                "lesson_id": lesson_id,
+                "block_type": "text",
+                "content": {"type": "text", "markdown": text},
+                "position": position,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        block_ids.append(response.json()["data"]["id"])
+    updated = client.patch(
+        f"/api/v1/courses/{course_id}/lessons/{lesson_id}/blocks/{block_ids[0]}",
+        json={"content": {"type": "text", "markdown": "Updated"}},
+        headers=headers,
+    )
+    assert updated.status_code == 200
+    assert updated.json()["data"]["content"]["markdown"] == "Updated"
+    invalid = client.put(
+        f"/api/v1/courses/{course_id}/lessons/{lesson_id}/blocks/order",
+        json={"ordered_ids": [block_ids[0]]},
+        headers=headers,
+    )
+    assert invalid.status_code == 400
+    reordered = client.put(
+        f"/api/v1/courses/{course_id}/lessons/{lesson_id}/blocks/order",
+        json={"ordered_ids": list(reversed(block_ids))},
+        headers=headers,
+    )
+    assert [block["id"] for block in reordered.json()["data"]] == list(reversed(block_ids))
+    assert (
+        client.delete(
+            f"/api/v1/courses/{course_id}/lessons/{lesson_id}/blocks/{block_ids[0]}",
+            headers=headers,
+        ).status_code
+        == 200
+    )
+    replacement = client.post(
+        f"/api/v1/courses/{course_id}/blocks",
+        json={
+            "lesson_id": lesson_id,
+            "block_type": "file",
+            "content": {
+                "type": "file",
+                "url": "https://example.com/guide.pdf",
+                "file_name": "guide.pdf",
+            },
+            "position": 1,
+        },
+        headers=headers,
+    )
+    assert replacement.status_code == 200
 
 
 class TenantAccount:

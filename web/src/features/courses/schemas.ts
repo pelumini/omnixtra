@@ -173,6 +173,19 @@ export const imageBlockContentSchema = z.object({
   alt_text: z.string().min(1).max(300),
 });
 
+export const audioBlockContentSchema = z.object({
+  type: z.literal("audio"),
+  url: z.string().url(),
+  caption: z.string().max(500).nullable(),
+});
+
+export const fileBlockContentSchema = z.object({
+  type: z.literal("file"),
+  url: z.string().url(),
+  file_name: z.string().min(1).max(255),
+  size_bytes: z.number().int().positive().nullable(),
+});
+
 export const quizBlockContentSchema = z
   .object({
     type: z.literal("quiz"),
@@ -190,13 +203,17 @@ export const blockContentSchema = z.union([
   textBlockContentSchema,
   videoBlockContentSchema,
   imageBlockContentSchema,
+  audioBlockContentSchema,
+  fileBlockContentSchema,
   quizBlockContentSchema,
 ]);
+
+export const blockUpdateRequestSchema = z.object({ content: blockContentSchema });
 
 export const blockCreateRequestSchema = z
   .object({
     lesson_id: z.string().uuid(),
-    block_type: z.enum(["text", "video", "image", "quiz"]),
+    block_type: z.enum(["text", "video", "image", "audio", "file", "quiz"]),
     content: blockContentSchema,
     position: z.number().int().nonnegative(),
   })
@@ -209,13 +226,19 @@ export const blockSchema = z.object({
   id: z.string().uuid(),
   course_id: z.string().uuid(),
   lesson_id: z.string().uuid(),
-  block_type: z.enum(["text", "video", "image", "quiz"]),
-  content: z.record(z.unknown()),
+  block_type: z.enum(["text", "video", "image", "audio", "file", "quiz"]),
+  content: blockContentSchema,
   position: z.number().int().nonnegative(),
 });
 
 export const blockEnvelopeSchema = z.object({
   data: blockSchema,
+  error: z.null(),
+  meta: metaSchema,
+});
+
+export const blocksEnvelopeSchema = z.object({
+  data: z.array(blockSchema),
   error: z.null(),
   meta: metaSchema,
 });
@@ -330,6 +353,7 @@ export const mediaFormSchema = z.object({
 });
 
 export type Block = z.infer<typeof blockSchema>;
+export type BlockContent = z.infer<typeof blockContentSchema>;
 export type BlockFormInput = z.infer<typeof blockFormSchema>;
 export type Course = z.infer<typeof courseSchema>;
 export type CourseCreateRequest = z.infer<typeof courseCreateRequestSchema>;
