@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { SelectField, TextareaField } from "@/components/ui/form-controls";
+import { Field, SelectField, TextareaField } from "@/components/ui/form-controls";
 import { Input, SearchInput, Select, controlSurface } from "@/components/ui/input";
 
 describe("input primitives", () => {
@@ -40,6 +40,15 @@ describe("input primitives", () => {
     expect(markup).toContain("focus-within:border-[var(--color-primary-base)]");
     expect(markup).toContain("lucide-chevron-down");
     expect(markup).toContain("appearance-none");
+  });
+
+  it("provides password visibility from the shared field primitive", () => {
+    const registration = { name: "password", onBlur: async () => undefined, onChange: async () => undefined, ref: () => undefined };
+    const markup = renderToStaticMarkup(<Field label="Password" registration={registration} type="password" />);
+
+    expect(markup).toContain('type="password"');
+    expect(markup).toContain('aria-label="Show password"');
+    expect(markup).toContain("lucide-eye");
   });
 
   it("wires invalid state to the native control", () => {

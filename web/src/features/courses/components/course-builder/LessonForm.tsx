@@ -28,7 +28,7 @@ export function LessonForm({ courseId, disabled, lessons, onCreated, onSectionCh
         <SelectField error={fieldError("sectionId")} label="Section" registration={register("sectionId", { onChange: (event) => onSectionChange(event.target.value) })}>
           <option value="">Select section</option>{sections.map((section) => <option key={section.id} value={section.id}>{section.title}</option>)}
         </SelectField>
-        <Field error={fieldError("title")} label="Lesson title" registration={register("title")} />
+        <Field error={fieldError("title")} label="Lesson Title" registration={register("title")} />
       </fieldset>
       <SubmitButton className="gap-2" disabled={disabled} isSubmitting={isSubmitting} pendingLabel="Adding..."><Plus aria-hidden="true" className="size-4" />Add</SubmitButton>
     </form>
