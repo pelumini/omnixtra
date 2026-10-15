@@ -57,7 +57,8 @@ export function Field({
       >
         <label
           className={cn(
-            "absolute -top-2 left-3 z-10 bg-[var(--color-bg-weak-100)] px-1 text-xs font-medium leading-4 text-[var(--color-text-main-900)] group-focus-within:bg-[var(--color-bg-white-0)]",
+            "absolute left-4 top-[-10px] z-10 bg-[var(--color-bg-white-0)] px-1 text-xs font-medium leading-4 text-[var(--color-text-main-900)]",
+            error ? "text-[var(--color-state-error)]" : "",
             disabled ? "bg-[var(--color-bg-weak-100)] text-[var(--color-text-disabled-300)]" : "",
           )}
           htmlFor={registration.name}
@@ -117,22 +118,10 @@ export function TextareaField({
 
   return (
     <div className="grid gap-1">
-      <label
-        className="block text-xs font-medium leading-4 text-[var(--color-text-main-900)]"
-        htmlFor={registration.name}
-      >
-        {label}
-      </label>
-      <Textarea
-        {...registration}
-        aria-describedby={describedBy}
-        hasError={Boolean(error)}
-        autoComplete={autoComplete}
-        disabled={disabled}
-        id={registration.name}
-        placeholder={placeholder}
-        rows={rows}
-      />
+      <div className="group relative mt-2">
+        <label className={cn("absolute left-4 top-[-10px] z-10 bg-[var(--color-bg-white-0)] px-1 text-xs font-medium leading-4 text-[var(--color-text-main-900)]", error ? "text-[var(--color-state-error)]" : "", disabled ? "bg-[var(--color-bg-weak-100)] text-[var(--color-text-disabled-300)]" : "")} htmlFor={registration.name}>{label}</label>
+        <Textarea {...registration} aria-describedby={describedBy} hasError={Boolean(error)} autoComplete={autoComplete} disabled={disabled} id={registration.name} placeholder={placeholder} rows={rows} />
+      </div>
       {error ? (
         <FieldError id={`${registration.name}-error`}>{error}</FieldError>
       ) : hint ? (
@@ -163,21 +152,10 @@ export function SelectField({
 
   return (
     <div className="grid gap-1">
-      <label
-        className="block text-xs font-medium leading-4 text-[var(--color-text-main-900)]"
-        htmlFor={registration.name}
-      >
-        {label}
-      </label>
-      <Select
-        {...registration}
-        aria-describedby={describedBy}
-        hasError={Boolean(error)}
-        disabled={disabled}
-        id={registration.name}
-      >
-        {children}
-      </Select>
+      <div className="group relative mt-2">
+        <label className={cn("absolute left-4 top-[-10px] z-10 bg-[var(--color-bg-white-0)] px-1 text-xs font-medium leading-4 text-[var(--color-text-main-900)]", error ? "text-[var(--color-state-error)]" : "", disabled ? "bg-[var(--color-bg-weak-100)] text-[var(--color-text-disabled-300)]" : "")} htmlFor={registration.name}>{label}</label>
+        <Select {...registration} aria-describedby={describedBy} hasError={Boolean(error)} disabled={disabled} id={registration.name}>{children}</Select>
+      </div>
       {error ? (
         <FieldError id={`${registration.name}-error`}>{error}</FieldError>
       ) : hint ? (
