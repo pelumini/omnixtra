@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 import { forwardRef } from "react";
 
 import { cn } from "@/lib/utils";
@@ -17,17 +17,17 @@ export function controlSurface({
   hasError = false,
 }: ControlSurfaceOptions = {}) {
   return cn(
-    "rounded-[10px] border border-transparent bg-[var(--color-bg-weak-100)] text-[var(--color-text-main-900)] transition-[background-color,border-color,box-shadow] hover:shadow-[var(--shadow-button-stroke-primary)]",
+    "rounded-[10px] border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] text-[var(--color-text-main-900)] shadow-[var(--shadow-x-small)] transition-[background-color,border-color,box-shadow] hover:border-[var(--color-stroke-sub-300)]",
     hasError && !focusWithin &&
-      "border-[var(--color-state-error)] shadow-[var(--shadow-button-focus-error)] focus-visible:border-[var(--color-state-error)] focus-visible:bg-[var(--color-bg-white-0)] focus-visible:shadow-[var(--shadow-button-focus-error)]",
+      "border-[var(--color-state-error)] shadow-[var(--shadow-button-focus-error)] focus-visible:border-[var(--color-state-error)] focus-visible:shadow-[var(--shadow-button-focus-error)]",
     hasError && focusWithin &&
-      "border-[var(--color-state-error)] shadow-[var(--shadow-button-focus-error)] focus-within:border-[var(--color-state-error)] focus-within:bg-[var(--color-bg-white-0)] focus-within:shadow-[var(--shadow-button-focus-error)]",
+      "border-[var(--color-state-error)] shadow-[var(--shadow-button-focus-error)] focus-within:border-[var(--color-state-error)] focus-within:shadow-[var(--shadow-button-focus-error)]",
     !hasError && !focusWithin &&
-      "focus-visible:border-[var(--color-primary-base)] focus-visible:bg-[var(--color-bg-white-0)] focus-visible:shadow-[var(--shadow-button-focus-primary)]",
+      "focus-visible:border-[var(--color-primary-base)] focus-visible:shadow-[var(--shadow-button-focus-primary)]",
     !hasError && focusWithin &&
-      "focus-within:border-[var(--color-primary-base)] focus-within:bg-[var(--color-bg-white-0)] focus-within:shadow-[var(--shadow-button-focus-primary)]",
+      "focus-within:border-[var(--color-primary-base)] focus-within:shadow-[var(--shadow-button-focus-primary)]",
     disabled &&
-      "border-transparent bg-[var(--color-bg-weak-100)] text-[var(--color-text-disabled-300)] shadow-none hover:shadow-none",
+      "border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-weak-100)] text-[var(--color-text-disabled-300)] shadow-none hover:border-[var(--color-stroke-soft-200)]",
   );
 }
 
@@ -46,7 +46,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       aria-invalid={props["aria-invalid"] ?? (hasError || undefined)}
       className={cn(
         !bare &&
-          "h-10 w-full px-3 text-xs leading-4 text-[var(--color-text-main-900)] placeholder:text-[var(--color-text-soft-400)] focus:outline-none disabled:cursor-not-allowed disabled:placeholder:text-[var(--color-text-disabled-300)]",
+          "h-10 w-full py-2.5 pl-3 pr-2.5 text-xs leading-4 text-[var(--color-text-main-900)] placeholder:text-[var(--color-text-soft-400)] focus:outline-none disabled:cursor-not-allowed disabled:placeholder:text-[var(--color-text-disabled-300)]",
         !bare && controlSurface({ disabled, hasError }),
         className,
       )}
@@ -88,17 +88,22 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
   ref,
 ) {
   return (
-    <select
-      {...props}
-      aria-invalid={props["aria-invalid"] ?? (hasError || undefined)}
+    <div
       className={cn(
-        "h-10 w-full px-3 text-xs leading-4 text-[var(--color-text-main-900)] focus:outline-none disabled:cursor-not-allowed",
-        controlSurface({ disabled, hasError }),
+        "relative flex h-10 w-full items-center",
+        controlSurface({ disabled, focusWithin: true, hasError }),
         className,
       )}
-      disabled={disabled}
-      ref={ref}
-    />
+    >
+      <select
+        {...props}
+        aria-invalid={props["aria-invalid"] ?? (hasError || undefined)}
+        className="h-full min-w-0 flex-1 appearance-none bg-transparent py-2.5 pl-3 pr-10 text-xs leading-4 text-[var(--color-text-main-900)] outline-none disabled:cursor-not-allowed disabled:text-[var(--color-text-disabled-300)]"
+        disabled={disabled}
+        ref={ref}
+      />
+      <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-2.5 size-5 text-[var(--color-text-soft-400)]" />
+    </div>
   );
 });
 
