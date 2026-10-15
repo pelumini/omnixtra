@@ -6,6 +6,7 @@
   --background: var(--color-bg-weak-100);
   --foreground: var(--color-text-main-900);
   --primary: var(--color-primary-base);
+  --color-primary-alpha-10: color-mix(in srgb, var(--color-primary-base) 10%, transparent);
   --primary-foreground: var(--color-text-white-0);
   --border: var(--color-stroke-soft-200);
   --tenant-primary: var(--primary);

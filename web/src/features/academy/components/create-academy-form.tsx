@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 
 import { FormError, SubmitButton } from "@/components/ui/form-controls";
 import { Input, controlSurface } from "@/components/ui/input";
+import { Toggle } from "@/components/ui/toggle";
 import { resolveMessage } from "@/lib/forms/messages";
 import { useFormSubmit } from "@/lib/forms/use-form-submit";
 import { createAcademySchema, type CreateAcademyInput } from "@/lib/schemas/auth";
@@ -73,7 +74,7 @@ export function CreateAcademyForm({ action, initialStep = 1, onSuccess }: Create
         </fieldset> : <fieldset className="mt-3 space-y-3" disabled={isSubmitting}>
           <WizardField error={fieldError("academyName")} label="Academy Name" name="academyName"><Input {...register("academyName")} className={inputClass} hasError={Boolean(fieldError("academyName"))} id="academyName" placeholder="Enter academy name" /></WizardField>
           <WizardField error={fieldError("subdomain")} label="Subdomain" name="subdomain"><div className={cn("flex h-10 lg:h-9", controlSurface({ focusWithin: true, hasError: Boolean(fieldError("subdomain")) }))}><Input {...register("subdomain", { setValueAs: (value: unknown) => typeof value === "string" ? value.toLowerCase().replace(/[^a-z0-9-]/g, "") : value })} bare className="min-w-0 flex-1 rounded-l-[10px] px-3 text-sm outline-none lg:text-xs" hasError={Boolean(fieldError("subdomain"))} id="subdomain" placeholder="your-academy" /><span className="flex items-center rounded-r-[10px] border-l border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-weak-100)] px-3 text-xs text-[var(--color-text-sub-500)]">.omnixtra.app</span></div>{!errors.subdomain ? <p className="mt-1 text-[11px] leading-4 text-[var(--color-text-sub-500)]">Your academy will live at {subdomain || "your-academy"}.omnixtra.app</p> : null}</WizardField>
-          <label className="flex items-center gap-2.5 text-xs leading-4 text-[var(--color-text-sub-500)]"><Input bare checked={acceptedTerms} className="size-4 shrink-0 accent-[var(--primary)]" onChange={(event) => setAcceptedTerms(event.target.checked)} type="checkbox" /><span>I accept the <Link className="font-semibold text-[var(--primary)] hover:underline" href="/terms">Terms &amp; Conditions</Link> and <Link className="font-semibold text-[var(--primary)] hover:underline" href="/privacy">Privacy Policy</Link>.</span></label>
+          <Toggle checked={acceptedTerms} className="items-start text-xs leading-4 text-[var(--color-text-sub-500)]" label={<span>I accept the <Link className="font-semibold text-[var(--primary)] hover:underline" href="/terms">Terms &amp; Conditions</Link> and <Link className="font-semibold text-[var(--primary)] hover:underline" href="/privacy">Privacy Policy</Link>.</span>} onChange={(event) => setAcceptedTerms(event.target.checked)} />
           <SubmitButton className="h-11 rounded-full text-sm font-semibold lg:h-10 lg:text-xs" disabled={!acceptedTerms} isSubmitting={isSubmitting} pendingLabel="Creating academy...">Create Academy</SubmitButton>
         </fieldset>}
       </div>
