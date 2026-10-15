@@ -260,12 +260,12 @@ function NewCourseForm({
       <fieldset className="grid gap-4" disabled={isSubmitting}>
         <Field
           error={fieldError("title")}
-          label="Course title"
+          label="Course Title"
           registration={register("title")}
         />
         <TextareaField
           error={fieldError("description")}
-          label="Course description"
+          label="Course Description"
           registration={register("description")}
         />
       </fieldset>

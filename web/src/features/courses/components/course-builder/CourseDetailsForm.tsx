@@ -155,17 +155,17 @@ export function CourseDetailsForm({
       <fieldset className="grid gap-4" disabled={isSubmitting}>
         <Field
           error={fieldError("title")}
-          label="Title"
+          label="Course Title"
           registration={register("title")}
         />
         <TextareaField
           error={fieldError("description")}
-          label="Description"
+          label="Course Description"
           registration={register("description")}
           rows={3}
         />
         <div className="grid gap-3 border border-[var(--color-stroke-soft-200)] p-4">
-          <SelectField label="Course access" registration={register("access")}><option value="enrolled_only">Enrolled learners only</option><option value="link">Anyone with the link</option></SelectField>
+          <SelectField label="Course Access" registration={register("access")}><option value="enrolled_only">Enrolled learners only</option><option value="link">Anyone with the link</option></SelectField>
           <Toggle label="Complete lessons in order" {...register("completeInOrder")} />
           <Toggle label="Issue a certificate on completion" {...register("certificateOnCompletion")} />
           <p className="text-xs text-[var(--color-text-sub-500)]">These settings are saved now and take effect when learner delivery ships.</p>
@@ -195,7 +195,7 @@ export function CourseDetailsForm({
           </SelectField>
           <SelectField
             error={fieldError("deliveryFormat")}
-            label="Delivery format"
+            label="Delivery Format"
             registration={register("deliveryFormat")}
           >
             <option value="">Not set</option>
@@ -219,7 +219,7 @@ export function CourseDetailsForm({
         <div className="grid grid-cols-[minmax(0,1fr)_8rem] gap-2">
           <Field
             error={fieldError("durationValue")}
-            label="Estimated duration"
+            label="Estimated Duration"
             registration={register("durationValue")}
             type="number"
           />
@@ -230,7 +230,7 @@ export function CourseDetailsForm({
         </div>
         <TextareaField
           error={fieldError("targetAudience")}
-          label="Target audience"
+          label="Target Audience"
           registration={register("targetAudience")}
           rows={3}
         />

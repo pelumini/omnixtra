@@ -34,7 +34,7 @@ export function MediaForm({ courseId, onCreated }: { courseId: string; onCreated
       <FormError>{formError}</FormError>
       <fieldset className="grid gap-3" disabled={isSubmitting}>
         <Field error={fieldError("fileName")} label="File" registration={register("fileName")} />
-        <SelectField label="Content type" registration={register("contentType")}><option value="image/png">image/png</option><option value="image/jpeg">image/jpeg</option><option value="video/mp4">video/mp4</option></SelectField>
+        <SelectField label="Content Type" registration={register("contentType")}><option value="image/png">image/png</option><option value="image/jpeg">image/jpeg</option><option value="video/mp4">video/mp4</option></SelectField>
         <Field error={fieldError("byteSize")} label="Bytes" registration={register("byteSize", { valueAsNumber: true })} type="number" />
       </fieldset>
       <SubmitButton className="gap-2" isSubmitting={isSubmitting} pendingLabel="Saving..."><Upload aria-hidden="true" className="size-4" />Save</SubmitButton>

@@ -1,5 +1,7 @@
 "use client";
 
+import { Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { Button } from "@/components/ui/button";
@@ -41,6 +43,8 @@ export function Field({
   suffix,
   type = "text",
 }: FieldProps) {
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const isPassword = type === "password";
   const describedBy = error
     ? `${registration.name}-error`
     : hint
@@ -78,8 +82,18 @@ export function Field({
           disabled={disabled}
           id={registration.name}
           placeholder={placeholder}
-          type={type}
+          type={isPassword && passwordVisible ? "text" : type}
         />
+        {isPassword ? (
+          <button
+            aria-label={passwordVisible ? "Hide password" : "Show password"}
+            className="grid w-10 shrink-0 place-items-center text-[var(--color-text-soft-400)] hover:text-[var(--color-text-main-900)]"
+            onClick={() => setPasswordVisible((visible) => !visible)}
+            type="button"
+          >
+            {passwordVisible ? <EyeOff aria-hidden="true" className="size-5" /> : <Eye aria-hidden="true" className="size-5" />}
+          </button>
+        ) : null}
         {suffix ? (
           <span className="flex items-center rounded-r-[10px] border-l border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-weak-100)] px-3 text-xs leading-4 text-[var(--color-text-sub-500)]">
             {suffix}

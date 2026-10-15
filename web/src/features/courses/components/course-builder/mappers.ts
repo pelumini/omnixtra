@@ -10,10 +10,10 @@ export function backendBlockType(blockType: StandardContentType) {
 }
 
 export function contentBodyLabel(blockType: StandardContentType) {
-  if (blockType === "web_content") return "Web content URL";
+  if (blockType === "web_content") return "Web Content URL";
   if (blockType === "video") return "Video URL";
-  if (blockType === "image") return "Image URL or description";
-  if (blockType === "quiz") return "Quiz question";
+  if (blockType === "image") return "Image URL or Description";
+  if (blockType === "quiz") return "Quiz Question";
   return "Content";
 }
 

@@ -82,14 +82,14 @@ function AcceptForm({ preview, token }: { preview: InvitationPreview; token: str
             autoComplete="new-password"
             error={fieldError("password")}
             hint="At least 12 characters."
-            label="Create a password"
+            label="Create a Password"
             registration={register("password")}
             type="password"
           />
           <Field
             autoComplete="new-password"
             error={fieldError("confirmPassword")}
-            label="Confirm password"
+            label="Confirm Password"
             registration={register("confirmPassword")}
             type="password"
           />
@@ -154,7 +154,7 @@ function TokenFallback() {
         <fieldset disabled={isSubmitting}>
           <Field
             error={tokenError}
-            label="Invitation code"
+            label="Invitation Code"
             placeholder="Paste your invitation code"
             registration={register("token")}
           />
