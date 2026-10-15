@@ -13,6 +13,7 @@ import {
   TextareaField,
 } from "@/components/ui/form-controls";
 import { Input, Textarea } from "@/components/ui/input";
+import { Toggle } from "@/components/ui/toggle";
 import { useFormSubmit } from "@/lib/forms/use-form-submit";
 
 import { updateCourse } from "../../api";
@@ -165,8 +166,8 @@ export function CourseDetailsForm({
         />
         <div className="grid gap-3 border border-[var(--color-stroke-soft-200)] p-4">
           <SelectField label="Course access" registration={register("access")}><option value="enrolled_only">Enrolled learners only</option><option value="link">Anyone with the link</option></SelectField>
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" {...register("completeInOrder")} /> Complete lessons in order</label>
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" {...register("certificateOnCompletion")} /> Issue a certificate on completion</label>
+          <Toggle label="Complete lessons in order" {...register("completeInOrder")} />
+          <Toggle label="Issue a certificate on completion" {...register("certificateOnCompletion")} />
           <p className="text-xs text-[var(--color-text-sub-500)]">These settings are saved now and take effect when learner delivery ships.</p>
         </div>
         <Field
