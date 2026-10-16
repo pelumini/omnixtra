@@ -154,6 +154,8 @@ function BlockEditor({ block, courseId, downDisabled, onChange, onDelete, onMess
 }) {
   const [content, setContent] = useState<BlockContent>(block.content);
   const [pending, startTransition] = useTransition();
+  const mediaReady = content.type === "text" || content.type === "quiz"
+    || Boolean(content.url && content.asset_id && content.object_key);
   function save() {
     startTransition(async () => {
       try {
@@ -178,7 +180,7 @@ function BlockEditor({ block, courseId, downDisabled, onChange, onDelete, onMess
       </header>
       <div className="grid gap-3 p-4">{contentFields(content, setContent, courseId)}</div>
       <footer className="flex justify-end border-t border-[var(--color-stroke-soft-200)] px-4 py-3">
-        <Button className="gap-2" isProcessing={pending} onClick={save}><Save /> Save</Button>
+        <Button className="gap-2" disabled={!mediaReady} isProcessing={pending} onClick={save}><Save /> Save</Button>
       </footer>
     </article>
   );
@@ -188,7 +190,7 @@ function contentFields(content: BlockContent, setContent: (value: BlockContent) 
   if (content.type === "text") return <Textarea aria-label="Text content" onChange={(e) => setContent({ ...content, markdown: e.target.value })} rows={7} value={content.markdown} />;
   if (content.type === "quiz") return <Textarea aria-label="Quiz question" onChange={(e) => setContent({ ...content, question: e.target.value })} rows={4} value={content.question} />;
   const uploaded = content.asset_id ? { assetId: content.asset_id, deliveryUrl: "", fileName: content.type === "file" ? content.file_name : `${content.type} upload`, objectKey: content.object_key ?? content.url } : null;
-  const upload = <MediaUploadField courseId={courseId} kind={content.type} label={`${labelFor(content.type)} File`} onChange={(media) => setContent({ ...content, asset_id: media?.assetId, object_key: media?.objectKey, url: media?.objectKey ?? "removed" })} value={uploaded} />;
+  const upload = <MediaUploadField courseId={courseId} kind={content.type} label={`${labelFor(content.type)} File`} onChange={(media) => setContent(media ? { ...content, asset_id: media.assetId, object_key: media.objectKey, url: media.objectKey } : { ...content, asset_id: null, object_key: null, url: "" })} value={uploaded} />;
   if (content.type === "image") return <>{upload}<Input aria-label="Image alt text" onChange={(e) => setContent({ ...content, alt_text: e.target.value })} placeholder="Describe the image" value={content.alt_text} /></>;
   if (content.type === "file") return <>{upload}<Input aria-label="File name" onChange={(e) => setContent({ ...content, file_name: e.target.value })} placeholder="File name" value={content.file_name} /></>;
   return <>{upload}<Input aria-label={`${labelFor(content.type)} caption`} onChange={(e) => setContent({ ...content, caption: e.target.value || null })} placeholder="Caption (optional)" value={content.caption ?? ""} /></>;

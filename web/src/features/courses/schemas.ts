@@ -187,28 +187,28 @@ export const textBlockContentSchema = z.object({
 export const videoBlockContentSchema = z.object({
   type: z.literal("video"),
   url: mediaReferenceSchema,
-  asset_id: z.string().uuid().optional(), object_key: z.string().optional(),
+  asset_id: z.string().uuid().nullish(), object_key: z.string().nullish(),
   caption: z.string().max(500).nullable(),
 });
 
 export const imageBlockContentSchema = z.object({
   type: z.literal("image"),
   url: mediaReferenceSchema,
-  asset_id: z.string().uuid().optional(), object_key: z.string().optional(),
+  asset_id: z.string().uuid().nullish(), object_key: z.string().nullish(),
   alt_text: z.string().min(1).max(300),
 });
 
 export const audioBlockContentSchema = z.object({
   type: z.literal("audio"),
   url: mediaReferenceSchema,
-  asset_id: z.string().uuid().optional(), object_key: z.string().optional(),
+  asset_id: z.string().uuid().nullish(), object_key: z.string().nullish(),
   caption: z.string().max(500).nullable(),
 });
 
 export const fileBlockContentSchema = z.object({
   type: z.literal("file"),
   url: mediaReferenceSchema,
-  asset_id: z.string().uuid().optional(), object_key: z.string().optional(),
+  asset_id: z.string().uuid().nullish(), object_key: z.string().nullish(),
   file_name: z.string().min(1).max(255),
   size_bytes: z.number().int().positive().nullable(),
 });
