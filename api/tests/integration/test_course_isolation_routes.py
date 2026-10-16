@@ -33,6 +33,10 @@ TEST_PASSWORD = "correct horse battery staple"  # noqa: S105
 @covers_isolation("DELETE", "/api/v1/courses/{course_id}/lessons/{lesson_id}/blocks/{block_id}")
 @covers_isolation("PUT", "/api/v1/courses/{course_id}/lessons/{lesson_id}/blocks/order")
 @covers_isolation("POST", "/api/v1/courses/{course_id}/media")
+@covers_isolation("POST", "/api/v1/courses/{course_id}/media/presign")
+@covers_isolation("POST", "/api/v1/courses/{course_id}/media/confirm")
+@covers_isolation("GET", "/api/v1/courses/{course_id}/media/{asset_id}/url")
+@covers_isolation("DELETE", "/api/v1/courses/{course_id}/media/{asset_id}")
 @covers_isolation("PUT", "/api/v1/courses/{course_id}/sections/order")
 @covers_isolation("PUT", "/api/v1/courses/{course_id}/sections/{section_id}/lessons/order")
 @covers_isolation("POST", "/api/v1/courses/{course_id}/publish")
@@ -122,6 +126,47 @@ def test_tenant_b_cannot_attack_tenant_a_course_routes() -> None:  # noqa: PLR09
             f"/api/v1/courses/{course_id}",
             headers=headers_b,
         ),
+    )
+    foreign_asset_id = uuid4()
+    _assert_not_found(
+        isolation_client.post(
+            "/api/v1/courses/{course_id}/media/presign",
+            f"/api/v1/courses/{course_id}/media/presign",
+            json={
+                "byte_size": 10,
+                "content_type": "image/png",
+                "filename": "x.png",
+                "kind": "image",
+            },
+            headers=headers_b,
+        )
+    )
+    _assert_not_found(
+        isolation_client.post(
+            "/api/v1/courses/{course_id}/media/confirm",
+            f"/api/v1/courses/{course_id}/media/confirm",
+            json={
+                "byte_size": 10,
+                "content_type": "image/png",
+                "kind": "image",
+                "object_key": "invalid",
+            },
+            headers=headers_b,
+        )
+    )
+    _assert_not_found(
+        isolation_client.get(
+            "/api/v1/courses/{course_id}/media/{asset_id}/url",
+            f"/api/v1/courses/{course_id}/media/{foreign_asset_id}/url",
+            headers=headers_b,
+        )
+    )
+    _assert_not_found(
+        isolation_client.delete(
+            "/api/v1/courses/{course_id}/media/{asset_id}",
+            f"/api/v1/courses/{course_id}/media/{foreign_asset_id}",
+            headers=headers_b,
+        )
     )
     _assert_not_found(
         isolation_client.get(

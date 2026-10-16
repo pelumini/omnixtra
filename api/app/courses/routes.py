@@ -21,12 +21,18 @@ from app.courses.schemas import (
     LessonUpdateRequest,
     MediaAssetCreateRequest,
     MediaAssetResponse,
+    MediaConfirmRequest,
+    MediaConfirmResponse,
+    MediaPresignRequest,
+    MediaPresignResponse,
+    MediaUrlResponse,
     ReorderRequest,
     SectionCreateRequest,
     SectionResponse,
     SectionUpdateRequest,
 )
 from app.courses.services import (
+    confirm_media_upload,
     create_block,
     create_course,
     create_lesson,
@@ -35,11 +41,14 @@ from app.courses.services import (
     delete_block,
     delete_course,
     delete_lesson,
+    delete_media_asset,
     delete_section,
     get_course_detail,
     get_course_structure,
     list_courses,
     list_lessons,
+    media_delivery_url,
+    presign_media_upload,
     publish_course,
     reorder_blocks,
     reorder_lessons,
@@ -313,6 +322,60 @@ async def create_media_asset_route(
     )
     response = await create_media_asset(session, course_id, request, actor_id=principal.user_id)
     return Envelope(data=response, error=None, meta=Meta.current())
+
+
+@router.post("/{course_id}/media/presign")
+async def presign_media_route(
+    course_id: UUID, request: MediaPresignRequest, session: SessionDep, principal: CourseMember
+) -> Envelope[MediaPresignResponse]:
+    await require_course_permission(
+        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+    )
+    return Envelope(
+        data=await presign_media_upload(session, course_id, request),
+        error=None,
+        meta=Meta.current(),
+    )
+
+
+@router.post("/{course_id}/media/confirm")
+async def confirm_media_route(
+    course_id: UUID, request: MediaConfirmRequest, session: SessionDep, principal: CourseMember
+) -> Envelope[MediaConfirmResponse]:
+    await require_course_permission(
+        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+    )
+    return Envelope(
+        data=await confirm_media_upload(session, course_id, request, actor_id=principal.user_id),
+        error=None,
+        meta=Meta.current(),
+    )
+
+
+@router.get("/{course_id}/media/{asset_id}/url")
+async def media_url_route(
+    course_id: UUID, asset_id: UUID, session: SessionDep, principal: CourseMember
+) -> Envelope[MediaUrlResponse]:
+    await require_course_permission(
+        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+    )
+    return Envelope(
+        data=await media_delivery_url(session, course_id, asset_id), error=None, meta=Meta.current()
+    )
+
+
+@router.delete("/{course_id}/media/{asset_id}")
+async def delete_media_route(
+    course_id: UUID, asset_id: UUID, session: SessionDep, principal: CourseMember
+) -> Envelope[MediaAssetResponse]:
+    await require_course_permission(
+        session, user_id=principal.user_id, course_id=course_id, permission="course.edit"
+    )
+    return Envelope(
+        data=await delete_media_asset(session, course_id, asset_id, actor_id=principal.user_id),
+        error=None,
+        meta=Meta.current(),
+    )
 
 
 @router.put("/{course_id}/sections/order")

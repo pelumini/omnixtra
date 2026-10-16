@@ -23,6 +23,9 @@ import {
   lessonsEnvelopeSchema,
   mediaAssetCreateRequestSchema,
   mediaAssetEnvelopeSchema,
+  mediaConfirmEnvelopeSchema,
+  mediaPresignEnvelopeSchema,
+  mediaUrlEnvelopeSchema,
   sectionCreateRequestSchema,
   sectionEnvelopeSchema,
   sectionsEnvelopeSchema,
@@ -32,6 +35,7 @@ import {
   type LessonCreateRequest,
   type LessonUpdateRequest,
   type MediaAssetCreateRequest,
+  type MediaKind,
   type SectionCreateRequest,
   type SectionUpdateRequest,
 } from "./schemas";
@@ -297,4 +301,32 @@ export async function createMediaAsset(
   const response = await postJson(`/api/v1/courses/${courseId}/media`, body);
 
   return mediaAssetEnvelopeSchema.parse(response);
+}
+
+export async function presignMedia(courseId: string, file: File, kind: MediaKind) {
+  return mediaPresignEnvelopeSchema.parse(await postJson(`/api/v1/courses/${courseId}/media/presign`, {
+    byte_size: file.size, content_type: file.type, filename: file.name, kind,
+  }));
+}
+
+export async function confirmMedia(
+  courseId: string, file: File, kind: MediaKind, objectKey: string,
+) {
+  return mediaConfirmEnvelopeSchema.parse(await postJson(`/api/v1/courses/${courseId}/media/confirm`, {
+    byte_size: file.size, content_type: file.type, kind, object_key: objectKey,
+    original_filename: file.name,
+  }));
+}
+
+export async function deleteMedia(courseId: string, assetId: string) {
+  return mutate(`/api/v1/courses/${courseId}/media/${assetId}`, "DELETE");
+}
+
+export async function getMediaUrl(courseId: string, assetId: string) {
+  const response = await fetch(`${apiUrl()}/api/v1/courses/${courseId}/media/${assetId}/url`, {
+    cache: "no-store", credentials: "include", headers: requestHeaders({}),
+  });
+  const body: unknown = await response.json();
+  throwIfApiError(response, body);
+  return mediaUrlEnvelopeSchema.parse(body);
 }

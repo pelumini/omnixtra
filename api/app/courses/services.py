@@ -1,10 +1,15 @@
-from uuid import UUID
+import re
+from contextlib import suppress
+from datetime import UTC, datetime
+from pathlib import PurePath
+from uuid import UUID, uuid4
 
-from pydantic import HttpUrl
+from botocore.exceptions import BotoCoreError, ClientError  # type: ignore[import-untyped]
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.billing.services import ensure_storage_capacity
+from app.core.config import get_settings
 from app.core.exceptions import ConflictError, NotFoundError, ValidationAppError
 from app.courses.models import (
     Course,
@@ -28,6 +33,7 @@ from app.courses.repositories import (
     lesson_by_id,
     lessons_for_course,
     lessons_for_section,
+    media_asset_by_id,
     media_asset_by_object_key,
     section_by_id,
     sections_for_course,
@@ -49,6 +55,11 @@ from app.courses.schemas import (
     LessonUpdateRequest,
     MediaAssetCreateRequest,
     MediaAssetResponse,
+    MediaConfirmRequest,
+    MediaConfirmResponse,
+    MediaPresignRequest,
+    MediaPresignResponse,
+    MediaUrlResponse,
     SectionCreateRequest,
     SectionNode,
     SectionResponse,
@@ -56,6 +67,7 @@ from app.courses.schemas import (
 )
 from app.learning.models import CourseRole, Enrolment, EnrolmentStatus
 from app.shared.models import utc_now
+from app.storage import StorageClient
 from app.tenancy.context import require_tenant_id
 
 DEFAULT_PAGE_SIZE = 20
@@ -147,6 +159,11 @@ async def update_course(
 ) -> CourseResponse:
     course = await require_course(session, course_id)
     fields = request.model_fields_set
+    replaced_object_key = (
+        course.thumbnail_url
+        if "thumbnail_url" in fields and course.thumbnail_url != request.thumbnail_url
+        else None
+    )
     for field in (
         "title",
         "description",
@@ -167,11 +184,11 @@ async def update_course(
             value = getattr(request, field)
             if field == "title" and value is None:
                 continue
-            if isinstance(value, HttpUrl):
-                value = str(value)
             setattr(course, field, value)
     _audit(session, course.id, actor_id, "course.updated", f"Updated course {course.slug}")
+    await _soft_delete_asset_by_key(session, replaced_object_key)
     await session.commit()
+    await _best_effort_delete_object(replaced_object_key)
     return course_response(course)
 
 
@@ -269,14 +286,21 @@ async def update_section(
 ) -> SectionResponse:
     await require_course(session, course_id)
     section = await require_section(session, section_id, course_id=course_id)
+    replaced_object_key = (
+        section.image_url
+        if "image_url" in request.model_fields_set and section.image_url != request.image_url
+        else None
+    )
     for field in ("title", "description", "image_url"):
         if field in request.model_fields_set:
             value = getattr(request, field)
             if field == "title" and value is None:
                 continue
-            setattr(section, field, str(value) if isinstance(value, HttpUrl) else value)
+            setattr(section, field, value)
     _audit(session, course_id, actor_id, "section.updated", f"Updated section {section.title}")
+    await _soft_delete_asset_by_key(session, replaced_object_key)
     await session.commit()
+    await _best_effort_delete_object(replaced_object_key)
     return section_response(section)
 
 
@@ -344,6 +368,11 @@ async def update_lesson(
 ) -> LessonResponse:
     await require_course(session, course_id)
     lesson = await require_lesson(session, lesson_id, course_id=course_id)
+    replaced_object_key = (
+        lesson.image_url
+        if "image_url" in request.model_fields_set and lesson.image_url != request.image_url
+        else None
+    )
     for field in (
         "title",
         "summary",
@@ -355,9 +384,11 @@ async def update_lesson(
             value = getattr(request, field)
             if field == "title" and value is None:
                 continue
-            setattr(lesson, field, str(value) if isinstance(value, HttpUrl) else value)
+            setattr(lesson, field, value)
     _audit(session, course_id, actor_id, "lesson.updated", f"Updated lesson {lesson.title}")
+    await _soft_delete_asset_by_key(session, replaced_object_key)
     await session.commit()
+    await _best_effort_delete_object(replaced_object_key)
     return lesson_response(lesson)
 
 
@@ -436,9 +467,23 @@ async def update_block(  # noqa: PLR0913, PLR0917
     if block.block_type != request.content.type:
         msg = "block content type must match the immutable block type"
         raise ValidationAppError(msg)
-    block.content = request.content.model_dump(mode="json")
+    previous_asset: CourseMediaAsset | None = None
+    previous_asset_id = block.content.get("asset_id")
+    next_content = request.content.model_dump(mode="json")
+    if isinstance(previous_asset_id, str) and previous_asset_id != next_content.get("asset_id"):
+        try:
+            previous_asset = await session.scalar(
+                media_asset_by_id(UUID(previous_asset_id), course_id=course_id)
+            )
+        except ValueError:
+            previous_asset = None
+        if previous_asset is not None:
+            previous_asset.deleted_at = utc_now()
+    block.content = next_content
     _audit(session, course_id, actor_id, "block.updated", f"Updated {block.block_type} block")
     await session.commit()
+    if previous_asset is not None:
+        await _best_effort_delete_object(previous_asset.object_key)
     return block_response(block)
 
 
@@ -466,8 +511,19 @@ async def delete_block(
     )
     block.position = min(lowest_position, DELETED_POSITION_START + 1) - 1
     block.deleted_at = utc_now()
+    asset: CourseMediaAsset | None = None
+    asset_id = block.content.get("asset_id")
+    if isinstance(asset_id, str):
+        try:
+            asset = await session.scalar(media_asset_by_id(UUID(asset_id), course_id=course_id))
+        except ValueError:
+            asset = None
+        if asset is not None:
+            asset.deleted_at = utc_now()
     _audit(session, course_id, actor_id, "block.deleted", f"Deleted {block.block_type} block")
     await session.commit()
+    if asset is not None:
+        await _best_effort_delete_object(asset.object_key)
     return response
 
 
@@ -533,6 +589,180 @@ async def create_media_asset(
     await session.flush()
     _audit(session, course.id, actor_id, "media.registered", f"Registered media {asset.file_name}")
     await session.commit()
+    return media_asset_response(asset)
+
+
+_DOCUMENT_TYPES = {
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "text/csv",
+    "text/plain",
+}
+
+
+def _validate_media(kind: str, content_type: str, byte_size: int) -> None:
+    settings = get_settings()
+    if byte_size > settings.storage_max_upload_bytes:
+        msg = f"file exceeds the {settings.storage_max_upload_bytes} byte upload limit"
+        raise ValidationAppError(msg)
+    family = "image" if kind == "thumbnail" else kind
+    allowed = (
+        content_type.startswith(f"{family}/")
+        if family != "file"
+        else content_type in _DOCUMENT_TYPES
+    )
+    if not allowed:
+        msg = f"content type {content_type} is not allowed for {kind} uploads"
+        raise ValidationAppError(msg)
+
+
+async def _ensure_media_capacity(session: AsyncSession, additional_bytes: int) -> None:
+    current = int(
+        await session.scalar(
+            select(func.coalesce(func.sum(CourseMediaAsset.byte_size), 0)).where(
+                CourseMediaAsset.deleted_at.is_(None),
+            )
+        )
+        or 0
+    )
+    if current + additional_bytes > get_settings().storage_tenant_quota_bytes:
+        msg = "Demo storage limit reached (100 MB per academy)"
+        raise ConflictError(msg)
+    await ensure_storage_capacity(
+        session, additional_bytes=additional_bytes, current_storage_bytes=current
+    )
+
+
+def _safe_filename(filename: str) -> str:
+    name = PurePath(filename.replace("\\", "/")).name
+    sanitized = re.sub(r"[^A-Za-z0-9._-]+", "-", name).strip(".-")
+    return (sanitized or "upload")[:255]
+
+
+async def _soft_delete_asset_by_key(session: AsyncSession, object_key: str | None) -> None:
+    if not object_key or not object_key.startswith("tenants/"):
+        return
+    asset = await session.scalar(media_asset_by_object_key(object_key))
+    if asset is not None:
+        asset.deleted_at = utc_now()
+
+
+async def _best_effort_delete_object(object_key: str | None) -> None:
+    if not object_key or not object_key.startswith("tenants/"):
+        return
+    with suppress(BotoCoreError, ClientError):
+        await StorageClient().delete(object_key)
+
+
+async def presign_media_upload(
+    session: AsyncSession, course_id: UUID, request: MediaPresignRequest
+) -> MediaPresignResponse:
+    await require_course(session, course_id)
+    _validate_media(request.kind, request.content_type, request.byte_size)
+    await _ensure_media_capacity(session, request.byte_size)
+    tenant_id = require_tenant_id()
+    asset_id = uuid4()
+    object_key = (
+        f"tenants/{tenant_id}/courses/{course_id}/{asset_id}/{_safe_filename(request.filename)}"
+    )
+    upload_url = await StorageClient().presign_put(object_key, request.content_type)
+    return MediaPresignResponse(
+        upload_url=upload_url,
+        headers={"Content-Type": request.content_type},
+        object_key=object_key,
+        asset_id=asset_id,
+        expires_in=get_settings().storage_presign_seconds,
+    )
+
+
+async def confirm_media_upload(
+    session: AsyncSession,
+    course_id: UUID,
+    request: MediaConfirmRequest,
+    actor_id: UUID | None = None,
+) -> MediaConfirmResponse:
+    course = await require_course(session, course_id)
+    tenant_id = require_tenant_id()
+    expected_prefix = f"tenants/{tenant_id}/courses/{course_id}/"
+    if not request.object_key.startswith(expected_prefix):
+        msg = "media object key must be tenant and course scoped"
+        raise ValidationAppError(msg)
+    _validate_media(request.kind, request.content_type, request.byte_size)
+    try:
+        head = await StorageClient().head(request.object_key)
+    except ClientError as exc:
+        msg = "uploaded media object was not found"
+        raise ValidationAppError(msg) from exc
+    actual_size = int(head.get("ContentLength", -1))
+    actual_type = str(head.get("ContentType", ""))
+    if actual_size != request.byte_size or actual_type != request.content_type:
+        msg = "uploaded media metadata does not match confirmation"
+        raise ValidationAppError(msg)
+    await _ensure_media_capacity(session, actual_size)
+    if await session.scalar(media_asset_by_object_key(request.object_key)) is not None:
+        msg = "media object key is already registered"
+        raise ConflictError(msg)
+    relative_key = request.object_key.removeprefix(expected_prefix)
+    key_parts = relative_key.split("/", 1)
+    if len(key_parts) != len(("asset_id", "filename")) or not key_parts[1]:
+        msg = "media object key has an invalid shape"
+        raise ValidationAppError(msg)
+    try:
+        asset_id = UUID(key_parts[0])
+    except ValueError as exc:
+        msg = "media object key has an invalid asset id"
+        raise ValidationAppError(msg) from exc
+    asset = CourseMediaAsset(
+        id=asset_id,
+        course_id=course.id,
+        object_key=request.object_key,
+        file_name=_safe_filename(
+            request.original_filename or request.object_key.rsplit("/", 1)[-1]
+        ),
+        content_type=request.content_type,
+        byte_size=actual_size,
+        checksum_sha256=request.checksum_sha256,
+    )
+    session.add(asset)
+    await session.flush()
+    _audit(session, course.id, actor_id, "media.confirmed", f"Confirmed media {asset.file_name}")
+    await session.commit()
+    return MediaConfirmResponse(
+        **media_asset_response(asset).model_dump(),
+        delivery_url=await StorageClient().presign_get(asset.object_key),
+    )
+
+
+async def media_delivery_url(
+    session: AsyncSession, course_id: UUID, asset_id: UUID
+) -> MediaUrlResponse:
+    await require_course(session, course_id)
+    asset = await session.scalar(media_asset_by_id(asset_id, course_id=course_id))
+    if asset is None:
+        msg = "media asset not found"
+        raise NotFoundError(msg)
+    settings = get_settings()
+    return MediaUrlResponse(
+        url=await StorageClient().presign_get(asset.object_key),
+        expires_in=None if settings.storage_public_base_url else settings.storage_download_seconds,
+    )
+
+
+async def delete_media_asset(
+    session: AsyncSession, course_id: UUID, asset_id: UUID, actor_id: UUID | None = None
+) -> MediaAssetResponse:
+    course = await require_course(session, course_id)
+    asset = await session.scalar(media_asset_by_id(asset_id, course_id=course_id))
+    if asset is None:
+        msg = "media asset not found"
+        raise NotFoundError(msg)
+    asset.deleted_at = datetime.now(UTC)
+    _audit(session, course.id, actor_id, "media.deleted", f"Deleted media {asset.file_name}")
+    await session.commit()
+    await _best_effort_delete_object(asset.object_key)
     return media_asset_response(asset)
 
 
@@ -668,7 +898,7 @@ def course_response(course: Course, *, lesson_count: int = 0) -> CourseResponse:
         title=course.title,
         slug=course.slug,
         description=course.description,
-        thumbnail_url=HttpUrl(course.thumbnail_url) if course.thumbnail_url else None,
+        thumbnail_url=course.thumbnail_url,
         category=course.category,
         tags=course.tags or [],
         language=course.language,
@@ -694,7 +924,7 @@ def section_response(section: CourseSection) -> SectionResponse:
         title=section.title,
         position=section.position,
         description=section.description,
-        image_url=HttpUrl(section.image_url) if section.image_url else None,
+        image_url=section.image_url,
     )
 
 
@@ -707,7 +937,7 @@ def lesson_response(lesson: Lesson, *, body: str | None = None) -> LessonRespons
         position=lesson.position,
         body=body,
         summary=lesson.summary,
-        image_url=HttpUrl(lesson.image_url) if lesson.image_url else None,
+        image_url=lesson.image_url,
         estimated_duration_minutes=lesson.estimated_duration_minutes,
         required_for_completion=lesson.required_for_completion or False,
     )

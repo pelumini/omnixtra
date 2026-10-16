@@ -79,6 +79,29 @@ class Settings(BaseSettings):
         default="http://localhost:3000,http://localhost:3001",
         validation_alias="CORS_ALLOWED_ORIGINS",
     )
+    storage_endpoint_url: str = Field(
+        default="http://minio:9000", validation_alias="STORAGE_ENDPOINT_URL"
+    )
+    storage_browser_endpoint_url: str = Field(
+        default="", validation_alias="STORAGE_BROWSER_ENDPOINT_URL"
+    )
+    storage_region: str = Field(default="us-east-1", validation_alias="STORAGE_REGION")
+    storage_bucket: str = Field(default="omnixtra-media", validation_alias="STORAGE_BUCKET")
+    storage_access_key_id: str = Field(
+        default="minioadmin", validation_alias="STORAGE_ACCESS_KEY_ID"
+    )
+    storage_secret_access_key: str = Field(
+        default="minioadmin", validation_alias="STORAGE_SECRET_ACCESS_KEY"
+    )
+    storage_public_base_url: str = Field(default="", validation_alias="STORAGE_PUBLIC_BASE_URL")
+    storage_max_upload_bytes: int = Field(
+        default=52_428_800, validation_alias="STORAGE_MAX_UPLOAD_BYTES"
+    )
+    storage_tenant_quota_bytes: int = Field(
+        default=104_857_600, validation_alias="STORAGE_TENANT_QUOTA_BYTES"
+    )
+    storage_presign_seconds: int = Field(default=300, validation_alias="STORAGE_PRESIGN_SECONDS")
+    storage_download_seconds: int = Field(default=3600, validation_alias="STORAGE_DOWNLOAD_SECONDS")
 
     @property
     def cors_origins(self) -> list[str]:

@@ -41,6 +41,10 @@ def test_isolation_coverage_gate_accepts_recorded_declared_hits(tmp_path: Path) 
                 "path": "/api/v1/courses/{course_id}/lessons/{lesson_id}/blocks/order"
               },
           {"method": "POST", "path": "/api/v1/courses/{course_id}/media"},
+          {"method": "POST", "path": "/api/v1/courses/{course_id}/media/presign"},
+          {"method": "POST", "path": "/api/v1/courses/{course_id}/media/confirm"},
+          {"method": "GET", "path": "/api/v1/courses/{course_id}/media/{asset_id}/url"},
+          {"method": "DELETE", "path": "/api/v1/courses/{course_id}/media/{asset_id}"},
           {"method": "PUT", "path": "/api/v1/courses/{course_id}/sections/order"},
           {
             "method": "PUT",

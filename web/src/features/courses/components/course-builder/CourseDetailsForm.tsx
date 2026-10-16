@@ -22,6 +22,7 @@ import {
   type Course,
   type CourseDetailsFormInput,
 } from "../../schemas";
+import { MediaUploadField, uploadedMediaFromReference } from "../MediaUploadField";
 
 import { formFieldError } from "./mappers";
 
@@ -170,13 +171,7 @@ export function CourseDetailsForm({
           <Toggle label="Issue a certificate on completion" {...register("certificateOnCompletion")} />
           <p className="text-xs text-[var(--color-text-sub-500)]">These settings are saved now and take effect when learner delivery ships.</p>
         </div>
-        <Field
-          error={fieldError("thumbnailUrl")}
-          label="Thumbnail URL"
-          placeholder="https://example.com/image.jpg"
-          registration={register("thumbnailUrl")}
-          type="url"
-        />
+        <MediaUploadField courseId={course.id} kind="thumbnail" label="Course Thumbnail" onChange={(media) => setValue("thumbnailUrl", media?.objectKey ?? "", { shouldValidate: true })} value={uploadedMediaFromReference(watch("thumbnailUrl"), "Course thumbnail")} />
         <Field
           error={fieldError("category")}
           label="Category"
