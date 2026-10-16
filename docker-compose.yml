@@ -32,11 +32,13 @@ services:
       - redis-data:/data
 
   minio:
-    image: quay.io/minio/minio:RELEASE.2025-09-06T17-38-46Z
+    image: bitnamilegacy/minio:latest
+    user: "0:0"
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_API_CORS_ALLOW_ORIGIN: "*"
     ports:
       - "${MINIO_API_PORT:-19000}:9000"
       - "${MINIO_CONSOLE_PORT:-19001}:9001"
@@ -49,11 +51,9 @@ services:
       - minio-data:/data
 
   minio-init:
-    image: quay.io/minio/minio:RELEASE.2025-09-06T17-38-46Z
+    image: bitnamilegacy/minio:latest
     entrypoint: ["/bin/sh", "-c"]
-    command: ["mc alias set local http://minio:9000 minioadmin minioadmin && mc mb --ignore-existing local/omnixtra-media && mc cors set local/omnixtra-media /config/cors.xml"]
-    volumes:
-      - ./infra/local/minio:/config:ro
+    command: ["mc alias set local http://minio:9000 minioadmin minioadmin && mc mb --ignore-existing local/omnixtra-media"]
     depends_on:
       minio:
         condition: service_healthy
