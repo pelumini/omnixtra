@@ -134,6 +134,14 @@ def media_asset_by_object_key(object_key: str) -> Select[tuple[CourseMediaAsset]
     )
 
 
+def media_asset_by_id(asset_id: UUID, *, course_id: UUID) -> Select[tuple[CourseMediaAsset]]:
+    return select(CourseMediaAsset).where(
+        CourseMediaAsset.id == asset_id,
+        CourseMediaAsset.course_id == course_id,
+        CourseMediaAsset.deleted_at.is_(None),
+    )
+
+
 __all__ = [
     "block_by_id",
     "blocks_for_course",
@@ -144,6 +152,7 @@ __all__ = [
     "lesson_by_id",
     "lessons_for_course",
     "lessons_for_section",
+    "media_asset_by_id",
     "media_asset_by_object_key",
     "section_by_id",
     "sections_for_course",

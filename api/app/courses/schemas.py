@@ -1,12 +1,26 @@
-from typing import Literal, Self
+from typing import Annotated, Literal, Self
 from uuid import UUID
 
-from pydantic import BaseModel, Field, HttpUrl, model_validator
+from pydantic import AfterValidator, BaseModel, Field, HttpUrl, TypeAdapter, model_validator
 
 from app.courses.models import CourseAccess, CourseDeliveryFormat, CourseDifficulty
 
 TAG_MAX_LENGTH = 50
 LEARNING_OUTCOME_MAX_LENGTH = 500
+
+
+def _validate_media_reference(value: str) -> str:
+    if value.startswith("tenants/"):
+        return value
+    TypeAdapter(HttpUrl).validate_python(value)
+    return value
+
+
+MediaReference = Annotated[
+    str,
+    Field(min_length=1, max_length=700),
+    AfterValidator(_validate_media_reference),
+]
 
 
 class TextBlockContent(BaseModel):
@@ -16,27 +30,35 @@ class TextBlockContent(BaseModel):
 
 class VideoBlockContent(BaseModel):
     type: Literal["video"] = "video"
-    url: HttpUrl
+    url: MediaReference
     caption: str | None = Field(default=None, max_length=500)
+    asset_id: UUID | None = None
+    object_key: str | None = Field(default=None, max_length=700)
 
 
 class ImageBlockContent(BaseModel):
     type: Literal["image"] = "image"
-    url: HttpUrl
+    url: MediaReference
     alt_text: str = Field(min_length=1, max_length=300)
+    asset_id: UUID | None = None
+    object_key: str | None = Field(default=None, max_length=700)
 
 
 class AudioBlockContent(BaseModel):
     type: Literal["audio"] = "audio"
-    url: HttpUrl
+    url: MediaReference
     caption: str | None = Field(default=None, max_length=500)
+    asset_id: UUID | None = None
+    object_key: str | None = Field(default=None, max_length=700)
 
 
 class FileBlockContent(BaseModel):
     type: Literal["file"] = "file"
-    url: HttpUrl
+    url: MediaReference
     file_name: str = Field(min_length=1, max_length=255)
     size_bytes: int | None = Field(default=None, gt=0)
+    asset_id: UUID | None = None
+    object_key: str | None = Field(default=None, max_length=700)
 
 
 class QuizOption(BaseModel):
@@ -81,7 +103,7 @@ class CourseCreateRequest(BaseModel):
 class CourseUpdateRequest(BaseModel):
     title: str | None = Field(default=None, min_length=3, max_length=200)
     description: str | None = Field(default=None, max_length=2_000)
-    thumbnail_url: HttpUrl | None = None
+    thumbnail_url: MediaReference | None = None
     category: str | None = Field(default=None, max_length=120)
     tags: list[str] | None = Field(default=None, max_length=20)
     language: str | None = Field(
@@ -121,7 +143,7 @@ class SectionCreateRequest(BaseModel):
 class SectionUpdateRequest(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=200)
     description: str | None = Field(default=None, max_length=2_000)
-    image_url: HttpUrl | None = None
+    image_url: MediaReference | None = None
 
 
 class LessonCreateRequest(BaseModel):
@@ -134,7 +156,7 @@ class LessonCreateRequest(BaseModel):
 class LessonUpdateRequest(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=200)
     summary: str | None = Field(default=None, max_length=2_000)
-    image_url: HttpUrl | None = None
+    image_url: MediaReference | None = None
     estimated_duration_minutes: int | None = Field(default=None, ge=0)
     required_for_completion: bool | None = None
 
@@ -165,6 +187,50 @@ class MediaAssetCreateRequest(BaseModel):
     checksum_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
 
 
+MediaKind = Literal["image", "video", "audio", "file", "thumbnail"]
+
+
+class MediaPresignRequest(BaseModel):
+    content_type: str = Field(min_length=1, max_length=120)
+    byte_size: int = Field(gt=0)
+    filename: str = Field(min_length=1, max_length=255)
+    kind: MediaKind
+
+
+class MediaPresignResponse(BaseModel):
+    upload_url: str
+    method: Literal["PUT"] = "PUT"
+    headers: dict[str, str]
+    object_key: str
+    asset_id: UUID
+    expires_in: int
+
+
+class MediaConfirmRequest(BaseModel):
+    object_key: str = Field(min_length=1, max_length=700)
+    kind: MediaKind
+    content_type: str = Field(min_length=1, max_length=120)
+    byte_size: int = Field(gt=0)
+    checksum_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+    original_filename: str | None = Field(default=None, max_length=255)
+
+
+class MediaConfirmResponse(BaseModel):
+    id: UUID
+    course_id: UUID
+    object_key: str
+    file_name: str
+    content_type: str
+    byte_size: int
+    checksum_sha256: str | None
+    delivery_url: str
+
+
+class MediaUrlResponse(BaseModel):
+    url: str
+    expires_in: int | None
+
+
 class ReorderRequest(BaseModel):
     ordered_ids: list[UUID] = Field(min_length=1)
 
@@ -174,7 +240,7 @@ class CourseResponse(BaseModel):
     title: str
     slug: str
     description: str | None
-    thumbnail_url: HttpUrl | None
+    thumbnail_url: str | None
     category: str | None
     tags: list[str]
     language: str | None
@@ -196,7 +262,7 @@ class SectionResponse(BaseModel):
     title: str
     position: int
     description: str | None
-    image_url: HttpUrl | None
+    image_url: str | None
 
 
 class LessonResponse(BaseModel):
@@ -207,7 +273,7 @@ class LessonResponse(BaseModel):
     position: int
     body: str | None = None
     summary: str | None
-    image_url: HttpUrl | None
+    image_url: str | None
     estimated_duration_minutes: int | None
     required_for_completion: bool
 
