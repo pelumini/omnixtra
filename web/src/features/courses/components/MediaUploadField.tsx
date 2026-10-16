@@ -75,7 +75,7 @@ export function MediaUploadField({ courseId, kind, label, onChange, value }: {
       <span className="grid gap-1 text-xs text-[var(--color-text-sub-500)]"><Upload aria-hidden="true" className="mx-auto size-5 text-[var(--color-primary-base)]" /><strong className="text-[var(--color-text-main-900)]">{current?.fileName ?? "Choose file"}</strong><span>Maximum 50MB</span></span>
     </label>
     {uploading ? <progress aria-label="Upload progress" className="w-full accent-[var(--color-primary-base)]" max={100} value={progress} /> : null}
-    {current && (kind === "image" || kind === "thumbnail") ? <Image alt="Uploaded preview" className="h-32 w-full rounded-[10px] object-cover" height={128} src={current.deliveryUrl} unoptimized width={512} /> : null}
+    {current?.deliveryUrl && (kind === "image" || kind === "thumbnail") ? <Image alt="Uploaded preview" className="h-32 w-full rounded-[10px] object-cover" height={128} src={current.deliveryUrl} unoptimized width={512} /> : null}
     {error ? <p className="text-xs text-[var(--color-state-error)]" role="alert">{error}</p> : null}
     {current ? <Button className="gap-2 justify-self-start" onClick={() => void remove()} size="x-small" variant="secondary"><X aria-hidden="true" /> Remove</Button> : null}
   </div>;
