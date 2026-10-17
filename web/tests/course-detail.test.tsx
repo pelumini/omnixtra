@@ -57,7 +57,11 @@ describe("course detail authoring slice", () => {
     expect(html).toContain("Add course");
     expect(html).toContain('role="link"');
     expect(html).toContain('tabindex="0"');
-    expect(html).toContain("More actions for Onboarding Essentials");
+    expect(html).toContain("Open Onboarding Essentials in builder");
+    expect(html).toContain("Publish Onboarding Essentials");
+    expect(html).toContain("Delete Onboarding Essentials");
+    expect(html).toContain('role="tooltip"');
+    expect(html).not.toContain("More actions for Onboarding Essentials");
     expect(html).not.toContain("Builder");
     expect(html).not.toContain("1 visible");
     expect(html).not.toContain("First content type");
