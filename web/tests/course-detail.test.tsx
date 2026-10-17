@@ -55,6 +55,7 @@ describe("course detail authoring slice", () => {
     expect(html).toContain("Onboarding Essentials");
     expect(html).toContain("1 lesson");
     expect(html).toContain("Add course");
+    expect(html).toContain("Actions");
     expect(html).toContain('role="link"');
     expect(html).toContain('tabindex="0"');
     expect(html).toContain("Open Onboarding Essentials in builder");
