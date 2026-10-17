@@ -1,5 +1,6 @@
 import {
   apiUrl,
+  fetchWithRefresh,
   postJson,
   requestHeaders,
   type RequestContext,
@@ -21,7 +22,7 @@ import {
   type LessonProgressRequest,
 } from "./schemas";
 export async function getCoursePlayer(courseId: string, context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl()}/api/v1/learning/courses/${courseId}/player`, {
+  const response = await fetchWithRefresh(`${apiUrl()}/api/v1/learning/courses/${courseId}/player`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),
@@ -33,7 +34,7 @@ export async function getCoursePlayer(courseId: string, context: RequestContext 
 }
 
 export async function getMyCourses(context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl()}/api/v1/learning/my-courses`, {
+  const response = await fetchWithRefresh(`${apiUrl()}/api/v1/learning/my-courses`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),
@@ -58,7 +59,7 @@ export async function updateLessonProgress(
   request: LessonProgressRequest,
 ) {
   const body = lessonProgressRequestSchema.parse(request);
-  const response = await fetch(
+  const response = await fetchWithRefresh(
     `${apiUrl()}/api/v1/learning/courses/${courseId}/lessons/${lessonId}/progress`,
     {
       body: JSON.stringify(body),
@@ -106,7 +107,7 @@ export function certificateDownloadUrl(courseId: string) {
 }
 
 export async function createTutorJob(courseId: string, question: string, idempotencyKey: string) {
-  const response = await fetch(`${apiUrl()}/api/v1/ai/courses/${courseId}/tutor/jobs`, {
+  const response = await fetchWithRefresh(`${apiUrl()}/api/v1/ai/courses/${courseId}/tutor/jobs`, {
     body: JSON.stringify({ question }),
     cache: "no-store",
     headers: {

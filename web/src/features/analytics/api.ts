@@ -1,5 +1,6 @@
 import {
   apiUrl,
+  fetchWithRefresh,
   requestHeaders,
   type RequestContext,
   throwIfApiError,
@@ -11,7 +12,7 @@ import {
 } from "./schemas";
 
 export async function getCompletionAnalytics(context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl()}/api/v1/admin/analytics/completions`, {
+  const response = await fetchWithRefresh(`${apiUrl()}/api/v1/admin/analytics/completions`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),
@@ -23,7 +24,7 @@ export async function getCompletionAnalytics(context: RequestContext = {}) {
 }
 
 export async function getLearnerProgressReport(context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl()}/api/v1/admin/reports/learner-progress`, {
+  const response = await fetchWithRefresh(`${apiUrl()}/api/v1/admin/reports/learner-progress`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),
