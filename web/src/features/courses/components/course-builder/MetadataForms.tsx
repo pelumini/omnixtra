@@ -8,7 +8,7 @@ import { Toggle } from "@/components/ui/toggle";
 import { updateLesson, updateSection } from "../../api";
 import { MediaUploadField, uploadedMediaFromReference } from "../MediaUploadField";
 
-import { SaveStatus } from "./SaveStatus";
+import { ErrorSaveStatus } from "./SaveStatus";
 import { useAutosave, type SaveState } from "./useAutosave";
 
 import type { Lesson, LessonUpdateRequest, Section, SectionUpdateRequest } from "../../schemas";
@@ -36,7 +36,7 @@ export function ChapterMetadataForm({ courseId, duration, onSaved, onStatusChang
     const value = { ...details, ...next }; setDetails(value); autosave.schedule(value, immediate);
   }
   return <div className="grid gap-2 border-t border-[var(--color-stroke-soft-200)] p-2" onBlur={() => void autosave.flush()}>
-    <div className="flex items-center justify-between gap-2"><p className="text-xs text-[var(--color-text-sub-500)]">{duration} min chapter total</p><button onClick={autosave.retry} type="button"><SaveStatus state={autosave.status} /></button></div>
+    <div className="flex items-center justify-between gap-2"><p className="text-xs text-[var(--color-text-sub-500)]">{duration} min chapter total</p><ErrorSaveStatus onRetry={autosave.retry} state={autosave.status} /></div>
     <Textarea aria-label={`${section.title} description`} maxLength={2000} onChange={(event) => change({ description: event.target.value || null })} placeholder="Chapter description" rows={2} value={details.description ?? ""} />
     <MediaUploadField courseId={courseId} kind="thumbnail" label="Chapter Thumbnail" onChange={(media) => change({ image_url: media?.objectKey ?? null }, true)} value={uploadedMediaFromReference(details.image_url ?? "", "Chapter thumbnail")} />
   </div>;
@@ -63,7 +63,7 @@ export function LessonMetadataForm({ courseId, lesson, onSaved, onStatusChange }
     setDuration(raw); change({ estimated_duration_minutes: raw === "" ? null : Math.round(Number(raw) * (nextUnit === "hours" ? 60 : 1)) });
   }
   return <section className="mb-6 grid gap-3 border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-4" onBlur={() => void autosave.flush()}>
-    <div className="flex items-center justify-between gap-2"><h2 className="text-sm font-semibold">Lesson details</h2><button onClick={autosave.retry} type="button"><SaveStatus state={autosave.status} /></button></div>
+    <div className="flex items-center justify-between gap-2"><h2 className="text-sm font-semibold">Lesson details</h2><ErrorSaveStatus onRetry={autosave.retry} state={autosave.status} /></div>
     <Textarea aria-label="Lesson summary" maxLength={2000} onChange={(event) => change({ summary: event.target.value || null })} placeholder="Lesson summary" rows={3} value={details.summary ?? ""} />
     <MediaUploadField courseId={courseId} kind="thumbnail" label="Lesson Thumbnail" onChange={(media) => change({ image_url: media?.objectKey ?? null }, true)} value={uploadedMediaFromReference(details.image_url ?? "", "Lesson thumbnail")} />
     <div className="grid grid-cols-[minmax(0,1fr)_8rem] gap-2"><Input aria-label="Estimated duration" min="0" onChange={(event) => durationValue(event.target.value)} type="number" value={duration} /><Select aria-label="Duration unit" onChange={(event) => { const next = event.target.value as "minutes" | "hours"; setUnit(next); durationValue(duration, next); queueMicrotask(() => void autosave.flush()); }} value={unit}><option value="minutes">Minutes</option><option value="hours">Hours</option></Select></div>

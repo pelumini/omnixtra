@@ -748,6 +748,9 @@ async def media_delivery_url(
     return MediaUrlResponse(
         url=await StorageClient().presign_get(asset.object_key),
         expires_in=None if settings.storage_public_base_url else settings.storage_download_seconds,
+        file_name=asset.file_name,
+        content_type=asset.content_type,
+        byte_size=asset.byte_size,
     )
 
 

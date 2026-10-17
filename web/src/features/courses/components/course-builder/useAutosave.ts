@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export type SaveState = "idle" | "dirty" | "saving" | "saved" | "error";
+export const AUTOSAVE_DELAY_MS = 1000;
 
 type Options<T> = {
   delay?: number;
@@ -16,7 +17,7 @@ type Options<T> = {
 const same = <T,>(left: T, right: T) => JSON.stringify(left) === JSON.stringify(right);
 
 export function useAutosave<T>({
-  delay = 800,
+  delay = AUTOSAVE_DELAY_MS,
   initialValue,
   onSaved,
   onStatusChange,

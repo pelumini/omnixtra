@@ -229,6 +229,9 @@ class MediaConfirmResponse(BaseModel):
 class MediaUrlResponse(BaseModel):
     url: str
     expires_in: int | None
+    file_name: str | None = None
+    content_type: str | None = None
+    byte_size: int | None = None
 
 
 class ReorderRequest(BaseModel):

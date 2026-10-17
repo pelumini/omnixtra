@@ -22,7 +22,7 @@ import {
 import { MediaUploadField, uploadedMediaFromReference } from "../MediaUploadField";
 
 import { formFieldError } from "./mappers";
-import { SaveStatus } from "./SaveStatus";
+import { ErrorSaveStatus } from "./SaveStatus";
 import { useAutosave, type SaveState } from "./useAutosave";
 
 function initialDuration(course: Course) {
@@ -122,7 +122,7 @@ export function CourseDetailsForm({
           aria-hidden="true"
           className="size-4 text-[var(--color-text-sub-500)]"
         />
-        <h2 className="text-sm font-semibold">Course Setup</h2><button className="ml-auto" onClick={autosave.retry} type="button"><SaveStatus state={autosave.status} /></button>
+        <h2 className="text-sm font-semibold">Course Setup</h2><span className="ml-auto"><ErrorSaveStatus onRetry={autosave.retry} state={autosave.status} /></span>
       </div>
       <fieldset className="grid gap-4">
         <Field

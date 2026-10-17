@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { Input } from "@/components/ui/input";
 
-import { SaveStatus } from "./SaveStatus";
+import { ErrorSaveStatus } from "./SaveStatus";
 import { useAutosave, type SaveState } from "./useAutosave";
 
 export function AutosaveTitle({ ariaLabel, entityKey, onChange, onStatusChange, save, value }: {
@@ -25,6 +25,6 @@ export function AutosaveTitle({ ariaLabel, entityKey, onChange, onStatusChange, 
   }
   return <div className="grid min-w-0 flex-1 gap-1">
     <Input aria-label={ariaLabel} hasError={Boolean(error)} maxLength={200} onBlur={() => void autosave.flush()} onChange={(event) => update(event.target.value)} value={value} />
-    <div className="flex min-h-5 items-center justify-between gap-2">{error ? <span className="text-xs text-[var(--color-state-error)]" role="alert">{error}</span> : <span /> }<button onClick={autosave.retry} type="button"><SaveStatus state={autosave.status} /></button></div>
+    {error || autosave.status === "error" ? <div className="flex items-center justify-between gap-2">{error ? <span className="text-xs text-[var(--color-state-error)]" role="alert">{error}</span> : <span /> }<ErrorSaveStatus onRetry={autosave.retry} state={autosave.status} /></div> : null}
   </div>;
 }

@@ -23,6 +23,7 @@ describe("course builder UI", () => {
     expect(html).toContain("Welcome");
     expect(html).toContain("Text content");
     expect(html).toContain("Saved");
+    expect(html.match(/Saved/g)).toHaveLength(1);
     expect(html).not.toContain("Save chapter details");
     expect(html).not.toContain("Save lesson details");
     expect(html).not.toContain("Save setup");

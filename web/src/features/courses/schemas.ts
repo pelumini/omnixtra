@@ -339,7 +339,11 @@ export const mediaConfirmEnvelopeSchema = z.object({
   error: z.null(), meta: metaSchema,
 });
 export const mediaUrlEnvelopeSchema = z.object({
-  data: z.object({ url: z.string().url(), expires_in: z.number().int().positive().nullable() }),
+  data: z.object({
+    url: z.string().url(), expires_in: z.number().int().positive().nullable(),
+    file_name: z.string().optional(), content_type: z.string().optional(),
+    byte_size: z.number().int().positive().optional(),
+  }),
   error: z.null(), meta: metaSchema,
 });
 
