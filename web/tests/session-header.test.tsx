@@ -105,11 +105,15 @@ describe("session header chrome", () => {
       </RouteChrome>,
     );
 
-    expect(builderHtml).toBe("<main>Builder body</main>");
+    expect(builderHtml).toContain("h-[100dvh]");
+    expect(builderHtml).toContain("overflow-hidden");
+    expect(builderHtml).toContain("Builder body");
     expect(listHtml).toContain("Course list");
     expect(listHtml).toContain("pt-14");
+    expect(listHtml).not.toContain("h-[100dvh]");
     expect(deeperHtml).toContain("Course settings");
     expect(deeperHtml).toContain("pt-14");
+    expect(deeperHtml).not.toContain("h-[100dvh]");
   });
 
   it("renders the admin header in the content column without duplicate branding", () => {
