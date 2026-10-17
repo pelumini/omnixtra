@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowDown, ArrowUp, File, Headphones, Image, Plus, Trash2, Type, Video } from "lucide-react";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -103,7 +103,7 @@ export function LessonComposer({ blocks, courseId, lesson, onBlocksChange, onLes
   return (
     <section className="min-w-0 p-4 sm:p-6 lg:h-full lg:overflow-y-auto lg:p-8">
       <div className="mx-auto max-w-3xl">
-        {lesson ? <LessonMetadataForm courseId={courseId} lesson={lesson} onSaved={onLessonChange} onStatusChange={onStatusChange} /> : null}
+        {lesson ? <LessonMetadataForm courseId={courseId} key={lesson.id} lesson={lesson} onSaved={onLessonChange} onStatusChange={onStatusChange} /> : null}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase text-[var(--color-primary-base)]">Lesson editor</p>
@@ -166,7 +166,11 @@ function BlockEditor({ block, courseId, downDisabled, onChange, onDelete, onMove
     save: async (value) => (await updateBlock(courseId, block.lesson_id, block.id, value)).data.content,
     validate: (value) => value.type === "text" || value.type === "quiz" || Boolean(value.url && value.asset_id && value.object_key),
   });
-  useEffect(() => setContent(block.content), [block]);
+  const autosaveStatus = useRef(autosave.status);
+  autosaveStatus.current = autosave.status;
+  useEffect(() => {
+    if (autosaveStatus.current !== "dirty" && autosaveStatus.current !== "saving") setContent(block.content);
+  }, [block]);
   function change(value: BlockContent, immediate = false) {
     setContent(value); autosave.schedule(value, immediate);
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Input, Select, Textarea } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
@@ -27,7 +27,11 @@ export function ChapterMetadataForm({ courseId, duration, onSaved, onStatusChang
     onStatusChange: (state) => onStatusChange?.(`section:${section.id}:details`, state),
     save: async (value) => chapterPayload((await updateSection(courseId, section.id, value)).data),
   });
-  useEffect(() => setDetails(chapterPayload(section)), [section]);
+  const autosaveStatus = useRef(autosave.status);
+  autosaveStatus.current = autosave.status;
+  useEffect(() => {
+    if (autosaveStatus.current !== "dirty" && autosaveStatus.current !== "saving") setDetails(chapterPayload(section));
+  }, [section]);
   function change(next: SectionUpdateRequest, immediate = false) {
     const value = { ...details, ...next }; setDetails(value); autosave.schedule(value, immediate);
   }

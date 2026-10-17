@@ -84,13 +84,14 @@ export function CourseDetailsForm({
     },
     validate: (input) => courseDetailsFormSchema.safeParse(input).success,
   });
+  const scheduleAutosave = autosave.schedule;
   useEffect(() => {
     const subscription = watch((value, { name }) => {
       const next = value as CourseDetailsFormInput;
-      autosave.schedule(next, Boolean(name && immediateFields.has(name)));
+      scheduleAutosave(next, Boolean(name && immediateFields.has(name)));
     });
     return () => subscription.unsubscribe();
-  }, [autosave, watch]);
+  }, [scheduleAutosave, watch]);
   const fieldError = formFieldError(errors);
 
   function addTag() {
