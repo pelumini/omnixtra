@@ -25,7 +25,11 @@ export function RouteChrome({ branding, children, fixtureMode, initialSession, r
   const isTenantSignIn = pathname === "/" && showAuthLink && initialSession === null;
   const isLandingPage = pathname === "/" && !showAuthLink;
 
-  if (fullBleedAuthPaths.has(pathname) || courseBuilderPath.test(pathname) || isTenantSignIn) {
+  if (courseBuilderPath.test(pathname)) {
+    return <div className="h-[100dvh] w-full overflow-hidden">{children}</div>;
+  }
+
+  if (fullBleedAuthPaths.has(pathname) || isTenantSignIn) {
     return children;
   }
 
