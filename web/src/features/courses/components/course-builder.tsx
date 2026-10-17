@@ -15,6 +15,7 @@ import { createLesson, createSection, deleteLesson, deleteSection, publishCourse
 import { AutosaveTitle } from "./course-builder/AutosaveTitle";
 import { CourseDetailsForm } from "./course-builder/CourseDetailsForm";
 import { CourseStatus } from "./course-builder/CourseStatus";
+import { LearnerPreview } from "./course-builder/LearnerPreview";
 import { LessonComposer } from "./course-builder/LessonComposer";
 import { ChapterMetadataForm } from "./course-builder/MetadataForms";
 import { SaveStatus } from "./course-builder/SaveStatus";
@@ -40,7 +41,7 @@ export function CourseBuilder({ course: initialCourse, courseRole = "course_owne
   const [newLessonTitle, setNewLessonTitle] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
   const [pending, startTransition] = useTransition();
-  const [mode, setMode] = useState<"content" | "settings">("content");
+  const [mode, setMode] = useState<"content" | "preview" | "settings">("content");
   const [saveStates, setSaveStates] = useState<Record<string, SaveState>>({});
   const selectedLesson = lessons.find(({ id }) => id === selectedLessonId) ?? null;
   const orderedSections = useMemo(() => [...sections].sort(byPosition), [sections]);
@@ -106,10 +107,12 @@ export function CourseBuilder({ course: initialCourse, courseRole = "course_owne
   }
   if (!canAuthorCourse(courseRole)) return <DeniedState description="Authoring this course is available to its course owner." title="This course is not yours to edit" />;
 
+  if (mode === "preview") return <LearnerPreview blocks={blocks} course={course} initialLessonId={selectedLessonId} lessons={lessons} onBack={() => setMode("content")} sections={sections} />;
+
   return <main className="flex h-[100dvh] w-full flex-col overflow-hidden bg-[var(--color-bg-weak-100)] text-[var(--color-text-main-900)]">
     <header className="z-20 flex min-h-16 shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] px-4 py-3 sm:px-6">
       <div className="flex min-w-0 items-center gap-3"><Link aria-label="Back to courses" className="grid size-9 shrink-0 place-items-center rounded-full border border-[var(--color-stroke-soft-200)] text-[var(--color-text-sub-500)] hover:bg-[var(--color-bg-weak-100)]" href="/admin/courses"><ArrowLeft className="size-4" /></Link><div className="min-w-0"><h1 className="truncate text-base font-semibold">{course.title}</h1><div className="flex items-center gap-2"><CourseStatus status={course.status} /><span className="text-xs text-[var(--color-text-sub-500)]">{rolledDuration} min total</span></div></div></div>
-      <div className="flex items-center gap-2"><SaveStatus state={overallStatus} /><Button onClick={() => setMode("content")} variant={mode === "content" ? "primary" : "secondary"}>Content</Button><Button onClick={() => setMode("settings")} variant={mode === "settings" ? "primary" : "secondary"}>Course settings</Button><Button className="gap-2" onClick={() => reportStatus("builder:action", "saved")} variant="secondary"><Eye /> Preview</Button><Button isProcessing={pending} onClick={() => run(async () => { const response = await publishCourse(course.id); setCourse(response.data); }, "Course could not be published")}>Publish</Button></div>
+      <div className="flex items-center gap-2"><SaveStatus state={overallStatus} /><Button onClick={() => setMode("content")} variant={mode === "content" ? "primary" : "secondary"}>Content</Button><Button onClick={() => setMode("settings")} variant={mode === "settings" ? "primary" : "secondary"}>Course settings</Button><Button className="gap-2" onClick={() => setMode("preview")} variant="secondary"><Eye /> Preview</Button><Button isProcessing={pending} onClick={() => run(async () => { const response = await publishCourse(course.id); setCourse(response.data); }, "Course could not be published")}>Publish</Button></div>
     </header>
     {mode === "settings" ? <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6"><div className="mx-auto max-w-3xl"><CourseDetailsForm course={course} onSaved={setCourse} onStatusChange={reportStatus} /></div></div> : <div className="grid min-h-0 flex-1 overflow-auto lg:grid-cols-[22rem_minmax(0,1fr)] lg:overflow-hidden">
       <aside className="border-b border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-4 lg:overflow-y-auto lg:border-b-0 lg:border-r">
