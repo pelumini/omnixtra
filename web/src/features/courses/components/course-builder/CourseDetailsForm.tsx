@@ -2,19 +2,16 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Pencil, Plus, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import {
   Field,
-  FormError,
   SelectField,
-  SubmitButton,
   TextareaField,
 } from "@/components/ui/form-controls";
 import { Input, Textarea } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
-import { useFormSubmit } from "@/lib/forms/use-form-submit";
 
 import { updateCourse } from "../../api";
 import {
@@ -25,6 +22,8 @@ import {
 import { MediaUploadField, uploadedMediaFromReference } from "../MediaUploadField";
 
 import { formFieldError } from "./mappers";
+import { SaveStatus } from "./SaveStatus";
+import { useAutosave, type SaveState } from "./useAutosave";
 
 function initialDuration(course: Course) {
   const minutes = course.estimated_duration_minutes;
@@ -43,84 +42,55 @@ function initialDuration(course: Course) {
 export function CourseDetailsForm({
   course,
   onSaved,
+  onStatusChange,
 }: {
   course: Course;
   onSaved: (course: Course) => void;
+  onStatusChange?: (key: string, state: SaveState) => void;
 }) {
   const duration = initialDuration(course);
   const [tagDraft, setTagDraft] = useState("");
   const [outcomeDraft, setOutcomeDraft] = useState("");
+  const defaults: CourseDetailsFormInput = {
+    access: course.access, certificateOnCompletion: course.certificate_on_completion,
+    category: course.category ?? "", completeInOrder: course.complete_in_order,
+    deliveryFormat: course.delivery_format ?? "", description: course.description ?? "",
+    difficulty: course.difficulty ?? "", durationUnit: duration.durationUnit,
+    durationValue: duration.durationValue,
+    language: ["en", "fr", "es", "de", "pt"].includes(course.language ?? "") ? course.language as CourseDetailsFormInput["language"] : "",
+    learningOutcomes: course.learning_outcomes, tags: course.tags,
+    targetAudience: course.target_audience ?? "", thumbnailUrl: course.thumbnail_url ?? "", title: course.title,
+  };
   const {
     formState: { errors },
-    handleSubmit,
+    getValues,
     register,
-    setError,
     setValue,
     watch,
   } = useForm<CourseDetailsFormInput>({
-    defaultValues: {
-      access: course.access,
-      certificateOnCompletion: course.certificate_on_completion,
-      category: course.category ?? "",
-      completeInOrder: course.complete_in_order,
-      deliveryFormat: course.delivery_format ?? "",
-      description: course.description ?? "",
-      difficulty: course.difficulty ?? "",
-      durationUnit: duration.durationUnit,
-      durationValue: duration.durationValue,
-      language:
-        course.language === "en" ||
-        course.language === "fr" ||
-        course.language === "es" ||
-        course.language === "de" ||
-        course.language === "pt"
-          ? course.language
-          : "",
-      learningOutcomes: course.learning_outcomes,
-      tags: course.tags,
-      targetAudience: course.target_audience ?? "",
-      thumbnailUrl: course.thumbnail_url ?? "",
-      title: course.title,
-    },
+    defaultValues: defaults,
     mode: "onTouched",
     reValidateMode: "onChange",
     resolver: zodResolver(courseDetailsFormSchema),
   });
   const tags = watch("tags");
   const learningOutcomes = watch("learningOutcomes");
-  const { formError, isSubmitting, submit } = useFormSubmit({
-    action: (input: CourseDetailsFormInput) => {
-      const durationValue =
-        input.durationValue === "" ? null : Number(input.durationValue);
-      return updateCourse(course.id, {
-        access: input.access,
-        certificate_on_completion: input.certificateOnCompletion,
-        category: input.category === "" ? null : input.category,
-        complete_in_order: input.completeInOrder,
-        delivery_format:
-          input.deliveryFormat === "" ? null : input.deliveryFormat,
-        description: input.description === "" ? null : input.description,
-        difficulty: input.difficulty === "" ? null : input.difficulty,
-        estimated_duration_minutes:
-          durationValue === null
-            ? null
-            : Math.round(
-                durationValue * (input.durationUnit === "hours" ? 60 : 1),
-              ),
-        language: input.language === "" ? null : input.language,
-        learning_outcomes: input.learningOutcomes,
-        tags: input.tags,
-        target_audience:
-          input.targetAudience === "" ? null : input.targetAudience,
-        thumbnail_url: input.thumbnailUrl === "" ? null : input.thumbnailUrl,
-        title: input.title,
-      });
+  const autosave = useAutosave({
+    initialValue: defaults,
+    onStatusChange: (state) => onStatusChange?.(`course:${course.id}:settings`, state),
+    save: async (input) => {
+      const response = await updateCourse(course.id, coursePayload(input));
+      onSaved(response.data); return input;
     },
-    errorMessage: "Course setup could not be saved.",
-    onSuccess: (response) => onSaved(response.data),
-    setError,
-    successMessage: "Course setup saved.",
+    validate: (input) => courseDetailsFormSchema.safeParse(input).success,
   });
+  useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      const next = value as CourseDetailsFormInput;
+      autosave.schedule(next, Boolean(name && immediateFields.has(name)));
+    });
+    return () => subscription.unsubscribe();
+  }, [autosave, watch]);
   const fieldError = formFieldError(errors);
 
   function addTag() {
@@ -143,17 +113,17 @@ export function CourseDetailsForm({
     <form
       className="grid gap-4 border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-4"
       noValidate
-      onSubmit={handleSubmit(submit)}
+      onBlur={() => void autosave.flush()}
+      onSubmit={(event) => event.preventDefault()}
     >
       <div className="flex items-center gap-2">
         <Pencil
           aria-hidden="true"
           className="size-4 text-[var(--color-text-sub-500)]"
         />
-        <h2 className="text-sm font-semibold">Course Setup</h2>
+        <h2 className="text-sm font-semibold">Course Setup</h2><button className="ml-auto" onClick={autosave.retry} type="button"><SaveStatus state={autosave.status} /></button>
       </div>
-      <FormError>{formError}</FormError>
-      <fieldset className="grid gap-4" disabled={isSubmitting}>
+      <fieldset className="grid gap-4">
         <Field
           error={fieldError("title")}
           label="Course Title"
@@ -171,7 +141,7 @@ export function CourseDetailsForm({
           <Toggle label="Issue a certificate on completion" {...register("certificateOnCompletion")} />
           <p className="text-xs text-[var(--color-text-sub-500)]">These settings are saved now and take effect when learner delivery ships.</p>
         </div>
-        <MediaUploadField courseId={course.id} kind="thumbnail" label="Course Thumbnail" onChange={(media) => setValue("thumbnailUrl", media?.objectKey ?? "", { shouldValidate: true })} value={uploadedMediaFromReference(watch("thumbnailUrl"), "Course thumbnail")} />
+        <MediaUploadField courseId={course.id} kind="thumbnail" label="Course Thumbnail" onChange={(media) => { setValue("thumbnailUrl", media?.objectKey ?? "", { shouldDirty: true, shouldValidate: true }); queueMicrotask(() => autosave.schedule(getValues(), true)); }} value={uploadedMediaFromReference(watch("thumbnailUrl"), "Course thumbnail")} />
         <Field
           error={fieldError("category")}
           label="Category"
@@ -334,9 +304,21 @@ export function CourseDetailsForm({
           </ol>
         </div>
       </fieldset>
-      <SubmitButton isSubmitting={isSubmitting} pendingLabel="Saving...">
-        Save setup
-      </SubmitButton>
     </form>
   );
+}
+
+const immediateFields = new Set(["access", "certificateOnCompletion", "completeInOrder", "deliveryFormat", "difficulty", "durationUnit", "language", "learningOutcomes", "tags", "thumbnailUrl"]);
+
+function coursePayload(input: CourseDetailsFormInput) {
+  const duration = input.durationValue === "" ? null : Number(input.durationValue);
+  return {
+    access: input.access, certificate_on_completion: input.certificateOnCompletion,
+    category: input.category || null, complete_in_order: input.completeInOrder,
+    delivery_format: input.deliveryFormat || null, description: input.description || null,
+    difficulty: input.difficulty || null,
+    estimated_duration_minutes: duration === null ? null : Math.round(duration * (input.durationUnit === "hours" ? 60 : 1)),
+    language: input.language || null, learning_outcomes: input.learningOutcomes, tags: input.tags,
+    target_audience: input.targetAudience || null, thumbnail_url: input.thumbnailUrl || null, title: input.title,
+  };
 }
