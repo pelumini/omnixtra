@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowDown, ArrowUp, File, Headphones, Image, Plus, Save, Trash2, Type, Video } from "lucide-react";
-import { useState, useTransition } from "react";
+import { ArrowDown, ArrowUp, File, Headphones, Image, Plus, Trash2, Type, Video } from "lucide-react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -11,6 +11,8 @@ import { createBlock, deleteBlock, reorderBlocks, updateBlock } from "../../api"
 import { MediaUploadField } from "../MediaUploadField";
 
 import { LessonMetadataForm } from "./MetadataForms";
+import { SaveStatus } from "./SaveStatus";
+import { useAutosave, type SaveState } from "./useAutosave";
 
 import type { Block, BlockContent, Lesson } from "../../schemas";
 import type { ReactNode } from "react";
@@ -23,6 +25,7 @@ type Props = {
   onBlocksChange: (blocks: Block[]) => void;
   onLessonChange: (lesson: Lesson) => void;
   onMessage: (message: string) => void;
+  onStatusChange?: (key: string, state: SaveState) => void;
 };
 
 const choices = [
@@ -33,7 +36,7 @@ const choices = [
   { icon: File, label: "File", type: "file" },
 ] as const;
 
-export function LessonComposer({ blocks, courseId, lesson, onBlocksChange, onLessonChange, onMessage }: Props) {
+export function LessonComposer({ blocks, courseId, lesson, onBlocksChange, onLessonChange, onMessage, onStatusChange }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Block | null>(null);
   const [pending, startTransition] = useTransition();
@@ -100,7 +103,7 @@ export function LessonComposer({ blocks, courseId, lesson, onBlocksChange, onLes
   return (
     <section className="min-w-0 p-4 sm:p-6 lg:h-full lg:overflow-y-auto lg:p-8">
       <div className="mx-auto max-w-3xl">
-        {lesson ? <LessonMetadataForm courseId={courseId} lesson={lesson} onSaved={onLessonChange} /> : null}
+        {lesson ? <LessonMetadataForm courseId={courseId} key={lesson.id} lesson={lesson} onSaved={onLessonChange} onStatusChange={onStatusChange} /> : null}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase text-[var(--color-primary-base)]">Lesson editor</p>
@@ -129,7 +132,7 @@ export function LessonComposer({ blocks, courseId, lesson, onBlocksChange, onLes
               key={block.id}
               onChange={(next) => onBlocksChange(blocks.map((item) => item.id === next.id ? next : item))}
               onDelete={() => setDeleteTarget(block)}
-              onMessage={onMessage}
+              onStatusChange={onStatusChange}
               onMoveDown={() => moveBlock(index, 1)}
               onMoveUp={() => moveBlock(index, -1)}
               upDisabled={index === 0}
@@ -148,25 +151,28 @@ export function LessonComposer({ blocks, courseId, lesson, onBlocksChange, onLes
   );
 }
 
-function BlockEditor({ block, courseId, downDisabled, onChange, onDelete, onMessage, onMoveDown, onMoveUp, upDisabled }: {
+function BlockEditor({ block, courseId, downDisabled, onChange, onDelete, onMoveDown, onMoveUp, onStatusChange, upDisabled }: {
   block: Block; courseId: string; downDisabled: boolean; onChange: (block: Block) => void; onDelete: () => void;
-  onMessage: (message: string) => void; onMoveDown: () => void; onMoveUp: () => void; upDisabled: boolean;
+  onMoveDown: () => void; onMoveUp: () => void;
+  onStatusChange?: (key: string, state: SaveState) => void; upDisabled: boolean;
 }) {
   const [content, setContent] = useState<BlockContent>(block.content);
-  const [pending, startTransition] = useTransition();
   const mediaReady = content.type === "text" || content.type === "quiz"
     || Boolean(content.url && content.asset_id && content.object_key);
-  function save() {
-    startTransition(async () => {
-      try {
-        const response = await updateBlock(courseId, block.lesson_id, block.id, content);
-        onChange(response.data);
-        onMessage(`${labelFor(block.block_type as ComposerType)} block saved`);
-      } catch (error) {
-        setContent(block.content);
-        onMessage(error instanceof Error ? error.message : "Content could not be saved");
-      }
-    });
+  const autosave = useAutosave({
+    initialValue: block.content,
+    onSaved: (saved) => onChange({ ...block, content: saved }),
+    onStatusChange: (state) => onStatusChange?.(`block:${block.id}`, state),
+    save: async (value) => (await updateBlock(courseId, block.lesson_id, block.id, value)).data.content,
+    validate: (value) => value.type === "text" || value.type === "quiz" || Boolean(value.url && value.asset_id && value.object_key),
+  });
+  const autosaveStatus = useRef(autosave.status);
+  autosaveStatus.current = autosave.status;
+  useEffect(() => {
+    if (autosaveStatus.current !== "dirty" && autosaveStatus.current !== "saving") setContent(block.content);
+  }, [block]);
+  function change(value: BlockContent, immediate = false) {
+    setContent(value); autosave.schedule(value, immediate);
   }
   return (
     <article className="border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] shadow-[var(--shadow-x-small)]">
@@ -178,22 +184,23 @@ function BlockEditor({ block, courseId, downDisabled, onChange, onDelete, onMess
           <IconButton label="Delete block" onClick={onDelete}><Trash2 /></IconButton>
         </div>
       </header>
-      <div className="grid gap-3 p-4">{contentFields(content, setContent, courseId)}</div>
+      <div className="grid gap-3 p-4" onBlur={() => void autosave.flush()}>{contentFields(content, change, courseId)}</div>
       <footer className="flex justify-end border-t border-[var(--color-stroke-soft-200)] px-4 py-3">
-        <Button className="gap-2" disabled={!mediaReady} isProcessing={pending} onClick={save}><Save /> Save</Button>
+        {!mediaReady ? <span className="mr-auto text-xs text-[var(--color-state-error)]">Upload a file before this block can be saved.</span> : null}
+        <button disabled={!mediaReady} onClick={autosave.retry} type="button"><SaveStatus state={autosave.status} /></button>
       </footer>
     </article>
   );
 }
 
-function contentFields(content: BlockContent, setContent: (value: BlockContent) => void, courseId: string) {
-  if (content.type === "text") return <Textarea aria-label="Text content" onChange={(e) => setContent({ ...content, markdown: e.target.value })} rows={7} value={content.markdown} />;
-  if (content.type === "quiz") return <Textarea aria-label="Quiz question" onChange={(e) => setContent({ ...content, question: e.target.value })} rows={4} value={content.question} />;
+function contentFields(content: BlockContent, setContent: (value: BlockContent, immediate?: boolean) => void, courseId: string) {
+  if (content.type === "text") return <Textarea aria-label="Text content" maxLength={20000} onChange={(e) => setContent({ ...content, markdown: e.target.value })} rows={7} value={content.markdown} />;
+  if (content.type === "quiz") return <Textarea aria-label="Quiz question" maxLength={1000} onChange={(e) => setContent({ ...content, question: e.target.value })} rows={4} value={content.question} />;
   const uploaded = content.asset_id ? { assetId: content.asset_id, deliveryUrl: "", fileName: content.type === "file" ? content.file_name : `${content.type} upload`, objectKey: content.object_key ?? content.url } : null;
-  const upload = <MediaUploadField courseId={courseId} kind={content.type} label={`${labelFor(content.type)} File`} onChange={(media) => setContent(media ? { ...content, asset_id: media.assetId, object_key: media.objectKey, url: media.objectKey } : { ...content, asset_id: null, object_key: null, url: "" })} value={uploaded} />;
-  if (content.type === "image") return <>{upload}<Input aria-label="Image alt text" onChange={(e) => setContent({ ...content, alt_text: e.target.value })} placeholder="Describe the image" value={content.alt_text} /></>;
-  if (content.type === "file") return <>{upload}<Input aria-label="File name" onChange={(e) => setContent({ ...content, file_name: e.target.value })} placeholder="File name" value={content.file_name} /></>;
-  return <>{upload}<Input aria-label={`${labelFor(content.type)} caption`} onChange={(e) => setContent({ ...content, caption: e.target.value || null })} placeholder="Caption (optional)" value={content.caption ?? ""} /></>;
+  const upload = <MediaUploadField courseId={courseId} kind={content.type} label={`${labelFor(content.type)} File`} onChange={(media) => setContent(media ? { ...content, asset_id: media.assetId, object_key: media.objectKey, url: media.objectKey } : { ...content, asset_id: null, object_key: null, url: "" }, true)} value={uploaded} />;
+  if (content.type === "image") return <>{upload}<Input aria-label="Image alt text" maxLength={300} onChange={(e) => setContent({ ...content, alt_text: e.target.value })} placeholder="Describe the image" value={content.alt_text} /></>;
+  if (content.type === "file") return <>{upload}<Input aria-label="File name" maxLength={255} onChange={(e) => setContent({ ...content, file_name: e.target.value })} placeholder="File name" value={content.file_name} /></>;
+  return <>{upload}<Input aria-label={`${labelFor(content.type)} caption`} maxLength={500} onChange={(e) => setContent({ ...content, caption: e.target.value || null })} placeholder="Caption (optional)" value={content.caption ?? ""} /></>;
 }
 
 function emptyContent(type: ComposerType): BlockContent {
