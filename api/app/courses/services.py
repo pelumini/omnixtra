@@ -1,11 +1,11 @@
 import re
 from contextlib import suppress
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import PurePath
 from uuid import UUID, uuid4
 
 from botocore.exceptions import BotoCoreError, ClientError  # type: ignore[import-untyped]
-from sqlalchemy import func, select
+from sqlalchemy import func, literal, select, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.billing.services import ensure_storage_capacity
@@ -657,6 +657,71 @@ async def _best_effort_delete_object(object_key: str | None) -> None:
         await StorageClient().delete(object_key)
 
 
+async def reclaim_orphaned_course_media(
+    session: AsyncSession,
+    course_id: UUID,
+    *,
+    grace_minutes: int = 10,
+) -> int:
+    references = union_all(
+        select(
+            literal("asset_id").label("reference_type"),
+            CourseBlock.content["asset_id"].astext.label("reference_value"),
+        ).where(
+            CourseBlock.course_id == course_id,
+            CourseBlock.deleted_at.is_(None),
+            CourseBlock.content["asset_id"].astext.is_not(None),
+            CourseBlock.content["asset_id"].astext != "",
+        ),
+        select(literal("object_key"), Course.thumbnail_url).where(
+            Course.id == course_id,
+            Course.deleted_at.is_(None),
+            Course.thumbnail_url.startswith("tenants/"),
+        ),
+        select(literal("object_key"), CourseSection.image_url).where(
+            CourseSection.course_id == course_id,
+            CourseSection.deleted_at.is_(None),
+            CourseSection.image_url.startswith("tenants/"),
+        ),
+        select(literal("object_key"), Lesson.image_url).where(
+            Lesson.course_id == course_id,
+            Lesson.deleted_at.is_(None),
+            Lesson.image_url.startswith("tenants/"),
+        ),
+    )
+    referenced_asset_ids: set[UUID] = set()
+    referenced_object_keys: set[str] = set()
+    for reference_type, reference_value in (await session.execute(references)).all():
+        if reference_type == "asset_id":
+            with suppress(ValueError, TypeError):
+                referenced_asset_ids.add(UUID(str(reference_value)))
+        elif isinstance(reference_value, str) and reference_value.startswith("tenants/"):
+            referenced_object_keys.add(reference_value)
+
+    orphan_query = select(CourseMediaAsset).where(
+        CourseMediaAsset.course_id == course_id,
+        CourseMediaAsset.deleted_at.is_(None),
+        CourseMediaAsset.created_at < utc_now() - timedelta(minutes=grace_minutes),
+    )
+    if referenced_asset_ids:
+        orphan_query = orphan_query.where(CourseMediaAsset.id.not_in(referenced_asset_ids))
+    if referenced_object_keys:
+        orphan_query = orphan_query.where(
+            CourseMediaAsset.object_key.not_in(referenced_object_keys)
+        )
+    orphans = list((await session.scalars(orphan_query)).all())
+    if not orphans:
+        return 0
+
+    deleted_at = utc_now()
+    for asset in orphans:
+        asset.deleted_at = deleted_at
+    await session.flush()
+    for asset in orphans:
+        await _best_effort_delete_object(asset.object_key)
+    return len(orphans)
+
+
 async def presign_media_upload(
     session: AsyncSession, course_id: UUID, request: MediaPresignRequest
 ) -> MediaPresignResponse:
@@ -685,6 +750,7 @@ async def confirm_media_upload(
     actor_id: UUID | None = None,
 ) -> MediaConfirmResponse:
     course = await require_course(session, course_id)
+    await reclaim_orphaned_course_media(session, course_id)
     tenant_id = require_tenant_id()
     expected_prefix = f"tenants/{tenant_id}/courses/{course_id}/"
     if not request.object_key.startswith(expected_prefix):
@@ -821,6 +887,7 @@ async def publish_course(
     actor_id: UUID | None = None,
 ) -> CourseResponse:
     course = await require_course(session, course_id)
+    await reclaim_orphaned_course_media(session, course_id)
     lesson_count = await session.scalar(
         select(func.count())
         .select_from(Lesson)
