@@ -341,6 +341,17 @@ describe("blockContentSchema", () => {
       }).type,
     ).toBe("quiz");
   });
+
+  it.each([
+    { type: "image", url: "https://example.com/image.png", alt_text: "Example" },
+    { type: "video", url: "https://example.com/video.mp4", caption: null },
+    { type: "audio", url: "https://example.com/audio.mp3", caption: null },
+    { type: "file", url: "https://example.com/file.pdf", file_name: "file.pdf", size_bytes: null },
+  ])("accepts backend null media references for $type blocks", (content) => {
+    expect(
+      blockContentSchema.parse({ ...content, asset_id: null, object_key: null }),
+    ).toMatchObject({ asset_id: null, object_key: null, type: content.type });
+  });
 });
 
 describe("courseCreateRequestSchema", () => {
