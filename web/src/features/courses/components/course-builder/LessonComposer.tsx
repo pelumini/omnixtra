@@ -11,7 +11,7 @@ import { createBlock, deleteBlock, reorderBlocks, updateBlock } from "../../api"
 import { MediaUploadField } from "../MediaUploadField";
 
 import { LessonMetadataForm } from "./MetadataForms";
-import { SaveStatus } from "./SaveStatus";
+import { ErrorSaveStatus } from "./SaveStatus";
 import { useAutosave, type SaveState } from "./useAutosave";
 
 import type { Block, BlockContent, Lesson } from "../../schemas";
@@ -187,7 +187,7 @@ function BlockEditor({ block, courseId, downDisabled, onChange, onDelete, onMove
       <div className="grid gap-3 p-4" onBlur={() => void autosave.flush()}>{contentFields(content, change, courseId)}</div>
       <footer className="flex justify-end border-t border-[var(--color-stroke-soft-200)] px-4 py-3">
         {!mediaReady ? <span className="mr-auto text-xs text-[var(--color-state-error)]">Upload a file before this block can be saved.</span> : null}
-        <button disabled={!mediaReady} onClick={autosave.retry} type="button"><SaveStatus state={autosave.status} /></button>
+        {mediaReady ? <ErrorSaveStatus onRetry={autosave.retry} state={autosave.status} /> : null}
       </footer>
     </article>
   );

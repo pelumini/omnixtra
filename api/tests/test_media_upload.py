@@ -6,12 +6,13 @@ import pytest
 from app.core.config import get_settings
 from app.core.context import clear_tenant_id, set_tenant_id
 from app.core.exceptions import ValidationAppError
-from app.courses.models import Course
+from app.courses.models import Course, CourseMediaAsset
 from app.courses.schemas import MediaConfirmRequest, MediaPresignRequest
 from app.courses.services import (
     _safe_filename,
     _validate_media,
     confirm_media_upload,
+    media_delivery_url,
     presign_media_upload,
 )
 
@@ -157,3 +158,33 @@ async def test_confirm_creates_asset_and_rechecks_quota(
     capacity.assert_awaited_once_with(session, 100)
     session.add.assert_called()
     session.commit.assert_awaited_once()
+
+
+@pytest.mark.anyio
+async def test_media_delivery_url_includes_asset_metadata(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    asset_id = UUID("00000000-0000-0000-0000-000000000099")
+    asset = CourseMediaAsset(
+        id=asset_id,
+        tenant_id=TENANT_ID,
+        course_id=COURSE_ID,
+        object_key=f"tenants/{TENANT_ID}/courses/{COURSE_ID}/{asset_id}/guide.pdf",
+        file_name="guide.pdf",
+        content_type="application/pdf",
+        byte_size=4_200_000,
+        checksum_sha256=None,
+    )
+    session = AsyncMock()
+    session.scalar = AsyncMock(return_value=asset)
+    monkeypatch.setattr("app.courses.services.require_course", AsyncMock())
+    monkeypatch.setattr(
+        "app.courses.services.StorageClient.presign_get",
+        AsyncMock(return_value="http://storage/read"),
+    )
+
+    response = await media_delivery_url(session, COURSE_ID, asset_id)
+
+    assert response.file_name == "guide.pdf"
+    assert response.content_type == "application/pdf"
+    assert response.byte_size == 4_200_000
