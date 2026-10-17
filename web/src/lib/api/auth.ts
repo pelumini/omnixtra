@@ -1,5 +1,6 @@
 import {
   apiUrl,
+  fetchWithRefresh,
   postJson,
   requestHeaders,
   type RequestContext,
@@ -24,7 +25,7 @@ export async function logout() {
 }
 
 export async function getAuthSession(context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl()}/api/v1/auth/session`, {
+  const response = await fetchWithRefresh(`${apiUrl()}/api/v1/auth/session`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),

@@ -1,5 +1,6 @@
 import {
   apiUrl,
+  fetchWithRefresh,
   requestHeaders,
   type RequestContext,
   throwIfApiError,
@@ -11,7 +12,7 @@ import {
 } from "./schemas";
 
 export async function getBillingPlans(context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl()}/api/v1/billing/plans`, {
+  const response = await fetchWithRefresh(`${apiUrl()}/api/v1/billing/plans`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),
@@ -23,7 +24,7 @@ export async function getBillingPlans(context: RequestContext = {}) {
 }
 
 export async function getBillingSubscription(context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl()}/api/v1/billing/subscription`, {
+  const response = await fetchWithRefresh(`${apiUrl()}/api/v1/billing/subscription`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),

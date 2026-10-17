@@ -1,5 +1,6 @@
 import {
   apiUrl,
+  fetchWithRefresh,
   postJson,
   requestHeaders,
   type RequestContext,
@@ -41,7 +42,7 @@ import {
 } from "./schemas";
 
 export async function getCourses(context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl()}/api/v1/courses`, {
+  const response = await fetchWithRefresh(`${apiUrl()}/api/v1/courses`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),
@@ -56,7 +57,7 @@ export async function getCourse(
   courseId: string,
   context: RequestContext = {},
 ) {
-  const response = await fetch(`${apiUrl()}/api/v1/courses/${courseId}`, {
+  const response = await fetchWithRefresh(`${apiUrl()}/api/v1/courses/${courseId}`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),
@@ -71,7 +72,7 @@ export async function getCourseStructure(
   courseId: string,
   context: RequestContext = {},
 ) {
-  const response = await fetch(
+  const response = await fetchWithRefresh(
     `${apiUrl()}/api/v1/courses/${courseId}/structure`,
     {
       cache: "no-store",
@@ -89,7 +90,7 @@ async function mutate(
   method: "PATCH" | "DELETE" | "PUT",
   body?: unknown,
 ) {
-  const response = await fetch(`${apiUrl()}${path}`, {
+  const response = await fetchWithRefresh(`${apiUrl()}${path}`, {
     body: body === undefined ? undefined : JSON.stringify(body),
     cache: "no-store",
     credentials: "include",
@@ -167,7 +168,7 @@ export async function getCourseLessons(
   courseId: string,
   context: RequestContext = {},
 ) {
-  const response = await fetch(
+  const response = await fetchWithRefresh(
     `${apiUrl()}/api/v1/courses/${courseId}/lessons`,
     {
       cache: "no-store",
@@ -200,7 +201,7 @@ export async function updateCourse(
   request: CourseUpdateRequest,
 ) {
   const requestBody = courseUpdateRequestSchema.parse(request);
-  const response = await fetch(`${apiUrl()}/api/v1/courses/${courseId}`, {
+  const response = await fetchWithRefresh(`${apiUrl()}/api/v1/courses/${courseId}`, {
     body: JSON.stringify(requestBody),
     cache: "no-store",
     credentials: "include",
@@ -323,7 +324,7 @@ export async function deleteMedia(courseId: string, assetId: string) {
 }
 
 export async function getMediaUrl(courseId: string, assetId: string) {
-  const response = await fetch(`${apiUrl()}/api/v1/courses/${courseId}/media/${assetId}/url`, {
+  const response = await fetchWithRefresh(`${apiUrl()}/api/v1/courses/${courseId}/media/${assetId}/url`, {
     cache: "no-store", credentials: "include", headers: requestHeaders({}),
   });
   const body: unknown = await response.json();

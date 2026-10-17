@@ -1,5 +1,6 @@
 import {
   apiUrl,
+  fetchWithRefresh,
   type ApiRequestError,
   postJson,
   publicApiUrl,
@@ -30,7 +31,7 @@ export async function createTenant(request: TenantCreateRequest) {
 }
 
 export async function getTenantBranding(context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl()}/api/v1/tenant/branding`, {
+  const response = await fetchWithRefresh(`${apiUrl()}/api/v1/tenant/branding`, {
     cache: "no-store",
     headers: requestHeaders(context),
   });
