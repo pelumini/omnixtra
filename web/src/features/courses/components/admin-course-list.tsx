@@ -6,13 +6,12 @@ import {
   CircleAlert,
   FilePlus2,
   Filter,
-  MoreHorizontal,
   Pencil,
   Send,
   Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -34,6 +33,7 @@ import { courseFormSchema, type CourseFormInput } from "../schemas";
 
 import type { Course } from "../schemas";
 import type { OrgRole } from "@/lib/schemas/common";
+import type { ReactNode } from "react";
 
 type AdminCourseListProps = {
   initialCourses: Course[];
@@ -279,62 +279,81 @@ function CourseActions({
   onOpen: () => void;
   onPublish: (course: Course) => Promise<void>;
 }) {
-  const itemClassName =
-    "flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm text-[var(--color-text-sub-500)] hover:bg-[var(--color-bg-weak-100)] disabled:cursor-not-allowed disabled:opacity-50";
+  return (
+    <div className="flex flex-wrap items-center justify-end gap-1">
+      <IconAction
+        ariaLabel={`Open ${course.title} in builder`}
+        icon={<Pencil aria-hidden="true" className="size-4" />}
+        onClick={onOpen}
+        tooltip="Open in builder"
+        tooltipAlignment="left"
+      />
+      {course.status === "draft" ? (
+        <IconAction
+          ariaLabel={`Publish ${course.title}`}
+          disabled={disabled}
+          icon={<Send aria-hidden="true" className="size-4" />}
+          onClick={() => void onPublish(course)}
+          tooltip="Publish"
+        />
+      ) : null}
+      <IconAction
+        ariaLabel={`Delete ${course.title}`}
+        destructive
+        disabled={disabled}
+        icon={<Trash2 aria-hidden="true" className="size-4" />}
+        onClick={() => onDelete(course)}
+        tooltip="Delete"
+        tooltipAlignment="right"
+      />
+    </div>
+  );
+}
+
+function IconAction({
+  ariaLabel,
+  destructive = false,
+  disabled = false,
+  icon,
+  onClick,
+  tooltip,
+  tooltipAlignment = "center",
+}: {
+  ariaLabel: string;
+  destructive?: boolean;
+  disabled?: boolean;
+  icon: ReactNode;
+  onClick: () => void;
+  tooltip: string;
+  tooltipAlignment?: "center" | "left" | "right";
+}) {
+  const tooltipId = useId();
+  const alignment = {
+    center: "left-1/2 -translate-x-1/2",
+    left: "left-0",
+    right: "right-0",
+  }[tooltipAlignment];
 
   return (
-    <Dropdown
-      panelClassName="absolute right-0 z-30 mt-2 min-w-48 rounded-md border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-1.5 shadow-lg"
-      rootClassName="relative ml-auto w-fit"
-      trigger={<MoreHorizontal aria-hidden="true" className="size-5" />}
-      triggerClassName="grid size-9 place-items-center rounded-md text-[var(--color-text-sub-500)] hover:bg-[var(--color-bg-weak-100)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-base)]"
-      triggerLabel={`More actions for ${course.title}`}
-    >
-      {(close) => (
-        <>
-          <button
-            className={itemClassName}
-            onClick={() => {
-              close();
-              onOpen();
-            }}
-            role="menuitem"
-            type="button"
-          >
-            <Pencil aria-hidden="true" className="size-4" />
-            Open in builder
-          </button>
-          {course.status === "draft" ? (
-            <button
-              className={itemClassName}
-              disabled={disabled}
-              onClick={() => {
-                close();
-                void onPublish(course);
-              }}
-              role="menuitem"
-              type="button"
-            >
-              <Send aria-hidden="true" className="size-4" />
-              Publish
-            </button>
-          ) : null}
-          <button
-            className={`${itemClassName} text-[var(--color-state-error)]`}
-            disabled={disabled}
-            onClick={() => {
-              close();
-              onDelete(course);
-            }}
-            role="menuitem"
-            type="button"
-          >
-            <Trash2 aria-hidden="true" className="size-4" />
-            Delete
-          </button>
-        </>
-      )}
-    </Dropdown>
+    <span className="group relative inline-flex">
+      <button
+        aria-describedby={tooltipId}
+        aria-label={ariaLabel}
+        className={`grid size-9 place-items-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-base)] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 ${destructive ? "text-[var(--color-state-error)] hover:bg-[var(--color-red-lighter)]" : "text-[var(--color-text-sub-500)] hover:bg-[var(--color-bg-soft-200)] hover:text-[var(--color-primary-base)]"}`}
+        disabled={disabled}
+        onClick={onClick}
+        type="button"
+      >
+        {icon}
+      </button>
+      <span
+        className={`pointer-events-none absolute bottom-[calc(100%+0.375rem)] z-40 whitespace-nowrap rounded-md border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] px-2 py-1 text-xs font-medium text-[var(--color-text-main-900)] opacity-0 shadow-[var(--shadow-small)] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 ${alignment}`}
+        id={tooltipId}
+        role="tooltip"
+      >
+        {tooltip}
+      </span>
+    </span>
   );
 }
 
