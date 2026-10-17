@@ -4,16 +4,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   BookOpen,
   CircleAlert,
-  ExternalLink,
   FilePlus2,
   Filter,
   MoreHorizontal,
+  Pencil,
+  Send,
+  Trash2,
 } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
+import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Dropdown } from "@/components/ui/dropdown";
 import {
@@ -27,7 +29,7 @@ import { resolveMessage } from "@/lib/forms/messages";
 import { useFormSubmit } from "@/lib/forms/use-form-submit";
 import { canCreateCourse } from "@/lib/permissions";
 
-import { createCourse } from "../api";
+import { createCourse, deleteCourse, publishCourse } from "../api";
 import { courseFormSchema, type CourseFormInput } from "../schemas";
 
 import type { Course } from "../schemas";
@@ -45,11 +47,14 @@ export function AdminCourseList({
   loadError,
   viewerRole = "tenant_admin",
 }: AdminCourseListProps) {
+  const router = useRouter();
   const [courses, setCourses] = useState(initialCourses);
   const [query, setQuery] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [status, setStatus] = useState<(typeof statusTabs)[number]>("all");
   const [message, setMessage] = useState(loadError);
+  const [pendingCourseId, setPendingCourseId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Course | null>(null);
   const canAuthor = canCreateCourse(viewerRole);
 
   const filteredCourses = useMemo(() => {
@@ -64,6 +69,45 @@ export function AdminCourseList({
       return matchesStatus && matchesQuery;
     });
   }, [courses, query, status]);
+
+  async function handlePublish(course: Course) {
+    setPendingCourseId(course.id);
+    setMessage(null);
+    try {
+      const response = await publishCourse(course.id);
+      setCourses((current) =>
+        current.map((item) =>
+          item.id === response.data.id ? response.data : item,
+        ),
+      );
+      setMessage(`${course.title} published`);
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Course could not be published.",
+      );
+    } finally {
+      setPendingCourseId(null);
+    }
+  }
+
+  async function handleDelete() {
+    if (deleteTarget === null) return;
+
+    const course = deleteTarget;
+    const previousCourses = courses;
+    setDeleteTarget(null);
+    setCourses((current) => current.filter((item) => item.id !== course.id));
+    setMessage(null);
+    try {
+      await deleteCourse(course.id);
+      setMessage(`${course.title} deleted`);
+    } catch (error) {
+      setCourses(previousCourses);
+      setMessage(
+        error instanceof Error ? error.message : "Course could not be deleted.",
+      );
+    }
+  }
 
   return (
     <main className="mx-auto grid min-h-screen max-w-[104rem] content-start gap-5 px-5 py-6 lg:px-8">
@@ -86,9 +130,6 @@ export function AdminCourseList({
             options={statusTabs}
             value={status}
           />
-          <span className="text-sm text-[var(--color-text-sub-500)]">
-            {filteredCourses.length} visible
-          </span>
           {canAuthor ? (
             <button
               className="ml-auto inline-flex h-11 items-center gap-2 rounded-md bg-[var(--color-primary-base)] px-4 text-sm font-semibold text-[var(--color-text-white-0)] hover:bg-[var(--color-primary-dark)]"
@@ -113,8 +154,8 @@ export function AdminCourseList({
       ) : null}
 
       <section className="grid content-start gap-4">
-        <div className="overflow-x-auto rounded-lg border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] shadow-sm">
-          <table className="w-full min-w-[760px] border-collapse text-left text-sm">
+        <div className="overflow-x-auto rounded-lg border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-weak-100)] px-2 pb-2 shadow-sm">
+          <table className="w-full min-w-[760px] border-separate border-spacing-y-2 text-left text-sm">
             <thead className="border-b border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-weak-100)] text-xs uppercase text-[var(--color-text-sub-500)]">
               <tr>
                 <th className="px-4 py-3 font-semibold">Course</th>
@@ -124,13 +165,23 @@ export function AdminCourseList({
                 <th className="px-4 py-3 font-semibold">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--color-stroke-soft-200)]">
+            <tbody>
               {filteredCourses.map((course, index) => (
                 <tr
-                  className="hover:bg-[var(--color-bg-weak-100)]"
+                  aria-label={`Open ${course.title}`}
+                  className="cursor-pointer bg-[var(--color-bg-white-0)] shadow-[var(--shadow-x-small)] transition-shadow hover:shadow-[var(--shadow-small)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-base)] focus-visible:ring-offset-2"
                   key={course.id}
+                  onClick={() => router.push(`/admin/courses/${course.id}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      router.push(`/admin/courses/${course.id}`);
+                    }
+                  }}
+                  role="link"
+                  tabIndex={0}
                 >
-                  <td className="px-4 py-4">
+                  <td className="rounded-l-md px-4 py-4">
                     <div className="flex min-w-0 items-center gap-3">
                       <span className="grid size-10 shrink-0 place-items-center rounded-md bg-[var(--color-primary-lighter)] text-[var(--color-primary-base)]">
                         <BookOpen aria-hidden="true" className="size-5" />
@@ -155,23 +206,18 @@ export function AdminCourseList({
                     {course.lesson_count}{" "}
                     {course.lesson_count === 1 ? "lesson" : "lessons"}
                   </td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center gap-2">
-                      <Link
-                        className="inline-flex h-9 items-center gap-2 rounded-md border border-[var(--color-primary-base)] px-3 text-sm font-semibold text-[var(--color-primary-base)] hover:bg-[var(--color-primary-lighter)]"
-                        href={`/admin/courses/${course.id}`}
-                      >
-                        <ExternalLink aria-hidden="true" className="size-4" />
-                        Builder
-                      </Link>
-                      <button
-                        aria-label={`More actions for ${course.title}`}
-                        className="grid size-9 place-items-center rounded-md text-[var(--color-text-sub-500)] hover:bg-[var(--color-bg-weak-100)]"
-                        type="button"
-                      >
-                        <MoreHorizontal aria-hidden="true" className="size-5" />
-                      </button>
-                    </div>
+                  <td
+                    className="rounded-r-md px-4 py-4"
+                    onClick={(event) => event.stopPropagation()}
+                    onKeyDown={(event) => event.stopPropagation()}
+                  >
+                    <CourseActions
+                      course={course}
+                      disabled={pendingCourseId === course.id}
+                      onDelete={setDeleteTarget}
+                      onOpen={() => router.push(`/admin/courses/${course.id}`)}
+                      onPublish={handlePublish}
+                    />
                   </td>
                 </tr>
               ))}
@@ -202,7 +248,93 @@ export function AdminCourseList({
           />
         </Dialog>
       ) : null}
+
+      <Dialog
+        description="This removes the course and its authoring content from the academy."
+        onClose={() => setDeleteTarget(null)}
+        open={deleteTarget !== null}
+        title={`Delete ${deleteTarget?.title ?? "course"}?`}
+      >
+        <div className="flex justify-end gap-2">
+          <Button onClick={() => setDeleteTarget(null)} variant="secondary">
+            Cancel
+          </Button>
+          <Button onClick={() => void handleDelete()}>Delete course</Button>
+        </div>
+      </Dialog>
     </main>
+  );
+}
+
+function CourseActions({
+  course,
+  disabled,
+  onDelete,
+  onOpen,
+  onPublish,
+}: {
+  course: Course;
+  disabled: boolean;
+  onDelete: (course: Course) => void;
+  onOpen: () => void;
+  onPublish: (course: Course) => Promise<void>;
+}) {
+  const itemClassName =
+    "flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm text-[var(--color-text-sub-500)] hover:bg-[var(--color-bg-weak-100)] disabled:cursor-not-allowed disabled:opacity-50";
+
+  return (
+    <Dropdown
+      panelClassName="absolute right-0 z-30 mt-2 min-w-48 rounded-md border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-1.5 shadow-lg"
+      rootClassName="relative ml-auto w-fit"
+      trigger={<MoreHorizontal aria-hidden="true" className="size-5" />}
+      triggerClassName="grid size-9 place-items-center rounded-md text-[var(--color-text-sub-500)] hover:bg-[var(--color-bg-weak-100)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-base)]"
+      triggerLabel={`More actions for ${course.title}`}
+    >
+      {(close) => (
+        <>
+          <button
+            className={itemClassName}
+            onClick={() => {
+              close();
+              onOpen();
+            }}
+            role="menuitem"
+            type="button"
+          >
+            <Pencil aria-hidden="true" className="size-4" />
+            Open in builder
+          </button>
+          {course.status === "draft" ? (
+            <button
+              className={itemClassName}
+              disabled={disabled}
+              onClick={() => {
+                close();
+                void onPublish(course);
+              }}
+              role="menuitem"
+              type="button"
+            >
+              <Send aria-hidden="true" className="size-4" />
+              Publish
+            </button>
+          ) : null}
+          <button
+            className={`${itemClassName} text-[var(--color-state-error)]`}
+            disabled={disabled}
+            onClick={() => {
+              close();
+              onDelete(course);
+            }}
+            role="menuitem"
+            type="button"
+          >
+            <Trash2 aria-hidden="true" className="size-4" />
+            Delete
+          </button>
+        </>
+      )}
+    </Dropdown>
   );
 }
 

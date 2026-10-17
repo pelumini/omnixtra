@@ -220,6 +220,12 @@ export async function publishCourse(courseId: string) {
   return courseEnvelopeSchema.parse(response);
 }
 
+export async function deleteCourse(courseId: string) {
+  return courseEnvelopeSchema.parse(
+    await mutate(`/api/v1/courses/${courseId}`, "DELETE"),
+  );
+}
+
 export async function createSection(
   courseId: string,
   request: SectionCreateRequest,
