@@ -206,7 +206,7 @@ function contentFields(content: BlockContent, setContent: (value: BlockContent, 
 }
 
 function emptyContent(type: ComposerType): BlockContent {
-  if (type === "text") return { markdown: "Start writing...", type };
+  if (type === "text") return { doc: { type: "doc", content: [{ type: "paragraph" }] }, type };
   if (type === "image") return { alt_text: "Image description", type, url: "https://example.com/image.jpg" };
   if (type === "file") return { file_name: "document.pdf", size_bytes: null, type, url: "https://example.com/document.pdf" };
   return { caption: null, type, url: `https://example.com/${type}` };

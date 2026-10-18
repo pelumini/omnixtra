@@ -182,18 +182,13 @@ export const quizOptionSchema = z.object({
 const richTextDocSchema = z
   .record(z.unknown())
   .refine((doc) => doc.type === "doc" && Array.isArray(doc.content), "Invalid rich-text document")
-  .refine((doc) => JSON.stringify(doc).match(/"text":"\s*\S/) !== null, "Rich-text document is empty")
   .refine((doc) => JSON.stringify(doc).length <= 100000, "Rich-text document is too large");
 
-export const textBlockContentSchema = z
-  .object({
-    type: z.literal("text"),
-    markdown: z.string().min(1).max(20000).optional(),
-    doc: richTextDocSchema.optional(),
-  })
-  .refine((content) => content.markdown !== undefined || content.doc !== undefined, {
-    message: "Text content requires markdown or doc",
-  });
+export const textBlockContentSchema = z.object({
+  type: z.literal("text"),
+  markdown: z.string().max(20000).optional(),
+  doc: richTextDocSchema.optional(),
+});
 
 export const videoBlockContentSchema = z.object({
   type: z.literal("video"),

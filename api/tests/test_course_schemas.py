@@ -37,12 +37,11 @@ def test_course_block_content_schemas_cover_mvp_block_types() -> None:
 
 
 def test_text_block_requires_bounded_tiptap_or_legacy_content() -> None:
-    with pytest.raises(ValidationError):
-        TextBlockContent()
+    assert TextBlockContent().markdown is None
+    assert TextBlockContent(markdown="").markdown == ""
+    assert TextBlockContent(doc={"type": "doc", "content": [{"type": "paragraph"}]}).doc is not None
     with pytest.raises(ValidationError):
         TextBlockContent(doc={"type": "paragraph", "content": []})
-    with pytest.raises(ValidationError):
-        TextBlockContent(doc={"type": "doc", "content": []})
     with pytest.raises(ValidationError):
         TextBlockContent(doc={"type": "doc", "content": "not-a-list"})
     with pytest.raises(ValidationError):
