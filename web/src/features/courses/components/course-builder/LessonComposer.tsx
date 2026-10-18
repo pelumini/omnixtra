@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, File, Headphones, Image, Plus, Trash2, Type, Video } from "lucide-react";
+import { File, Headphones, Image, Type, Video } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -10,12 +10,16 @@ import { Input, Textarea } from "@/components/ui/input";
 import { createBlock, deleteBlock, reorderBlocks, updateBlock } from "../../api";
 import { MediaUploadField } from "../MediaUploadField";
 
-import { LessonMetadataForm } from "./MetadataForms";
 import { ErrorSaveStatus } from "./SaveStatus";
 import { useAutosave, type SaveState } from "./useAutosave";
 
 import type { Block, BlockContent, Lesson } from "../../schemas";
-import type { ReactNode } from "react";
+
+export type LessonComposerActions = {
+  deleteBlock: (blockId: string) => void;
+  moveBlock: (blockId: string, direction: -1 | 1) => void;
+  openAddContent: () => void;
+};
 
 type ComposerType = "text" | "image" | "video" | "audio" | "file";
 type Props = {
@@ -25,7 +29,10 @@ type Props = {
   onBlocksChange: (blocks: Block[]) => void;
   onLessonChange: (lesson: Lesson) => void;
   onMessage: (message: string) => void;
+  actionsRef: { current: LessonComposerActions | null };
+  onSelectedBlockChange: (blockId: string | null) => void;
   onStatusChange?: (key: string, state: SaveState) => void;
+  selectedBlockId: string | null;
 };
 
 const choices = [
@@ -36,7 +43,7 @@ const choices = [
   { icon: File, label: "File", type: "file" },
 ] as const;
 
-export function LessonComposer({ blocks, courseId, lesson, onBlocksChange, onLessonChange, onMessage, onStatusChange }: Props) {
+export function LessonComposer({ actionsRef, blocks, courseId, lesson, onBlocksChange, onMessage, onSelectedBlockChange, onStatusChange, selectedBlockId }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Block | null>(null);
   const [pending, startTransition] = useTransition();
@@ -96,6 +103,18 @@ export function LessonComposer({ blocks, courseId, lesson, onBlocksChange, onLes
     });
   }
 
+  actionsRef.current = {
+    deleteBlock: (blockId) => {
+      const block = lessonBlocks.find(({ id }) => id === blockId);
+      if (block) setDeleteTarget(block);
+    },
+    moveBlock: (blockId, direction) => {
+      const index = lessonBlocks.findIndex(({ id }) => id === blockId);
+      if (index >= 0) moveBlock(index, direction);
+    },
+    openAddContent: () => setPickerOpen(true),
+  };
+
   if (!lesson) {
     return <EmptyState title="Add your first lesson" body="Choose a chapter, then add a lesson to start composing." />;
   }
@@ -103,19 +122,8 @@ export function LessonComposer({ blocks, courseId, lesson, onBlocksChange, onLes
   return (
     <section className="min-w-0 p-4 sm:p-6 lg:h-full lg:overflow-y-auto lg:p-8">
       <div className="mx-auto max-w-3xl">
-        {lesson ? <LessonMetadataForm courseId={courseId} key={lesson.id} lesson={lesson} onSaved={onLessonChange} onStatusChange={onStatusChange} /> : null}
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase text-[var(--color-primary-base)]">Lesson editor</p>
-            <h2 className="mt-1 text-2xl font-semibold text-[var(--color-text-main-900)]">{lesson.title}</h2>
-            <p className="mt-1 text-sm text-[var(--color-text-sub-500)]">Build the lesson by arranging content in the order learners will see it.</p>
-          </div>
-          <Button className="gap-2" onClick={() => setPickerOpen((open) => !open)} variant="secondary">
-            <Plus aria-hidden="true" /> Add content
-          </Button>
-        </div>
         {pickerOpen ? (
-          <div className="mt-4 grid grid-cols-2 gap-2 border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-3 sm:grid-cols-5">
+          <div className="mb-6 grid grid-cols-2 gap-2 border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-3 sm:grid-cols-5">
             {choices.map(({ icon: Icon, label, type }) => (
               <Button className="h-auto flex-col gap-2 py-3" disabled={pending} key={type} onClick={() => add(type)} variant="secondary">
                 <Icon aria-hidden="true" /> {label}
@@ -123,19 +131,16 @@ export function LessonComposer({ blocks, courseId, lesson, onBlocksChange, onLes
             ))}
           </div>
         ) : null}
-        <div className="mt-6 grid gap-4">
-          {lessonBlocks.map((block, index) => (
+        <div className="grid gap-4">
+          {lessonBlocks.map((block) => (
             <BlockEditor
               block={block}
               courseId={courseId}
-              downDisabled={index === lessonBlocks.length - 1}
               key={block.id}
               onChange={(next) => onBlocksChange(blocks.map((item) => item.id === next.id ? next : item))}
-              onDelete={() => setDeleteTarget(block)}
+              onSelect={() => onSelectedBlockChange(block.id)}
               onStatusChange={onStatusChange}
-              onMoveDown={() => moveBlock(index, 1)}
-              onMoveUp={() => moveBlock(index, -1)}
-              upDisabled={index === 0}
+              selected={selectedBlockId === block.id}
             />
           ))}
           {lessonBlocks.length === 0 ? <EmptyState title="Add your first content block" body="Text, media, and files can be mixed in any order." /> : null}
@@ -151,10 +156,9 @@ export function LessonComposer({ blocks, courseId, lesson, onBlocksChange, onLes
   );
 }
 
-function BlockEditor({ block, courseId, downDisabled, onChange, onDelete, onMoveDown, onMoveUp, onStatusChange, upDisabled }: {
-  block: Block; courseId: string; downDisabled: boolean; onChange: (block: Block) => void; onDelete: () => void;
-  onMoveDown: () => void; onMoveUp: () => void;
-  onStatusChange?: (key: string, state: SaveState) => void; upDisabled: boolean;
+function BlockEditor({ block, courseId, onChange, onSelect, onStatusChange, selected }: {
+  block: Block; courseId: string; onChange: (block: Block) => void; onSelect: () => void;
+  onStatusChange?: (key: string, state: SaveState) => void; selected: boolean;
 }) {
   const [content, setContent] = useState<BlockContent>(block.content);
   const mediaReady = content.type === "text" || content.type === "quiz"
@@ -175,14 +179,9 @@ function BlockEditor({ block, courseId, downDisabled, onChange, onDelete, onMove
     setContent(value); autosave.schedule(value, immediate);
   }
   return (
-    <article className="border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] shadow-[var(--shadow-x-small)]">
+    <article aria-label={`Select ${labelFor(block.block_type)} block`} className={`border bg-[var(--color-bg-white-0)] shadow-[var(--shadow-x-small)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-base)] ${selected ? "border-[var(--color-primary-base)] ring-2 ring-[var(--color-primary-alpha-10)]" : "border-[var(--color-stroke-soft-200)]"}`} onClick={onSelect} onFocusCapture={onSelect} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") onSelect(); }} tabIndex={0}>
       <header className="flex items-center justify-between gap-3 border-b border-[var(--color-stroke-soft-200)] px-4 py-3">
         <span className="text-sm font-semibold text-[var(--color-text-main-900)]">{labelFor(block.block_type as ComposerType)}</span>
-        <div className="flex gap-1">
-          <IconButton disabled={upDisabled} label="Move block up" onClick={onMoveUp}><ArrowUp /></IconButton>
-          <IconButton disabled={downDisabled} label="Move block down" onClick={onMoveDown}><ArrowDown /></IconButton>
-          <IconButton label="Delete block" onClick={onDelete}><Trash2 /></IconButton>
-        </div>
       </header>
       <div className="grid gap-3 p-4" onBlur={() => void autosave.flush()}>{contentFields(content, change, courseId)}</div>
       <footer className="flex justify-end border-t border-[var(--color-stroke-soft-200)] px-4 py-3">
@@ -212,5 +211,4 @@ function emptyContent(type: ComposerType): BlockContent {
 function labelFor(type: string) { return type.charAt(0).toUpperCase() + type.slice(1); }
 function byPosition(a: Block, b: Block) { return a.position - b.position; }
 function move<T>(items: T[], index: number, direction: -1 | 1) { const next = [...items]; const target = index + direction; if (target < 0 || target >= next.length) return next; [next[index], next[target]] = [next[target], next[index]]; return next; }
-function IconButton({ children, disabled, label, onClick }: { children: ReactNode; disabled?: boolean; label: string; onClick: () => void }) { return <Button aria-label={label} disabled={disabled} iconOnly onClick={onClick} size="x-small" variant="secondary">{children}</Button>; }
 function EmptyState({ body, title }: { body: string; title: string }) { return <div className="grid min-h-48 place-content-center border border-dashed border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-weak-100)] p-8 text-center"><h3 className="font-semibold text-[var(--color-text-main-900)]">{title}</h3><p className="mt-1 text-sm text-[var(--color-text-sub-500)]">{body}</p></div>; }
