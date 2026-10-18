@@ -329,13 +329,9 @@ describe("blockContentSchema", () => {
     expect(
       blockContentSchema.parse({ type: "text", markdown: "Welcome" }).type,
     ).toBe("text");
-    expect(
-      blockContentSchema.parse({ type: "text", doc: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Welcome" }] }] } }).type,
-    ).toBe("text");
     expect(blockContentSchema.parse({ type: "text" })).toEqual({ type: "text" });
     expect(blockContentSchema.parse({ type: "text", markdown: "" })).toEqual({ type: "text", markdown: "" });
-    expect(blockContentSchema.parse({ type: "text", doc: { type: "doc", content: [{ type: "paragraph" }] } }).type).toBe("text");
-    expect(() => blockContentSchema.parse({ type: "text", doc: { type: "paragraph", content: [] } })).toThrow();
+    expect(blockContentSchema.parse({ type: "text", doc: { type: "doc", content: [] } })).toEqual({ type: "text" });
     expect(
       blockContentSchema.parse({
         type: "quiz",

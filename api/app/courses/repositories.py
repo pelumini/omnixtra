@@ -13,6 +13,11 @@ def course_by_slug(slug: str) -> Select[tuple[Course]]:
     return select(Course).where(Course.slug == slug, Course.deleted_at.is_(None))
 
 
+def course_slug_occupied(slug: str) -> Select[tuple[UUID]]:
+    """Check durable slug ownership, including soft-deleted courses."""
+    return select(Course.id).where(Course.slug == slug)
+
+
 def courses_page(*, after: UUID | None, limit: int) -> Select[tuple[Course]]:
     statement = (
         select(Course).where(Course.deleted_at.is_(None)).order_by(Course.id).limit(limit + 1)

@@ -28,7 +28,7 @@ from app.courses.repositories import (
     blocks_for_course,
     blocks_for_lesson,
     course_by_id,
-    course_by_slug,
+    course_slug_occupied,
     courses_page,
     lesson_by_id,
     lessons_for_course,
@@ -80,9 +80,8 @@ async def create_course(
     request: CourseCreateRequest,
     actor_id: UUID | None = None,
 ) -> CourseResponse:
-    slug = request.slug or _slugify(request.title)
-    existing = await session.scalar(course_by_slug(slug))
-    if existing is not None:
+    slug = request.slug or await _available_course_slug(session, _slugify(request.title))
+    if request.slug is not None and await session.scalar(course_slug_occupied(slug)) is not None:
         msg = "course slug is already taken"
         raise ConflictError(msg)
     course = Course(
@@ -439,6 +438,7 @@ async def create_block(
 ) -> BlockResponse:
     await require_course(session, course_id)
     await require_lesson(session, request.lesson_id, course_id=course_id)
+    await _release_deleted_block_position(session, request.lesson_id, request.position)
     block = CourseBlock(
         course_id=course_id,
         lesson_id=request.lesson_id,
@@ -451,6 +451,28 @@ async def create_block(
     _audit(session, course_id, actor_id, "block.created", f"Created {block.block_type} block")
     await session.commit()
     return block_response(block)
+
+
+async def _release_deleted_block_position(
+    session: AsyncSession,
+    lesson_id: UUID,
+    position: int,
+) -> None:
+    occupant = await session.scalar(
+        select(CourseBlock)
+        .where(CourseBlock.lesson_id == lesson_id, CourseBlock.position == position)
+        .with_for_update()
+    )
+    if occupant is None:
+        return
+    if occupant.deleted_at is None:
+        msg = "block position is already occupied"
+        raise ConflictError(msg)
+    lowest_position = await session.scalar(
+        select(func.min(CourseBlock.position)).where(CourseBlock.lesson_id == lesson_id)
+    )
+    occupant.position = min(lowest_position or 0, DELETED_POSITION_START + 1) - 1
+    await session.flush()
 
 
 async def update_block(  # noqa: PLR0913, PLR0917
@@ -1086,6 +1108,16 @@ def _slugify(value: str) -> str:
             previous_dash = True
     normalized = "".join(slug).strip("-")
     return normalized[:120].strip("-") or "course"
+
+
+async def _available_course_slug(session: AsyncSession, base_slug: str) -> str:
+    slug = base_slug
+    suffix = 2
+    while await session.scalar(course_slug_occupied(slug)) is not None:
+        suffix_text = f"-{suffix}"
+        slug = f"{base_slug[: 120 - len(suffix_text)].rstrip('-')}{suffix_text}"
+        suffix += 1
+    return slug
 
 
 async def count_lessons_for_courses(
