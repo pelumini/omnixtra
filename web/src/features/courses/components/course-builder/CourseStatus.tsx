@@ -7,5 +7,5 @@ export function CourseStatus({ status }: { status: Course["status"] }) {
     published: "bg-[var(--color-primary-lighter)] text-[var(--color-primary-dark)]",
   };
 
-  return <span className={`px-2 py-1 text-xs font-medium ${styles[status]}`}>{status}</span>;
+  return <span className={`px-2 py-1 text-xs font-medium capitalize ${styles[status]}`}>{status}</span>;
 }

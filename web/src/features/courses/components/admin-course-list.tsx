@@ -501,7 +501,7 @@ function CourseStatus({ status }: { status: Course["status"] }) {
 
   return (
     <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${styles[status]}`}
+      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${styles[status]}`}
     >
       {status}
     </span>
