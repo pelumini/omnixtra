@@ -78,7 +78,9 @@ test("course owner sees authoring entry and can reach builder controls", async (
 
   await page.goto("/e2e/permissions/course-owner-builder");
 
-  await expect(page.getByRole("heading", { name: "Role Gated Onboarding" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Course title" })).toHaveValue(
+    "Role Gated Onboarding",
+  );
   await expect(page.getByRole("button", { name: "Publish" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Details" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add chapter" })).toBeVisible();
 });
