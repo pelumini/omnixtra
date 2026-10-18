@@ -15,7 +15,7 @@ import { MyCoursesDashboard } from "@/features/learning";
 import { MembersView } from "@/features/members";
 import { e2eMyCourses } from "@/lib/e2e-fixtures";
 
-import { draftCourse } from "./fixtures";
+import { courseStructure, draftCourse } from "./fixtures";
 
 import type { TenantBranding } from "@/lib/schemas/academy";
 
@@ -158,7 +158,11 @@ describe("ADR-003 frontend permissions", () => {
 
   it("hides academy-wide course creation from ordinary members", () => {
     const html = renderToStaticMarkup(
-      <AdminCourseList initialCourses={[draftCourse]} loadError={null} viewerRole="member" />,
+      <AdminCourseList
+        initialCourses={[draftCourse]}
+        loadError={null}
+        viewerRole="member"
+      />,
     );
 
     expect(html).toContain("Onboarding Essentials");
@@ -177,7 +181,8 @@ describe("ADR-003 frontend permissions", () => {
     expect(listHtml.match(/placeholder="Search courses"/g)).toHaveLength(1);
     expect(listHtml).toContain("Add course");
     expect(listHtml).toContain("Filter by status");
-    expect(listHtml).toContain("1 visible");
+    expect(listHtml).toContain("capitalize");
+    expect(listHtml).not.toContain("1 visible");
     expect(listHtml).not.toContain("Course operations");
     expect(listHtml).not.toContain('role="dialog"');
     expect(emptyHtml).toContain("Add course");
@@ -186,7 +191,13 @@ describe("ADR-003 frontend permissions", () => {
   });
 
   it("denies authoring controls to non-owner course roles", () => {
-    const html = renderToStaticMarkup(<CourseBuilder course={draftCourse} courseRole="learner" />);
+    const html = renderToStaticMarkup(
+      <CourseBuilder
+        course={draftCourse}
+        courseRole="learner"
+        initialStructure={courseStructure}
+      />,
+    );
 
     expect(html).toContain("This course is not yours to edit");
     expect(html).not.toContain("Publish");
@@ -196,7 +207,9 @@ describe("ADR-003 frontend permissions", () => {
   it("renders only my-courses sections backed by enrolled course roles", () => {
     const html = renderToStaticMarkup(
       <MyCoursesDashboard
-        courses={e2eMyCourses.filter((course) => course.course_role === "learner")}
+        courses={e2eMyCourses.filter(
+          (course) => course.course_role === "learner",
+        )}
         loadError={null}
         tenantName="Acme Learning"
       />,

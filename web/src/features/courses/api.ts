@@ -1,5 +1,6 @@
 import {
   apiUrl,
+  fetchWithRefresh,
   postJson,
   requestHeaders,
   type RequestContext,
@@ -9,26 +10,39 @@ import {
 import {
   blockCreateRequestSchema,
   blockEnvelopeSchema,
+  blocksEnvelopeSchema,
+  blockUpdateRequestSchema,
   courseCreateRequestSchema,
   courseDetailEnvelopeSchema,
   courseEnvelopeSchema,
   coursePageEnvelopeSchema,
+  courseStructureEnvelopeSchema,
+  courseUpdateRequestSchema,
   lessonCreateRequestSchema,
   lessonEnvelopeSchema,
+  lessonUpdateRequestSchema,
   lessonsEnvelopeSchema,
   mediaAssetCreateRequestSchema,
   mediaAssetEnvelopeSchema,
+  mediaConfirmEnvelopeSchema,
+  mediaPresignEnvelopeSchema,
+  mediaUrlEnvelopeSchema,
   sectionCreateRequestSchema,
   sectionEnvelopeSchema,
+  sectionsEnvelopeSchema,
+  sectionUpdateRequestSchema,
   type CourseCreateRequest,
   type CourseUpdateRequest,
   type LessonCreateRequest,
+  type LessonUpdateRequest,
   type MediaAssetCreateRequest,
+  type MediaKind,
   type SectionCreateRequest,
+  type SectionUpdateRequest,
 } from "./schemas";
 
 export async function getCourses(context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl()}/api/v1/courses`, {
+  const response = await fetchWithRefresh(`${apiUrl()}/api/v1/courses`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),
@@ -39,8 +53,11 @@ export async function getCourses(context: RequestContext = {}) {
   return coursePageEnvelopeSchema.parse(body);
 }
 
-export async function getCourse(courseId: string, context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl()}/api/v1/courses/${courseId}`, {
+export async function getCourse(
+  courseId: string,
+  context: RequestContext = {},
+) {
+  const response = await fetchWithRefresh(`${apiUrl()}/api/v1/courses/${courseId}`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),
@@ -51,28 +68,141 @@ export async function getCourse(courseId: string, context: RequestContext = {}) 
   return courseDetailEnvelopeSchema.parse(body);
 }
 
-export async function getCourseLessons(courseId: string, context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl()}/api/v1/courses/${courseId}/lessons`, {
+export async function getCourseStructure(
+  courseId: string,
+  context: RequestContext = {},
+) {
+  const response = await fetchWithRefresh(
+    `${apiUrl()}/api/v1/courses/${courseId}/structure`,
+    {
+      cache: "no-store",
+      credentials: "include",
+      headers: requestHeaders(context),
+    },
+  );
+  const body: unknown = await response.json();
+  throwIfApiError(response, body);
+  return courseStructureEnvelopeSchema.parse(body);
+}
+
+async function mutate(
+  path: string,
+  method: "PATCH" | "DELETE" | "PUT",
+  body?: unknown,
+) {
+  const response = await fetchWithRefresh(`${apiUrl()}${path}`, {
+    body: body === undefined ? undefined : JSON.stringify(body),
     cache: "no-store",
     credentials: "include",
-    headers: requestHeaders(context),
+    headers: { "Content-Type": "application/json" },
+    method,
   });
+  const payload: unknown = await response.json();
+  throwIfApiError(response, payload);
+  return payload;
+}
+
+export async function updateSection(
+  courseId: string,
+  sectionId: string,
+  request: SectionUpdateRequest,
+) {
+  return sectionEnvelopeSchema.parse(
+    await mutate(
+      `/api/v1/courses/${courseId}/sections/${sectionId}`,
+      "PATCH",
+      sectionUpdateRequestSchema.parse(request),
+    ),
+  );
+}
+
+export async function deleteSection(courseId: string, sectionId: string) {
+  return sectionEnvelopeSchema.parse(
+    await mutate(`/api/v1/courses/${courseId}/sections/${sectionId}`, "DELETE"),
+  );
+}
+
+export async function updateLesson(
+  courseId: string,
+  lessonId: string,
+  request: LessonUpdateRequest,
+) {
+  return lessonEnvelopeSchema.parse(
+    await mutate(
+      `/api/v1/courses/${courseId}/lessons/${lessonId}`,
+      "PATCH",
+      lessonUpdateRequestSchema.parse(request),
+    ),
+  );
+}
+
+export async function deleteLesson(courseId: string, lessonId: string) {
+  return lessonEnvelopeSchema.parse(
+    await mutate(`/api/v1/courses/${courseId}/lessons/${lessonId}`, "DELETE"),
+  );
+}
+
+export async function reorderSections(courseId: string, orderedIds: string[]) {
+  return sectionsEnvelopeSchema.parse(
+    await mutate(`/api/v1/courses/${courseId}/sections/order`, "PUT", {
+      ordered_ids: orderedIds,
+    }),
+  );
+}
+
+export async function reorderLessons(
+  courseId: string,
+  sectionId: string,
+  orderedIds: string[],
+) {
+  return lessonsEnvelopeSchema.parse(
+    await mutate(
+      `/api/v1/courses/${courseId}/sections/${sectionId}/lessons/order`,
+      "PUT",
+      { ordered_ids: orderedIds },
+    ),
+  );
+}
+
+export async function getCourseLessons(
+  courseId: string,
+  context: RequestContext = {},
+) {
+  const response = await fetchWithRefresh(
+    `${apiUrl()}/api/v1/courses/${courseId}/lessons`,
+    {
+      cache: "no-store",
+      credentials: "include",
+      headers: requestHeaders(context),
+    },
+  );
   const body: unknown = await response.json();
   throwIfApiError(response, body);
 
   return lessonsEnvelopeSchema.parse(body);
 }
 
-export async function createCourse(request: CourseCreateRequest, context: RequestContext = {}) {
+export async function createCourse(
+  request: CourseCreateRequest,
+  context: RequestContext = {},
+) {
   const body = courseCreateRequestSchema.parse(request);
-  const response = await postJson("/api/v1/courses", body, requestHeaders(context));
+  const response = await postJson(
+    "/api/v1/courses",
+    body,
+    requestHeaders(context),
+  );
 
   return courseEnvelopeSchema.parse(response);
 }
 
-export async function updateCourse(courseId: string, request: CourseUpdateRequest) {
-  const response = await fetch(`${apiUrl()}/api/v1/courses/${courseId}`, {
-    body: JSON.stringify(request),
+export async function updateCourse(
+  courseId: string,
+  request: CourseUpdateRequest,
+) {
+  const requestBody = courseUpdateRequestSchema.parse(request);
+  const response = await fetchWithRefresh(`${apiUrl()}/api/v1/courses/${courseId}`, {
+    body: JSON.stringify(requestBody),
     cache: "no-store",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -90,7 +220,16 @@ export async function publishCourse(courseId: string) {
   return courseEnvelopeSchema.parse(response);
 }
 
-export async function createSection(courseId: string, request: SectionCreateRequest) {
+export async function deleteCourse(courseId: string) {
+  return courseEnvelopeSchema.parse(
+    await mutate(`/api/v1/courses/${courseId}`, "DELETE"),
+  );
+}
+
+export async function createSection(
+  courseId: string,
+  request: SectionCreateRequest,
+) {
   const body = sectionCreateRequestSchema.parse(request);
   const response = await postJson(`/api/v1/courses/${courseId}/sections`, body);
 
@@ -119,9 +258,82 @@ export async function createBlock(courseId: string, request: unknown) {
   return blockEnvelopeSchema.parse(response);
 }
 
-export async function createMediaAsset(courseId: string, request: MediaAssetCreateRequest) {
+export async function updateBlock(
+  courseId: string,
+  lessonId: string,
+  blockId: string,
+  content: unknown,
+) {
+  return blockEnvelopeSchema.parse(
+    await mutate(
+      `/api/v1/courses/${courseId}/lessons/${lessonId}/blocks/${blockId}`,
+      "PATCH",
+      blockUpdateRequestSchema.parse({ content }),
+    ),
+  );
+}
+
+export async function deleteBlock(
+  courseId: string,
+  lessonId: string,
+  blockId: string,
+) {
+  return blockEnvelopeSchema.parse(
+    await mutate(
+      `/api/v1/courses/${courseId}/lessons/${lessonId}/blocks/${blockId}`,
+      "DELETE",
+    ),
+  );
+}
+
+export async function reorderBlocks(
+  courseId: string,
+  lessonId: string,
+  orderedIds: string[],
+) {
+  return blocksEnvelopeSchema.parse(
+    await mutate(
+      `/api/v1/courses/${courseId}/lessons/${lessonId}/blocks/order`,
+      "PUT",
+      { ordered_ids: orderedIds },
+    ),
+  );
+}
+
+export async function createMediaAsset(
+  courseId: string,
+  request: MediaAssetCreateRequest,
+) {
   const body = mediaAssetCreateRequestSchema.parse(request);
   const response = await postJson(`/api/v1/courses/${courseId}/media`, body);
 
   return mediaAssetEnvelopeSchema.parse(response);
+}
+
+export async function presignMedia(courseId: string, file: File, kind: MediaKind) {
+  return mediaPresignEnvelopeSchema.parse(await postJson(`/api/v1/courses/${courseId}/media/presign`, {
+    byte_size: file.size, content_type: file.type, filename: file.name, kind,
+  }));
+}
+
+export async function confirmMedia(
+  courseId: string, file: File, kind: MediaKind, objectKey: string,
+) {
+  return mediaConfirmEnvelopeSchema.parse(await postJson(`/api/v1/courses/${courseId}/media/confirm`, {
+    byte_size: file.size, content_type: file.type, kind, object_key: objectKey,
+    original_filename: file.name,
+  }));
+}
+
+export async function deleteMedia(courseId: string, assetId: string) {
+  return mutate(`/api/v1/courses/${courseId}/media/${assetId}`, "DELETE");
+}
+
+export async function getMediaUrl(courseId: string, assetId: string) {
+  const response = await fetchWithRefresh(`${apiUrl()}/api/v1/courses/${courseId}/media/${assetId}/url`, {
+    cache: "no-store", credentials: "include", headers: requestHeaders({}),
+  });
+  const body: unknown = await response.json();
+  throwIfApiError(response, body);
+  return mediaUrlEnvelopeSchema.parse(body);
 }

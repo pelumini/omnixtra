@@ -150,8 +150,8 @@ function AddLessonForm({
       </div>
       <FormError>{formError}</FormError>
       <fieldset className="grid gap-3" disabled={isSubmitting}>
-        <Field error={fieldError("title")} label="Lesson title" registration={register("title")} />
-        <TextareaField error={fieldError("body")} label="Lesson text" registration={register("body")} />
+        <Field error={fieldError("title")} label="Lesson Title" registration={register("title")} />
+        <TextareaField error={fieldError("body")} label="Lesson Text" registration={register("body")} />
       </fieldset>
       <SubmitButton className="gap-2" isSubmitting={isSubmitting} pendingLabel="Saving...">
         <FilePlus2 aria-hidden="true" className="size-4" />

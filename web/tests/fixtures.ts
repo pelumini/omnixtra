@@ -3,7 +3,7 @@ import type {
   LearnerProgressReportRow,
 } from "@/features/analytics";
 import type { BillingPlan } from "@/features/billing";
-import type { Course } from "@/features/courses";
+import type { Course, CourseStructure } from "@/features/courses/schemas";
 import type { CoursePlayer } from "@/features/learning";
 
 export const courseId = "00000000-0000-0000-0000-000000000101";
@@ -12,17 +12,69 @@ export const lessonId = "00000000-0000-0000-0000-000000000301";
 export const learnerId = "00000000-0000-0000-0000-000000000401";
 
 export const draftCourse: Course = {
+  access: "enrolled_only",
+  certificate_on_completion: false,
+  category: null,
+  complete_in_order: false,
   description: "New hire onboarding",
+  delivery_format: null,
+  difficulty: null,
+  estimated_duration_minutes: null,
   id: courseId,
+  language: null,
+  learning_outcomes: [],
   lesson_count: 1,
   slug: "onboarding",
   status: "draft",
+  tags: [],
+  target_audience: null,
+  thumbnail_url: null,
   title: "Onboarding Essentials",
 };
 
 export const publishedCourse: Course = {
   ...draftCourse,
   status: "published",
+};
+
+export const courseStructure: CourseStructure = {
+  ...draftCourse,
+  rolled_duration_minutes: 0,
+  sections: [
+    {
+      course_id: courseId,
+      description: null,
+      id: sectionId,
+      image_url: null,
+      position: 0,
+      title: "Getting Started",
+      rolled_duration_minutes: 0,
+      lessons: [
+        {
+          blocks: [
+            {
+              block_type: "text",
+              content: { type: "text", markdown: "Welcome content" },
+              course_id: courseId,
+              id: "00000000-0000-0000-0000-000000000601",
+              lesson_id: lessonId,
+              position: 0,
+            },
+          ],
+          body: "Welcome content",
+          course_id: courseId,
+          estimated_duration_minutes: null,
+          id: lessonId,
+          image_url: null,
+          position: 0,
+          section_id: sectionId,
+          summary: null,
+          required_for_completion: false,
+          title: "Welcome",
+        },
+      ],
+    },
+  ],
 };
 
 export const coursePlayer: CoursePlayer = {

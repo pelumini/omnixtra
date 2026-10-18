@@ -1,25 +1,39 @@
-from uuid import UUID
+import re
+from contextlib import suppress
+from datetime import UTC, datetime, timedelta
+from pathlib import PurePath
+from uuid import UUID, uuid4
 
-from sqlalchemy import func, select
+from botocore.exceptions import BotoCoreError, ClientError  # type: ignore[import-untyped]
+from sqlalchemy import func, literal, select, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.billing.services import ensure_storage_capacity
+from app.core.config import get_settings
 from app.core.exceptions import ConflictError, NotFoundError, ValidationAppError
 from app.courses.models import (
     Course,
+    CourseAccess,
     CourseAuditEvent,
     CourseBlock,
+    CourseDeliveryFormat,
+    CourseDifficulty,
     CourseMediaAsset,
     CourseSection,
     CourseStatus,
     Lesson,
 )
 from app.courses.repositories import (
+    block_by_id,
+    blocks_for_course,
+    blocks_for_lesson,
     course_by_id,
-    course_by_slug,
+    course_slug_occupied,
     courses_page,
     lesson_by_id,
     lessons_for_course,
+    lessons_for_section,
+    media_asset_by_id,
     media_asset_by_object_key,
     section_by_id,
     sections_for_course,
@@ -28,24 +42,37 @@ from app.courses.repositories import (
 from app.courses.schemas import (
     BlockCreateRequest,
     BlockResponse,
+    BlockUpdateRequest,
     CourseCreateRequest,
     CourseDetailResponse,
     CourseResponse,
+    CourseStructureResponse,
     CourseUpdateRequest,
     CursorPage,
     LessonCreateRequest,
+    LessonNode,
     LessonResponse,
+    LessonUpdateRequest,
     MediaAssetCreateRequest,
     MediaAssetResponse,
+    MediaConfirmRequest,
+    MediaConfirmResponse,
+    MediaPresignRequest,
+    MediaPresignResponse,
+    MediaUrlResponse,
     SectionCreateRequest,
+    SectionNode,
     SectionResponse,
+    SectionUpdateRequest,
 )
 from app.learning.models import CourseRole, Enrolment, EnrolmentStatus
 from app.shared.models import utc_now
+from app.storage import StorageClient
 from app.tenancy.context import require_tenant_id
 
 DEFAULT_PAGE_SIZE = 20
 DEFAULT_SECTION_TITLE = "Start here"
+DELETED_POSITION_START = -1_000_000_000
 
 
 async def create_course(
@@ -53,9 +80,8 @@ async def create_course(
     request: CourseCreateRequest,
     actor_id: UUID | None = None,
 ) -> CourseResponse:
-    slug = request.slug or _slugify(request.title)
-    existing = await session.scalar(course_by_slug(slug))
-    if existing is not None:
+    slug = request.slug or await _available_course_slug(session, _slugify(request.title))
+    if request.slug is not None and await session.scalar(course_slug_occupied(slug)) is not None:
         msg = "course slug is already taken"
         raise ConflictError(msg)
     course = Course(
@@ -90,6 +116,40 @@ async def get_course_detail(session: AsyncSession, course_id: UUID) -> CourseDet
     )
 
 
+async def get_course_structure(session: AsyncSession, course_id: UUID) -> CourseStructureResponse:
+    course = await require_course(session, course_id)
+    sections = list((await session.scalars(sections_for_course(course_id))).all())
+    lessons = list((await session.scalars(lessons_for_course(course_id))).all())
+    blocks = list((await session.scalars(blocks_for_course(course_id))).all())
+    blocks_by_lesson: dict[UUID, list[BlockResponse]] = {}
+    for block in blocks:
+        blocks_by_lesson.setdefault(block.lesson_id, []).append(block_response(block))
+    lessons_by_section: dict[UUID, list[LessonNode]] = {}
+    for lesson in lessons:
+        lessons_by_section.setdefault(lesson.section_id, []).append(
+            LessonNode(
+                **lesson_response(lesson).model_dump(),
+                blocks=blocks_by_lesson.get(lesson.id, []),
+            )
+        )
+    section_nodes = [
+        SectionNode(
+            **section_response(section).model_dump(),
+            lessons=lessons_by_section.get(section.id, []),
+            rolled_duration_minutes=sum(
+                lesson.estimated_duration_minutes or 0
+                for lesson in lessons_by_section.get(section.id, [])
+            ),
+        )
+        for section in sections
+    ]
+    return CourseStructureResponse(
+        **course_response(course, lesson_count=len(lessons)).model_dump(),
+        sections=section_nodes,
+        rolled_duration_minutes=sum(section.rolled_duration_minutes for section in section_nodes),
+    )
+
+
 async def update_course(
     session: AsyncSession,
     course_id: UUID,
@@ -97,12 +157,37 @@ async def update_course(
     actor_id: UUID | None = None,
 ) -> CourseResponse:
     course = await require_course(session, course_id)
-    if request.title is not None:
-        course.title = request.title
-    if request.description is not None:
-        course.description = request.description
+    fields = request.model_fields_set
+    replaced_object_key = (
+        course.thumbnail_url
+        if "thumbnail_url" in fields and course.thumbnail_url != request.thumbnail_url
+        else None
+    )
+    for field in (
+        "title",
+        "description",
+        "thumbnail_url",
+        "category",
+        "tags",
+        "language",
+        "learning_outcomes",
+        "target_audience",
+        "difficulty",
+        "delivery_format",
+        "estimated_duration_minutes",
+        "access",
+        "complete_in_order",
+        "certificate_on_completion",
+    ):
+        if field in fields:
+            value = getattr(request, field)
+            if field == "title" and value is None:
+                continue
+            setattr(course, field, value)
     _audit(session, course.id, actor_id, "course.updated", f"Updated course {course.slug}")
+    await _soft_delete_asset_by_key(session, replaced_object_key)
     await session.commit()
+    await _best_effort_delete_object(replaced_object_key)
     return course_response(course)
 
 
@@ -191,6 +276,160 @@ async def create_lesson(
     return lesson_response(lesson, body=request.body)
 
 
+async def update_section(
+    session: AsyncSession,
+    course_id: UUID,
+    section_id: UUID,
+    request: SectionUpdateRequest,
+    actor_id: UUID | None = None,
+) -> SectionResponse:
+    await require_course(session, course_id)
+    section = await require_section(session, section_id, course_id=course_id)
+    replaced_object_key = (
+        section.image_url
+        if "image_url" in request.model_fields_set and section.image_url != request.image_url
+        else None
+    )
+    for field in ("title", "description", "image_url"):
+        if field in request.model_fields_set:
+            value = getattr(request, field)
+            if field == "title" and value is None:
+                continue
+            setattr(section, field, value)
+    _audit(session, course_id, actor_id, "section.updated", f"Updated section {section.title}")
+    await _soft_delete_asset_by_key(session, replaced_object_key)
+    await session.commit()
+    await _best_effort_delete_object(replaced_object_key)
+    return section_response(section)
+
+
+async def delete_section(
+    session: AsyncSession,
+    course_id: UUID,
+    section_id: UUID,
+    actor_id: UUID | None = None,
+) -> SectionResponse:
+    await require_course(session, course_id)
+    section = await require_section(session, section_id, course_id=course_id)
+    response = section_response(section)
+    siblings = list(
+        (
+            await session.scalars(
+                select(CourseSection).where(CourseSection.course_id == course_id).with_for_update()
+            )
+        ).all()
+    )
+    lowest_position = min(
+        (sibling.position for sibling in siblings),
+        default=DELETED_POSITION_START + 1,
+    )
+    section.position = min(lowest_position, DELETED_POSITION_START + 1) - 1
+    section.deleted_at = utc_now()
+    lessons = list(
+        (
+            await session.scalars(
+                select(Lesson).where(
+                    Lesson.course_id == course_id,
+                    Lesson.section_id == section_id,
+                    Lesson.deleted_at.is_(None),
+                )
+            )
+        ).all()
+    )
+    deleted_at = utc_now()
+    for lesson in lessons:
+        lesson.deleted_at = deleted_at
+    lesson_ids = [lesson.id for lesson in lessons]
+    if lesson_ids:
+        blocks = list(
+            (
+                await session.scalars(
+                    select(CourseBlock).where(
+                        CourseBlock.lesson_id.in_(lesson_ids),
+                        CourseBlock.deleted_at.is_(None),
+                    )
+                )
+            ).all()
+        )
+        for block in blocks:
+            block.deleted_at = deleted_at
+    _audit(session, course_id, actor_id, "section.deleted", f"Deleted section {section.title}")
+    await session.commit()
+    return response
+
+
+async def update_lesson(
+    session: AsyncSession,
+    course_id: UUID,
+    lesson_id: UUID,
+    request: LessonUpdateRequest,
+    actor_id: UUID | None = None,
+) -> LessonResponse:
+    await require_course(session, course_id)
+    lesson = await require_lesson(session, lesson_id, course_id=course_id)
+    replaced_object_key = (
+        lesson.image_url
+        if "image_url" in request.model_fields_set and lesson.image_url != request.image_url
+        else None
+    )
+    for field in (
+        "title",
+        "summary",
+        "image_url",
+        "estimated_duration_minutes",
+        "required_for_completion",
+    ):
+        if field in request.model_fields_set:
+            value = getattr(request, field)
+            if field == "title" and value is None:
+                continue
+            setattr(lesson, field, value)
+    _audit(session, course_id, actor_id, "lesson.updated", f"Updated lesson {lesson.title}")
+    await _soft_delete_asset_by_key(session, replaced_object_key)
+    await session.commit()
+    await _best_effort_delete_object(replaced_object_key)
+    return lesson_response(lesson)
+
+
+async def delete_lesson(
+    session: AsyncSession,
+    course_id: UUID,
+    lesson_id: UUID,
+    actor_id: UUID | None = None,
+) -> LessonResponse:
+    await require_course(session, course_id)
+    lesson = await require_lesson(session, lesson_id, course_id=course_id)
+    response = lesson_response(lesson)
+    siblings = list(
+        (
+            await session.scalars(
+                select(Lesson).where(Lesson.section_id == lesson.section_id).with_for_update()
+            )
+        ).all()
+    )
+    lowest_position = min(
+        (sibling.position for sibling in siblings),
+        default=DELETED_POSITION_START + 1,
+    )
+    lesson.position = min(lowest_position, DELETED_POSITION_START + 1) - 1
+    lesson.deleted_at = utc_now()
+    blocks = list(
+        (
+            await session.scalars(
+                select(CourseBlock).where(
+                    CourseBlock.lesson_id == lesson_id,
+                    CourseBlock.deleted_at.is_(None),
+                )
+            )
+        ).all()
+    )
+    for block in blocks:
+        block.deleted_at = lesson.deleted_at
+    _audit(session, course_id, actor_id, "lesson.deleted", f"Deleted lesson {lesson.title}")
+    await session.commit()
+    return response
+
+
 async def create_block(
     session: AsyncSession,
     course_id: UUID,
@@ -199,6 +438,7 @@ async def create_block(
 ) -> BlockResponse:
     await require_course(session, course_id)
     await require_lesson(session, request.lesson_id, course_id=course_id)
+    await _release_deleted_block_position(session, request.lesson_id, request.position)
     block = CourseBlock(
         course_id=course_id,
         lesson_id=request.lesson_id,
@@ -211,6 +451,126 @@ async def create_block(
     _audit(session, course_id, actor_id, "block.created", f"Created {block.block_type} block")
     await session.commit()
     return block_response(block)
+
+
+async def _release_deleted_block_position(
+    session: AsyncSession,
+    lesson_id: UUID,
+    position: int,
+) -> None:
+    occupant = await session.scalar(
+        select(CourseBlock)
+        .where(CourseBlock.lesson_id == lesson_id, CourseBlock.position == position)
+        .with_for_update()
+    )
+    if occupant is None:
+        return
+    if occupant.deleted_at is None:
+        msg = "block position is already occupied"
+        raise ConflictError(msg)
+    lowest_position = await session.scalar(
+        select(func.min(CourseBlock.position)).where(CourseBlock.lesson_id == lesson_id)
+    )
+    occupant.position = min(lowest_position or 0, DELETED_POSITION_START + 1) - 1
+    await session.flush()
+
+
+async def update_block(  # noqa: PLR0913, PLR0917
+    session: AsyncSession,
+    course_id: UUID,
+    lesson_id: UUID,
+    block_id: UUID,
+    request: BlockUpdateRequest,
+    actor_id: UUID | None = None,
+) -> BlockResponse:
+    await require_course(session, course_id)
+    await require_lesson(session, lesson_id, course_id=course_id)
+    block = await require_block(session, block_id, course_id=course_id, lesson_id=lesson_id)
+    if block.block_type != request.content.type:
+        msg = "block content type must match the immutable block type"
+        raise ValidationAppError(msg)
+    previous_asset: CourseMediaAsset | None = None
+    previous_asset_id = block.content.get("asset_id")
+    next_content = request.content.model_dump(mode="json")
+    if isinstance(previous_asset_id, str) and previous_asset_id != next_content.get("asset_id"):
+        try:
+            previous_asset = await session.scalar(
+                media_asset_by_id(UUID(previous_asset_id), course_id=course_id)
+            )
+        except ValueError:
+            previous_asset = None
+        if previous_asset is not None:
+            previous_asset.deleted_at = utc_now()
+    block.content = next_content
+    _audit(session, course_id, actor_id, "block.updated", f"Updated {block.block_type} block")
+    await session.commit()
+    if previous_asset is not None:
+        await _best_effort_delete_object(previous_asset.object_key)
+    return block_response(block)
+
+
+async def delete_block(
+    session: AsyncSession,
+    course_id: UUID,
+    lesson_id: UUID,
+    block_id: UUID,
+    actor_id: UUID | None = None,
+) -> BlockResponse:
+    await require_course(session, course_id)
+    await require_lesson(session, lesson_id, course_id=course_id)
+    block = await require_block(session, block_id, course_id=course_id, lesson_id=lesson_id)
+    response = block_response(block)
+    siblings = list(
+        (
+            await session.scalars(
+                select(CourseBlock).where(CourseBlock.lesson_id == lesson_id).with_for_update()
+            )
+        ).all()
+    )
+    lowest_position = min(
+        (sibling.position for sibling in siblings),
+        default=DELETED_POSITION_START + 1,
+    )
+    block.position = min(lowest_position, DELETED_POSITION_START + 1) - 1
+    block.deleted_at = utc_now()
+    asset: CourseMediaAsset | None = None
+    asset_id = block.content.get("asset_id")
+    if isinstance(asset_id, str):
+        try:
+            asset = await session.scalar(media_asset_by_id(UUID(asset_id), course_id=course_id))
+        except ValueError:
+            asset = None
+        if asset is not None:
+            asset.deleted_at = utc_now()
+    _audit(session, course_id, actor_id, "block.deleted", f"Deleted {block.block_type} block")
+    await session.commit()
+    if asset is not None:
+        await _best_effort_delete_object(asset.object_key)
+    return response
+
+
+async def reorder_blocks(
+    session: AsyncSession,
+    course_id: UUID,
+    lesson_id: UUID,
+    ordered_ids: list[UUID],
+    actor_id: UUID | None = None,
+) -> list[BlockResponse]:
+    await require_course(session, course_id)
+    await require_lesson(session, lesson_id, course_id=course_id)
+    blocks = list((await session.scalars(blocks_for_lesson(course_id, lesson_id))).all())
+    block_by_identifier = {block.id: block for block in blocks}
+    if set(block_by_identifier) != set(ordered_ids) or len(ordered_ids) != len(block_by_identifier):
+        msg = "ordered block ids must match existing lesson blocks"
+        raise ValidationAppError(msg)
+    for position, current_id in enumerate(ordered_ids):
+        block_by_identifier[current_id].position = -(position + 1)
+    await session.flush()
+    for position, current_id in enumerate(ordered_ids):
+        block_by_identifier[current_id].position = position
+    _audit(session, course_id, actor_id, "blocks.reordered", "Reordered lesson blocks")
+    await session.commit()
+    return [block_response(block_by_identifier[current_id]) for current_id in ordered_ids]
 
 
 async def create_media_asset(
@@ -254,6 +614,249 @@ async def create_media_asset(
     return media_asset_response(asset)
 
 
+_DOCUMENT_TYPES = {
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "text/csv",
+    "text/plain",
+}
+
+
+def _validate_media(kind: str, content_type: str, byte_size: int) -> None:
+    settings = get_settings()
+    if byte_size > settings.storage_max_upload_bytes:
+        msg = f"file exceeds the {settings.storage_max_upload_bytes} byte upload limit"
+        raise ValidationAppError(msg)
+    family = "image" if kind == "thumbnail" else kind
+    allowed = (
+        content_type.startswith(f"{family}/")
+        if family != "file"
+        else content_type in _DOCUMENT_TYPES
+    )
+    if not allowed:
+        msg = f"content type {content_type} is not allowed for {kind} uploads"
+        raise ValidationAppError(msg)
+
+
+async def _ensure_media_capacity(session: AsyncSession, additional_bytes: int) -> None:
+    current = int(
+        await session.scalar(
+            select(func.coalesce(func.sum(CourseMediaAsset.byte_size), 0)).where(
+                CourseMediaAsset.deleted_at.is_(None),
+            )
+        )
+        or 0
+    )
+    if current + additional_bytes > get_settings().storage_tenant_quota_bytes:
+        msg = "Demo storage limit reached (100 MB per academy)"
+        raise ConflictError(msg)
+    await ensure_storage_capacity(
+        session, additional_bytes=additional_bytes, current_storage_bytes=current
+    )
+
+
+def _safe_filename(filename: str) -> str:
+    name = PurePath(filename.replace("\\", "/")).name
+    sanitized = re.sub(r"[^A-Za-z0-9._-]+", "-", name).strip(".-")
+    return (sanitized or "upload")[:255]
+
+
+async def _soft_delete_asset_by_key(session: AsyncSession, object_key: str | None) -> None:
+    if not object_key or not object_key.startswith("tenants/"):
+        return
+    asset = await session.scalar(media_asset_by_object_key(object_key))
+    if asset is not None:
+        asset.deleted_at = utc_now()
+
+
+async def _best_effort_delete_object(object_key: str | None) -> None:
+    if not object_key or not object_key.startswith("tenants/"):
+        return
+    with suppress(BotoCoreError, ClientError):
+        await StorageClient().delete(object_key)
+
+
+async def reclaim_orphaned_course_media(
+    session: AsyncSession,
+    course_id: UUID,
+    *,
+    grace_minutes: int = 10,
+) -> int:
+    references = union_all(
+        select(
+            literal("asset_id").label("reference_type"),
+            CourseBlock.content["asset_id"].astext.label("reference_value"),
+        ).where(
+            CourseBlock.course_id == course_id,
+            CourseBlock.deleted_at.is_(None),
+            CourseBlock.content["asset_id"].astext.is_not(None),
+            CourseBlock.content["asset_id"].astext != "",
+        ),
+        select(literal("object_key"), Course.thumbnail_url).where(
+            Course.id == course_id,
+            Course.deleted_at.is_(None),
+            Course.thumbnail_url.startswith("tenants/"),
+        ),
+        select(literal("object_key"), CourseSection.image_url).where(
+            CourseSection.course_id == course_id,
+            CourseSection.deleted_at.is_(None),
+            CourseSection.image_url.startswith("tenants/"),
+        ),
+        select(literal("object_key"), Lesson.image_url).where(
+            Lesson.course_id == course_id,
+            Lesson.deleted_at.is_(None),
+            Lesson.image_url.startswith("tenants/"),
+        ),
+    )
+    referenced_asset_ids: set[UUID] = set()
+    referenced_object_keys: set[str] = set()
+    for reference_type, reference_value in (await session.execute(references)).all():
+        if reference_type == "asset_id":
+            with suppress(ValueError, TypeError):
+                referenced_asset_ids.add(UUID(str(reference_value)))
+        elif isinstance(reference_value, str) and reference_value.startswith("tenants/"):
+            referenced_object_keys.add(reference_value)
+
+    orphan_query = select(CourseMediaAsset).where(
+        CourseMediaAsset.course_id == course_id,
+        CourseMediaAsset.deleted_at.is_(None),
+        CourseMediaAsset.created_at < utc_now() - timedelta(minutes=grace_minutes),
+    )
+    if referenced_asset_ids:
+        orphan_query = orphan_query.where(CourseMediaAsset.id.not_in(referenced_asset_ids))
+    if referenced_object_keys:
+        orphan_query = orphan_query.where(
+            CourseMediaAsset.object_key.not_in(referenced_object_keys)
+        )
+    orphans = list((await session.scalars(orphan_query)).all())
+    if not orphans:
+        return 0
+
+    deleted_at = utc_now()
+    for asset in orphans:
+        asset.deleted_at = deleted_at
+    await session.flush()
+    for asset in orphans:
+        await _best_effort_delete_object(asset.object_key)
+    return len(orphans)
+
+
+async def presign_media_upload(
+    session: AsyncSession, course_id: UUID, request: MediaPresignRequest
+) -> MediaPresignResponse:
+    await require_course(session, course_id)
+    _validate_media(request.kind, request.content_type, request.byte_size)
+    await _ensure_media_capacity(session, request.byte_size)
+    tenant_id = require_tenant_id()
+    asset_id = uuid4()
+    object_key = (
+        f"tenants/{tenant_id}/courses/{course_id}/{asset_id}/{_safe_filename(request.filename)}"
+    )
+    upload_url = await StorageClient().presign_put(object_key, request.content_type)
+    return MediaPresignResponse(
+        upload_url=upload_url,
+        headers={"Content-Type": request.content_type},
+        object_key=object_key,
+        asset_id=asset_id,
+        expires_in=get_settings().storage_presign_seconds,
+    )
+
+
+async def confirm_media_upload(
+    session: AsyncSession,
+    course_id: UUID,
+    request: MediaConfirmRequest,
+    actor_id: UUID | None = None,
+) -> MediaConfirmResponse:
+    course = await require_course(session, course_id)
+    await reclaim_orphaned_course_media(session, course_id)
+    tenant_id = require_tenant_id()
+    expected_prefix = f"tenants/{tenant_id}/courses/{course_id}/"
+    if not request.object_key.startswith(expected_prefix):
+        msg = "media object key must be tenant and course scoped"
+        raise ValidationAppError(msg)
+    _validate_media(request.kind, request.content_type, request.byte_size)
+    try:
+        head = await StorageClient().head(request.object_key)
+    except ClientError as exc:
+        msg = "uploaded media object was not found"
+        raise ValidationAppError(msg) from exc
+    actual_size = int(head.get("ContentLength", -1))
+    actual_type = str(head.get("ContentType", ""))
+    if actual_size != request.byte_size or actual_type != request.content_type:
+        msg = "uploaded media metadata does not match confirmation"
+        raise ValidationAppError(msg)
+    await _ensure_media_capacity(session, actual_size)
+    if await session.scalar(media_asset_by_object_key(request.object_key)) is not None:
+        msg = "media object key is already registered"
+        raise ConflictError(msg)
+    relative_key = request.object_key.removeprefix(expected_prefix)
+    key_parts = relative_key.split("/", 1)
+    if len(key_parts) != len(("asset_id", "filename")) or not key_parts[1]:
+        msg = "media object key has an invalid shape"
+        raise ValidationAppError(msg)
+    try:
+        asset_id = UUID(key_parts[0])
+    except ValueError as exc:
+        msg = "media object key has an invalid asset id"
+        raise ValidationAppError(msg) from exc
+    asset = CourseMediaAsset(
+        id=asset_id,
+        course_id=course.id,
+        object_key=request.object_key,
+        file_name=_safe_filename(
+            request.original_filename or request.object_key.rsplit("/", 1)[-1]
+        ),
+        content_type=request.content_type,
+        byte_size=actual_size,
+        checksum_sha256=request.checksum_sha256,
+    )
+    session.add(asset)
+    await session.flush()
+    _audit(session, course.id, actor_id, "media.confirmed", f"Confirmed media {asset.file_name}")
+    await session.commit()
+    return MediaConfirmResponse(
+        **media_asset_response(asset).model_dump(),
+        delivery_url=await StorageClient().presign_get(asset.object_key),
+    )
+
+
+async def media_delivery_url(
+    session: AsyncSession, course_id: UUID, asset_id: UUID
+) -> MediaUrlResponse:
+    await require_course(session, course_id)
+    asset = await session.scalar(media_asset_by_id(asset_id, course_id=course_id))
+    if asset is None:
+        msg = "media asset not found"
+        raise NotFoundError(msg)
+    settings = get_settings()
+    return MediaUrlResponse(
+        url=await StorageClient().presign_get(asset.object_key),
+        expires_in=None if settings.storage_public_base_url else settings.storage_download_seconds,
+        file_name=asset.file_name,
+        content_type=asset.content_type,
+        byte_size=asset.byte_size,
+    )
+
+
+async def delete_media_asset(
+    session: AsyncSession, course_id: UUID, asset_id: UUID, actor_id: UUID | None = None
+) -> MediaAssetResponse:
+    course = await require_course(session, course_id)
+    asset = await session.scalar(media_asset_by_id(asset_id, course_id=course_id))
+    if asset is None:
+        msg = "media asset not found"
+        raise NotFoundError(msg)
+    asset.deleted_at = datetime.now(UTC)
+    _audit(session, course.id, actor_id, "media.deleted", f"Deleted media {asset.file_name}")
+    await session.commit()
+    await _best_effort_delete_object(asset.object_key)
+    return media_asset_response(asset)
+
+
 async def reorder_sections(
     session: AsyncSession,
     course_id: UUID,
@@ -276,12 +879,37 @@ async def reorder_sections(
     return [section_response(section_by_id[section_id]) for section_id in ordered_ids]
 
 
+async def reorder_lessons(
+    session: AsyncSession,
+    course_id: UUID,
+    section_id: UUID,
+    ordered_ids: list[UUID],
+    actor_id: UUID | None = None,
+) -> list[LessonResponse]:
+    await require_course(session, course_id)
+    await require_section(session, section_id, course_id=course_id)
+    lessons = list((await session.scalars(lessons_for_section(course_id, section_id))).all())
+    lesson_by_id = {lesson.id: lesson for lesson in lessons}
+    if set(lesson_by_id) != set(ordered_ids) or len(ordered_ids) != len(lesson_by_id):
+        msg = "ordered lesson ids must match existing section lessons"
+        raise ValidationAppError(msg)
+    for position, lesson_id in enumerate(ordered_ids):
+        lesson_by_id[lesson_id].position = -(position + 1)
+    await session.flush()
+    for position, lesson_id in enumerate(ordered_ids):
+        lesson_by_id[lesson_id].position = position
+    _audit(session, course_id, actor_id, "lessons.reordered", "Reordered section lessons")
+    await session.commit()
+    return [lesson_response(lesson_by_id[lesson_id]) for lesson_id in ordered_ids]
+
+
 async def publish_course(
     session: AsyncSession,
     course_id: UUID,
     actor_id: UUID | None = None,
 ) -> CourseResponse:
     course = await require_course(session, course_id)
+    await reclaim_orphaned_course_media(session, course_id)
     lesson_count = await session.scalar(
         select(func.count())
         .select_from(Lesson)
@@ -342,12 +970,40 @@ async def require_lesson(
     return lesson
 
 
+async def require_block(
+    session: AsyncSession,
+    block_id: UUID,
+    *,
+    course_id: UUID,
+    lesson_id: UUID,
+) -> CourseBlock:
+    block = await session.scalar(block_by_id(block_id, course_id=course_id, lesson_id=lesson_id))
+    if block is None:
+        msg = "block not found"
+        raise NotFoundError(msg)
+    return block
+
+
 def course_response(course: Course, *, lesson_count: int = 0) -> CourseResponse:
     return CourseResponse(
         id=course.id,
         title=course.title,
         slug=course.slug,
         description=course.description,
+        thumbnail_url=course.thumbnail_url,
+        category=course.category,
+        tags=course.tags or [],
+        language=course.language,
+        learning_outcomes=course.learning_outcomes or [],
+        target_audience=course.target_audience,
+        difficulty=CourseDifficulty(course.difficulty) if course.difficulty else None,
+        delivery_format=(
+            CourseDeliveryFormat(course.delivery_format) if course.delivery_format else None
+        ),
+        estimated_duration_minutes=course.estimated_duration_minutes,
+        access=CourseAccess(course.access or CourseAccess.enrolled_only.value),
+        complete_in_order=course.complete_in_order or False,
+        certificate_on_completion=course.certificate_on_completion or False,
         status=course.status,
         lesson_count=lesson_count,
     )
@@ -359,6 +1015,8 @@ def section_response(section: CourseSection) -> SectionResponse:
         course_id=section.course_id,
         title=section.title,
         position=section.position,
+        description=section.description,
+        image_url=section.image_url,
     )
 
 
@@ -370,6 +1028,10 @@ def lesson_response(lesson: Lesson, *, body: str | None = None) -> LessonRespons
         title=lesson.title,
         position=lesson.position,
         body=body,
+        summary=lesson.summary,
+        image_url=lesson.image_url,
+        estimated_duration_minutes=lesson.estimated_duration_minutes,
+        required_for_completion=lesson.required_for_completion or False,
     )
 
 
@@ -446,6 +1108,16 @@ def _slugify(value: str) -> str:
             previous_dash = True
     normalized = "".join(slug).strip("-")
     return normalized[:120].strip("-") or "course"
+
+
+async def _available_course_slug(session: AsyncSession, base_slug: str) -> str:
+    slug = base_slug
+    suffix = 2
+    while await session.scalar(course_slug_occupied(slug)) is not None:
+        suffix_text = f"-{suffix}"
+        slug = f"{base_slug[: 120 - len(suffix_text)].rstrip('-')}{suffix_text}"
+        suffix += 1
+    return slug
 
 
 async def count_lessons_for_courses(

@@ -109,8 +109,8 @@ export function CreateUserDialog({
           <fieldset className="mt-4 grid gap-3" disabled={isSubmitting}>
             <Field error={fieldError("email")} label="Email" placeholder="name@company.com" registration={register("email")} type="email" />
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field autoComplete="given-name" error={fieldError("firstName")} label="First name" registration={register("firstName")} />
-              <Field autoComplete="family-name" error={fieldError("lastName")} label="Last name" registration={register("lastName")} />
+              <Field autoComplete="given-name" error={fieldError("firstName")} label="First Name" registration={register("firstName")} />
+              <Field autoComplete="family-name" error={fieldError("lastName")} label="Last Name" registration={register("lastName")} />
             </div>
             <Field autoComplete="tel" error={fieldError("phone")} label="Phone" registration={register("phone")} type="tel" />
             <SelectField error={fieldError("orgRole")} label="Role" registration={register("orgRole")}>

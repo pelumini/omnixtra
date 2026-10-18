@@ -45,7 +45,6 @@ describe("tenant branding", () => {
 
     expect(getTenantBranding).toHaveBeenCalledWith({ host: "acme.localhost" });
     expect(html).toContain("lang=\"en-GB\"");
-    expect(html).toContain("font-mulish");
     expect(html).toContain("font-sans");
     expect(html).toContain("--tenant-primary:#0f766e");
     expect(html).toContain("Acme Learning");

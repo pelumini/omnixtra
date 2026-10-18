@@ -1,5 +1,10 @@
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID
 
+import pytest
+
+from app.core.exceptions import ConflictError
 from app.courses.models import (
     Course,
     CourseBlock,
@@ -8,9 +13,13 @@ from app.courses.models import (
     CourseStatus,
     Lesson,
 )
+from app.courses.schemas import CourseCreateRequest
 from app.courses.services import (
+    DELETED_POSITION_START,
+    _release_deleted_block_position,
     block_response,
     course_response,
+    create_course,
     lesson_response,
     media_asset_response,
     section_response,
@@ -24,6 +33,72 @@ BLOCK_ID = UUID("00000000-0000-0000-0000-000000000040")
 MEDIA_ID = UUID("00000000-0000-0000-0000-000000000050")
 
 
+@pytest.mark.anyio
+async def test_create_course_suffixes_generated_slug_occupied_by_deleted_course() -> None:
+    session = MagicMock()
+    session.scalar = AsyncMock(side_effect=[COURSE_ID, None])
+    session.flush = AsyncMock()
+    session.commit = AsyncMock()
+    session.add.side_effect = lambda instance: setattr(instance, "id", COURSE_ID)
+
+    response = await create_course(session, CourseCreateRequest(title="Security Basics"))
+
+    assert response.slug == "security-basics-2"
+    assert session.scalar.await_count == 2
+
+
+@pytest.mark.anyio
+async def test_create_course_rejects_explicit_occupied_slug() -> None:
+    session = MagicMock()
+    session.scalar = AsyncMock(return_value=COURSE_ID)
+
+    with pytest.raises(ConflictError, match="course slug is already taken"):
+        await create_course(
+            session,
+            CourseCreateRequest(title="Security Basics", slug="security-basics"),
+        )
+
+
+@pytest.mark.anyio
+async def test_create_block_releases_legacy_deleted_position() -> None:
+    deleted_block = CourseBlock(
+        id=BLOCK_ID,
+        tenant_id=TENANT_ID,
+        course_id=COURSE_ID,
+        lesson_id=LESSON_ID,
+        block_type="text",
+        content={"type": "text"},
+        position=0,
+        deleted_at=datetime.now(UTC),
+    )
+    session = MagicMock()
+    session.scalar = AsyncMock(side_effect=[deleted_block, 0])
+    session.flush = AsyncMock()
+
+    await _release_deleted_block_position(session, LESSON_ID, 0)
+
+    assert deleted_block.position <= DELETED_POSITION_START
+    session.flush.assert_awaited_once()
+
+
+@pytest.mark.anyio
+async def test_create_block_rejects_active_position_collision() -> None:
+    active_block = CourseBlock(
+        id=BLOCK_ID,
+        tenant_id=TENANT_ID,
+        course_id=COURSE_ID,
+        lesson_id=LESSON_ID,
+        block_type="text",
+        content={"type": "text"},
+        position=0,
+    )
+    session = MagicMock()
+    session.scalar = AsyncMock(return_value=active_block)
+
+    with pytest.raises(ConflictError, match="block position is already occupied"):
+        await _release_deleted_block_position(session, LESSON_ID, 0)
+
+
 def test_course_response_maps_public_fields() -> None:
     course = Course(
         id=COURSE_ID,
@@ -31,6 +106,15 @@ def test_course_response_maps_public_fields() -> None:
         title="Security Basics",
         slug="security-basics",
         description="Required onboarding",
+        thumbnail_url="https://cdn.example.com/course.png",
+        category="Security",
+        tags=["required"],
+        language="en",
+        learning_outcomes=["Recognize threats"],
+        target_audience="All employees",
+        difficulty="beginner",
+        delivery_format="self_paced",
+        estimated_duration_minutes=45,
         status=CourseStatus.draft.value,
     )
 
@@ -39,6 +123,8 @@ def test_course_response_maps_public_fields() -> None:
     assert response.id == COURSE_ID
     assert response.slug == "security-basics"
     assert response.status == "draft"
+    assert response.category == "Security"
+    assert response.estimated_duration_minutes == 45
 
 
 def test_nested_course_authoring_responses_map_parent_fields() -> None:

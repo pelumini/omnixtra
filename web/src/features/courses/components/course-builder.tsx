@@ -1,77 +1,120 @@
 "use client";
 
-import { BadgeCheck, CircleAlert, Layers3 } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, ChevronDown, ChevronRight, Eye, Plus, Settings, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 
 import { DeniedState } from "@/components/layout/denied-state";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
+import { SlideOver } from "@/components/ui/slide-over";
 import { canAuthorCourse } from "@/lib/permissions";
 
-import { publishCourse } from "../api";
+import { createLesson, createSection, deleteLesson, deleteSection, publishCourse, reorderLessons, reorderSections, updateCourse, updateLesson, updateSection } from "../api";
 
-import { BlockForm } from "./course-builder/BlockForm";
+import { AutosaveTitle } from "./course-builder/AutosaveTitle";
 import { CourseDetailsForm } from "./course-builder/CourseDetailsForm";
 import { CourseStatus } from "./course-builder/CourseStatus";
-import { LessonForm } from "./course-builder/LessonForm";
-import { MediaForm } from "./course-builder/MediaForm";
-import { SectionForm } from "./course-builder/SectionForm";
+import { LearnerPreview } from "./course-builder/LearnerPreview";
+import { LessonComposer, type LessonComposerActions } from "./course-builder/LessonComposer";
+import { ChapterMetadataForm, LessonMetadataForm } from "./course-builder/MetadataForms";
+import { SaveStatus } from "./course-builder/SaveStatus";
 
-
-
-import type { Block, Course, Lesson, MediaAsset, Section } from "../schemas";
+import type { Block, Course, CourseStructure, Lesson, Section } from "../schemas";
+import type { SaveState } from "./course-builder/useAutosave";
 import type { CourseRole } from "@/lib/schemas/common";
+import type { ReactNode } from "react";
 
-type CourseBuilderProps = { course: Course; courseRole?: CourseRole };
+type Props = { course: Course; courseRole?: CourseRole; initialStructure: CourseStructure };
+type DeleteTarget = { id: string; kind: "lesson" | "section"; title: string } | null;
+type BuilderSection = Section & { rolled_duration_minutes: number };
+type Focus = { level: "course" } | { chapterId: string; level: "chapter" } | { chapterId: string; lessonId: string; level: "lesson" };
 
-export function CourseBuilder({ course: initialCourse, courseRole = "course_owner" }: CourseBuilderProps) {
+export function CourseBuilder({ course: initialCourse, courseRole = "course_owner", initialStructure }: Props) {
   const [course, setCourse] = useState(initialCourse);
-  const [sections, setSections] = useState<Section[]>([]);
-  const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [blocks, setBlocks] = useState<Block[]>([]);
-  const [media, setMedia] = useState<MediaAsset[]>([]);
-  const [selectedSectionId, setSelectedSectionId] = useState("");
-  const [selectedLessonId, setSelectedLessonId] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-  const selectedSectionLessons = useMemo(() => lessons.filter((lesson) => lesson.section_id === selectedSectionId), [lessons, selectedSectionId]);
+  const [sections, setSections] = useState<BuilderSection[]>(initialStructure.sections.map(sectionValue));
+  const [lessons, setLessons] = useState<Lesson[]>(initialStructure.sections.flatMap((section) => section.lessons.map(lessonValue)));
+  const [blocks, setBlocks] = useState<Block[]>(initialStructure.sections.flatMap((section) => section.lessons.flatMap((lesson) => lesson.blocks)));
+  const [rolledDuration, setRolledDuration] = useState(initialStructure.rolled_duration_minutes);
+  const [focus, setFocus] = useState<Focus>({ level: "course" });
+  const [expanded, setExpanded] = useState(() => new Set(initialStructure.sections.map(({ id }) => id)));
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [preview, setPreview] = useState(false);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [editTargetId, setEditTargetId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
+  const [pending, startTransition] = useTransition();
+  const [saveStates, setSaveStates] = useState<Record<string, SaveState>>({});
+  const composerActions = useRef<LessonComposerActions | null>(null);
+  const orderedSections = useMemo(() => [...sections].sort(byPosition), [sections]);
+  const selectedChapter = focus.level === "course" ? null : sections.find(({ id }) => id === focus.chapterId) ?? null;
+  const selectedLesson = focus.level === "lesson" ? lessons.find(({ id }) => id === focus.lessonId) ?? null : null;
+  const selectedBlock = blocks.find(({ id }) => id === selectedBlockId) ?? null;
+  const reportStatus = (key: string, state: SaveState) => setSaveStates((current) => current[key] === state ? current : { ...current, [key]: state });
+  const overallStatus = rollupStatus(Object.values(saveStates));
 
-  function handlePublish() {
-    startTransition(async () => {
-      try { const response = await publishCourse(course.id); setCourse(response.data); setMessage("Course published"); }
-      catch (error) { setMessage(errorMessage(error, "Course could not be published")); }
-    });
+  function run(action: () => Promise<void>, fallback: string) { reportStatus("builder:action", "saving"); startTransition(async () => { try { await action(); reportStatus("builder:action", "saved"); } catch { reportStatus("builder:action", "error"); void fallback; } }); }
+  function focusCourse() { setFocus({ level: "course" }); setSelectedBlockId(null); setSettingsOpen(false); }
+  function focusChapter(chapterId: string) { setFocus({ chapterId, level: "chapter" }); setSelectedBlockId(null); setSettingsOpen(false); setExpanded((value) => new Set(value).add(chapterId)); }
+  function focusLesson(lesson: Lesson) { setFocus({ chapterId: lesson.section_id, lessonId: lesson.id, level: "lesson" }); setSelectedBlockId(null); setSettingsOpen(false); setExpanded((value) => new Set(value).add(lesson.section_id)); }
+  function addChapter() { run(async () => { const response = await createSection(course.id, { position: sections.length, title: "Untitled chapter" }); const section = { ...response.data, rolled_duration_minutes: 0 }; setSections((items) => [...items, section]); setEditTargetId(section.id); focusChapter(section.id); }, "Chapter could not be added"); }
+  function addLesson() { if (!selectedChapter) return; run(async () => { const position = lessons.filter(({ section_id }) => section_id === selectedChapter.id).length; const response = await createLesson(course.id, { position, section_id: selectedChapter.id, title: "Untitled lesson" }); setLessons((items) => [...items, response.data]); setEditTargetId(response.data.id); focusLesson(response.data); }, "Lesson could not be added"); }
+  function moveSection(index: number, direction: -1 | 1) { const previous = sections; const next = move(orderedSections, index, direction).map((item, position) => ({ ...item, position })); setSections(next); run(async () => { try { await reorderSections(course.id, next.map(({ id }) => id)); } catch (error) { setSections(previous); throw error; } }, "Chapter order could not be saved"); }
+  function moveLesson(sectionId: string, index: number, direction: -1 | 1) { const previous = lessons; const siblings = lessons.filter((item) => item.section_id === sectionId).sort(byPosition); const next = move(siblings, index, direction).map((item, position) => ({ ...item, position })); setLessons(lessons.filter((item) => item.section_id !== sectionId).concat(next)); run(async () => { try { await reorderLessons(course.id, sectionId, next.map(({ id }) => id)); } catch (error) { setLessons(previous); throw error; } }, "Lesson order could not be saved"); }
+  function confirmDelete() {
+    if (!deleteTarget) return;
+    run(async () => {
+      if (deleteTarget.kind === "section") { const removedDuration = sections.find(({ id }) => id === deleteTarget.id)?.rolled_duration_minutes ?? 0; const childIds = new Set(lessons.filter(({ section_id }) => section_id === deleteTarget.id).map(({ id }) => id)); await deleteSection(course.id, deleteTarget.id); setSections((items) => items.filter(({ id }) => id !== deleteTarget.id)); setLessons((items) => items.filter(({ id }) => !childIds.has(id))); setBlocks((items) => items.filter(({ lesson_id }) => !childIds.has(lesson_id))); setRolledDuration((value) => value - removedDuration); focusCourse(); }
+      else { const removed = lessons.find(({ id }) => id === deleteTarget.id); const removedDuration = removed?.estimated_duration_minutes ?? 0; await deleteLesson(course.id, deleteTarget.id); setLessons((items) => items.filter(({ id }) => id !== deleteTarget.id)); setBlocks((items) => items.filter(({ lesson_id }) => lesson_id !== deleteTarget.id)); setRolledDuration((value) => value - removedDuration); if (removed) { setSections((items) => items.map((section) => section.id === removed.section_id ? { ...section, rolled_duration_minutes: section.rolled_duration_minutes - removedDuration } : section)); focusChapter(removed.section_id); } }
+      setDeleteTarget(null);
+    }, "Item could not be deleted");
   }
+  function saveLesson(saved: Lesson) { const previous = lessons.find((lesson) => lesson.id === saved.id); const delta = (saved.estimated_duration_minutes ?? 0) - (previous?.estimated_duration_minutes ?? 0); setLessons((items) => items.map((item) => item.id === saved.id ? saved : item)); if (delta !== 0) { setRolledDuration((value) => value + delta); setSections((items) => items.map((section) => section.id === saved.section_id ? { ...section, rolled_duration_minutes: section.rolled_duration_minutes + delta } : section)); } }
+  if (!canAuthorCourse(courseRole)) return <DeniedState description="Authoring this course is available to its course owner." title="This course is not yours to edit" />;
+  if (preview) return <LearnerPreview blocks={blocks} course={course} initialLessonId={selectedLesson?.id ?? lessons[0]?.id ?? ""} lessons={lessons} onBack={() => setPreview(false)} sections={sections} />;
 
-  if (!canAuthorCourse(courseRole)) return <DeniedState description="Authoring this course is available to its course owner. You can still use the learner course player for courses you are enrolled in." title="This course is not yours to edit" />;
+  const chapterIndex = selectedChapter ? orderedSections.findIndex(({ id }) => id === selectedChapter.id) : -1;
+  const chapterLessons = selectedChapter ? lessons.filter(({ section_id }) => section_id === selectedChapter.id).sort(byPosition) : [];
+  const lessonIndex = selectedLesson ? chapterLessons.findIndex(({ id }) => id === selectedLesson.id) : -1;
+  const lessonBlocks = selectedLesson ? blocks.filter(({ lesson_id }) => lesson_id === selectedLesson.id).sort(byPosition) : [];
+  const blockIndex = selectedBlock ? lessonBlocks.findIndex(({ id }) => id === selectedBlock.id) : -1;
 
-  return (
-    <main className="mx-auto grid min-h-screen max-w-7xl content-start gap-5 px-5 py-5">
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--color-stroke-soft-200)] pb-4">
-        <div><Link className="text-sm text-[var(--color-text-sub-500)] hover:text-[var(--color-primary-base)]" href="/admin/courses">Courses</Link><h1 className="mt-1 text-xl font-semibold">{course.title}</h1><p className="mt-1 text-sm text-[var(--color-text-sub-500)]">{course.description ?? course.slug}</p></div>
-        <div className="flex items-center gap-2"><CourseStatus status={course.status} /><Button className="gap-2" isProcessing={isPending} onClick={handlePublish} processingLabel="Publishing..."><BadgeCheck aria-hidden="true" className="size-4" />Publish</Button></div>
-      </header>
-      {message ? <div className="flex items-start gap-2 border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] px-4 py-3 text-sm text-[var(--color-text-sub-500)]"><CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[var(--color-primary-base)]" /><span>{message}</span></div> : null}
-      <section className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)_300px]">
-        <aside className="grid content-start gap-4">
-          <CourseDetailsForm course={course} onSaved={(updatedCourse) => { setCourse(updatedCourse); setMessage("Course details saved"); }} />
-          <MediaForm courseId={course.id} onCreated={(asset) => { setMedia((current) => [asset, ...current]); setMessage("Media metadata saved"); }} />
-        </aside>
-        <section className="grid content-start gap-4">
-          <SectionForm courseId={course.id} position={sections.length} onCreated={(section) => { setSections((current) => [...current, section]); setSelectedSectionId(section.id); setMessage("Section added"); }} />
-          <div className="grid gap-3">
-            {sections.map((section, index) => { const sectionLessons = lessons.filter((lesson) => lesson.section_id === section.id); return <article className="border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)]" key={section.id}><button className="flex w-full items-center justify-between gap-3 border-b border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-weak-100)] px-4 py-3 text-left" onClick={() => setSelectedSectionId(section.id)} type="button"><span className="text-sm font-semibold">{index + 1}. {section.title}</span><Layers3 aria-hidden="true" className="size-4 text-[var(--color-text-soft-400)]" /></button><div className="divide-y divide-[var(--color-stroke-soft-200)]">{sectionLessons.map((lesson) => <button className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-[var(--color-bg-weak-100)]" key={lesson.id} onClick={() => setSelectedLessonId(lesson.id)} type="button"><span className="min-w-0 truncate text-sm">{lesson.title}</span><span className="text-xs text-[var(--color-text-soft-400)]">{blocks.filter((block) => block.lesson_id === lesson.id).length} blocks</span></button>)}{sectionLessons.length === 0 ? <div className="px-4 py-4 text-sm text-[var(--color-text-sub-500)]">No lessons</div> : null}</div></article>; })}
-            {sections.length === 0 ? <div className="border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] px-4 py-10 text-center text-sm text-[var(--color-text-sub-500)]">No sections</div> : null}
-          </div>
-        </section>
-        <aside className="grid content-start gap-4">
-          <LessonForm courseId={course.id} disabled={sections.length === 0} lessons={lessons} onCreated={(lesson) => { setLessons((current) => [...current, lesson]); setSelectedLessonId(lesson.id); setMessage("Lesson added"); }} onSectionChange={setSelectedSectionId} sections={sections} selectedSectionId={selectedSectionId} />
-          <BlockForm blocks={blocks} courseId={course.id} disabled={lessons.length === 0} lessons={selectedSectionLessons} onCreated={(block) => { setBlocks((current) => [...current, block]); setMessage("Block added"); }} onLessonChange={setSelectedLessonId} selectedLessonId={selectedLessonId} />
-          <section className="border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)]"><div className="border-b border-[var(--color-stroke-soft-200)] px-4 py-3"><h2 className="text-sm font-semibold">Assets</h2></div><div className="divide-y divide-[var(--color-stroke-soft-200)]">{media.map((asset) => <article className="px-4 py-3" key={asset.id}><p className="truncate text-sm font-medium">{asset.file_name}</p><p className="mt-1 text-xs text-[var(--color-text-soft-400)]">{asset.content_type}</p></article>)}{media.length === 0 ? <div className="px-4 py-4 text-sm text-[var(--color-text-sub-500)]">No assets</div> : null}</div></section>
-        </aside>
-      </section>
-    </main>
-  );
+  return <main className="flex h-[100dvh] w-full flex-col overflow-hidden bg-[var(--color-bg-weak-100)] text-[var(--color-text-main-900)]">
+    <header className="z-20 shrink-0 border-b border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)]">
+      <div className="flex min-h-16 items-center justify-between gap-3 px-4 py-3 sm:px-6"><div className="flex min-w-0 items-center gap-3"><Link aria-label="Back to courses" className="grid size-9 shrink-0 place-items-center rounded-full border border-[var(--color-stroke-soft-200)] hover:bg-[var(--color-bg-weak-100)]" href="/admin/courses"><ArrowLeft className="size-4" /></Link><span className="hidden shrink-0 text-xs font-bold uppercase text-[var(--color-primary-base)] sm:inline">Course Builder</span><Breadcrumb focus={focus} lesson={selectedLesson} onChapter={() => selectedChapter && focusChapter(selectedChapter.id)} onCourse={focusCourse} section={selectedChapter} /></div><div className="flex shrink-0 items-center gap-2"><SaveStatus state={overallStatus} /><Button aria-label="Preview course" className="gap-2" onClick={() => setPreview(true)} variant="secondary"><Eye /><span className="hidden sm:inline">Preview</span></Button><Button isProcessing={pending} onClick={() => run(async () => { const response = await publishCourse(course.id); setCourse(response.data); }, "Course could not be published")}>Publish</Button></div></div>
+      <div className="flex min-h-12 items-center gap-2 overflow-x-auto border-t border-[var(--color-stroke-soft-200)] px-4 py-2 sm:px-6"><ContextActions block={selectedBlock} blockIndex={blockIndex} blocks={lessonBlocks} chapter={selectedChapter} chapterIndex={chapterIndex} chapters={orderedSections} focus={focus} lesson={selectedLesson} lessonIndex={lessonIndex} lessons={chapterLessons} onAddChapter={addChapter} onAddContent={() => composerActions.current?.openAddContent()} onAddLesson={addLesson} onBlockDelete={() => selectedBlock && composerActions.current?.deleteBlock(selectedBlock.id)} onBlockMove={(direction) => selectedBlock && composerActions.current?.moveBlock(selectedBlock.id, direction)} onChapterDelete={() => selectedChapter && setDeleteTarget({ id: selectedChapter.id, kind: "section", title: selectedChapter.title })} onChapterMove={(direction) => moveSection(chapterIndex, direction)} onLessonDelete={() => selectedLesson && setDeleteTarget({ id: selectedLesson.id, kind: "lesson", title: selectedLesson.title })} onLessonMove={(direction) => selectedLesson && moveLesson(selectedLesson.section_id, lessonIndex, direction)} onSettings={() => setSettingsOpen(true)} /></div>
+    </header>
+    <div className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden md:grid-cols-[17rem_minmax(0,1fr)]"><CourseTree expanded={expanded} focus={focus} lessons={lessons} onAddChapter={addChapter} onChapter={focusChapter} onLesson={focusLesson} onToggle={(id) => setExpanded((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; })} sections={orderedSections} /><section className="min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8">
+      {focus.level === "course" ? <CourseOverview course={course} onAdd={addChapter} onChange={setCourse} onFocus={focusChapter} onStatusChange={reportStatus} sections={orderedSections} totalMinutes={rolledDuration} /> : null}
+      {focus.level === "chapter" && selectedChapter ? <ChapterOverview autoFocus={editTargetId === selectedChapter.id} courseId={course.id} lessons={chapterLessons} onAdd={addLesson} onChange={(saved) => setSections((items) => items.map((item) => item.id === saved.id ? { ...saved, rolled_duration_minutes: item.rolled_duration_minutes } : item))} onFocus={focusLesson} onStatusChange={reportStatus} section={selectedChapter} /> : null}
+      {focus.level === "lesson" && selectedLesson ? <div className="mx-auto max-w-3xl"><AutosaveTitle ariaLabel="Lesson title" autoFocus={editTargetId === selectedLesson.id} entityKey={`lesson:${selectedLesson.id}:title`} key={selectedLesson.id} onChange={(title) => setLessons((items) => items.map((item) => item.id === selectedLesson.id ? { ...item, title } : item))} onStatusChange={reportStatus} save={async (title) => (await updateLesson(course.id, selectedLesson.id, { title: title.trim() })).data.title} value={selectedLesson.title} /><p className="mt-2 text-sm text-[var(--color-text-sub-500)]">{selectedLesson.estimated_duration_minutes ?? 0} min · {lessonBlocks.length} {lessonBlocks.length === 1 ? "block" : "blocks"}</p><LessonComposer actionsRef={composerActions} blocks={blocks} courseId={course.id} lesson={selectedLesson} onBlocksChange={setBlocks} onLessonChange={saveLesson} onMessage={(message) => reportStatus("builder:action", message.toLowerCase().includes("could not") ? "error" : "saved")} onSelectedBlockChange={setSelectedBlockId} onStatusChange={reportStatus} selectedBlockId={selectedBlockId} /></div> : null}
+    </section></div>
+    <SettingsPanel course={course} focus={focus} lesson={selectedLesson} onClose={() => setSettingsOpen(false)} onCourse={setCourse} onLesson={saveLesson} onSection={(saved) => setSections((items) => items.map((item) => item.id === saved.id ? { ...saved, rolled_duration_minutes: item.rolled_duration_minutes } : item))} onStatusChange={reportStatus} open={settingsOpen} section={selectedChapter} />
+    <Dialog description={deleteTarget?.kind === "section" ? "Deleting this chapter also removes all of its lessons and content blocks." : "Deleting this lesson also removes all of its content blocks."} onClose={() => setDeleteTarget(null)} open={deleteTarget !== null} title={`Delete ${deleteTarget?.title ?? "item"}?`}><div className="flex justify-end gap-2"><Button onClick={() => setDeleteTarget(null)} variant="secondary">Cancel</Button><Button isProcessing={pending} onClick={confirmDelete}>Delete</Button></div></Dialog>
+  </main>;
 }
 
-function errorMessage(error: unknown, fallback: string) { return error instanceof Error ? error.message : fallback; }
+function Breadcrumb({ focus, lesson, onChapter, onCourse, section }: { focus: Focus; lesson: Lesson | null; onChapter: () => void; onCourse: () => void; section: BuilderSection | null }) { return <nav aria-label="Builder breadcrumb" className="flex min-w-0 items-center gap-1 text-sm"><Crumb current={focus.level === "course"} label="Course" onClick={onCourse} />{section ? <><ChevronRight className="size-4 shrink-0 text-[var(--color-text-soft-400)]" /><Crumb current={focus.level === "chapter"} label={section.title} onClick={onChapter} /></> : null}{lesson ? <><ChevronRight className="size-4 shrink-0 text-[var(--color-text-soft-400)]" /><Crumb current label={lesson.title} onClick={() => undefined} /></> : null}</nav>; }
+function Crumb({ current, label, onClick }: { current: boolean; label: string; onClick: () => void }) { return current ? <span aria-current="page" className="max-w-40 truncate font-semibold">{label}</span> : <button className="max-w-40 truncate text-[var(--color-text-sub-500)] hover:text-[var(--color-primary-base)]" onClick={onClick} type="button">{label}</button>; }
+
+function ContextActions(props: { block: Block | null; blockIndex: number; blocks: Block[]; chapter: BuilderSection | null; chapterIndex: number; chapters: BuilderSection[]; focus: Focus; lesson: Lesson | null; lessonIndex: number; lessons: Lesson[]; onAddChapter: () => void; onAddContent: () => void; onAddLesson: () => void; onBlockDelete: () => void; onBlockMove: (direction: -1 | 1) => void; onChapterDelete: () => void; onChapterMove: (direction: -1 | 1) => void; onLessonDelete: () => void; onLessonMove: (direction: -1 | 1) => void; onSettings: () => void }) {
+  if (props.focus.level === "course") return <><ActionButton icon={<Plus />} label="Add chapter" onClick={props.onAddChapter} /><ActionButton icon={<Settings />} label="Course settings" onClick={props.onSettings} /></>;
+  if (props.focus.level === "chapter" && props.chapter) return <><ActionButton icon={<Plus />} label="Add lesson" onClick={props.onAddLesson} /><ActionButton icon={<Settings />} label="Chapter settings" onClick={props.onSettings} /><MoveButtons down={props.chapterIndex === props.chapters.length - 1} label={props.chapter.title} onDown={() => props.onChapterMove(1)} onUp={() => props.onChapterMove(-1)} up={props.chapterIndex === 0} /><DeleteButton label={`Delete chapter ${props.chapter.title}`} onClick={props.onChapterDelete} /></>;
+  if (props.focus.level === "lesson" && props.lesson) return <><ActionButton icon={<Plus />} label="Add content" onClick={props.onAddContent} /><ActionButton icon={<Settings />} label="Lesson settings" onClick={props.onSettings} /><MoveButtons down={props.lessonIndex === props.lessons.length - 1} label={props.lesson.title} onDown={() => props.onLessonMove(1)} onUp={() => props.onLessonMove(-1)} up={props.lessonIndex === 0} /><DeleteButton label={`Delete lesson ${props.lesson.title}`} onClick={props.onLessonDelete} />{props.block ? <div className="ml-2 flex items-center gap-1 border-l border-[var(--color-stroke-soft-200)] pl-3"><span className="mr-1 text-xs font-semibold uppercase text-[var(--color-text-sub-500)]">{props.block.block_type} block</span><MoveButtons down={props.blockIndex === props.blocks.length - 1} label="block" onDown={() => props.onBlockMove(1)} onUp={() => props.onBlockMove(-1)} up={props.blockIndex === 0} /><DeleteButton label="Delete block" onClick={props.onBlockDelete} /></div> : null}</>;
+  return null;
+}
+
+function CourseTree({ expanded, focus, lessons, onAddChapter, onChapter, onLesson, onToggle, sections }: { expanded: Set<string>; focus: Focus; lessons: Lesson[]; onAddChapter: () => void; onChapter: (id: string) => void; onLesson: (lesson: Lesson) => void; onToggle: (id: string) => void; sections: BuilderSection[] }) { return <aside className="hidden min-h-0 border-r border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] md:flex md:flex-col"><div className="shrink-0 px-4 py-4"><h2 className="text-sm font-semibold">Course outline</h2><p className="mt-1 text-xs text-[var(--color-text-sub-500)]">Chapters and lessons</p></div><nav aria-label="Course structure" className="min-h-0 flex-1 overflow-y-auto px-2 pb-3"><ul className="grid gap-1">{sections.map((section) => { const children = lessons.filter(({ section_id }) => section_id === section.id).sort(byPosition); const open = expanded.has(section.id); const selected = focus.level !== "course" && focus.chapterId === section.id; return <li key={section.id}><div className={`flex items-center rounded-md ${selected && focus.level === "chapter" ? "bg-[var(--color-primary-alpha-10)]" : ""}`}><button aria-label={`${open ? "Collapse" : "Expand"} ${section.title}`} className="grid size-8 shrink-0 place-items-center" onClick={() => onToggle(section.id)} type="button">{open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}</button><button className="min-w-0 flex-1 truncate py-2 pr-2 text-left text-sm font-semibold hover:text-[var(--color-primary-base)]" onClick={() => onChapter(section.id)} type="button">{section.title}</button></div>{open ? <ul className="ml-8 grid gap-1 border-l border-[var(--color-stroke-soft-200)] pl-2">{children.map((lesson) => <li key={lesson.id}><button aria-current={focus.level === "lesson" && focus.lessonId === lesson.id ? "page" : undefined} className={`w-full truncate rounded-md px-3 py-2 text-left text-sm ${focus.level === "lesson" && focus.lessonId === lesson.id ? "bg-[var(--color-primary-alpha-10)] font-semibold text-[var(--color-primary-base)]" : "hover:bg-[var(--color-bg-weak-100)]"}`} onClick={() => onLesson(lesson)} type="button">{lesson.title}</button></li>)}</ul> : null}</li>; })}</ul></nav><div className="shrink-0 border-t border-[var(--color-stroke-soft-200)] p-3"><Button className="w-full gap-2" onClick={onAddChapter} variant="secondary"><Plus /> Add chapter</Button></div></aside>; }
+
+function CourseOverview({ course, onAdd, onChange, onFocus, onStatusChange, sections, totalMinutes }: { course: Course; onAdd: () => void; onChange: (course: Course) => void; onFocus: (id: string) => void; onStatusChange: (key: string, state: SaveState) => void; sections: BuilderSection[]; totalMinutes: number }) { return <div className="mx-auto max-w-4xl"><AutosaveTitle ariaLabel="Course title" entityKey={`course:${course.id}:title`} onChange={(title) => onChange({ ...course, title })} onStatusChange={onStatusChange} save={async (title) => (await updateCourse(course.id, { title: title.trim() })).data.title} value={course.title} /><div className="mt-2 flex items-center gap-2 text-sm text-[var(--color-text-sub-500)]"><CourseStatus status={course.status} /><span>{sections.length} chapters · {totalMinutes} min total</span></div><OverviewGrid addLabel="Add chapter" items={sections.map((section) => ({ id: section.id, meta: `${section.rolled_duration_minutes} min`, title: section.title }))} onAdd={onAdd} onFocus={onFocus} /></div>; }
+function ChapterOverview({ autoFocus, courseId, lessons, onAdd, onChange, onFocus, onStatusChange, section }: { autoFocus: boolean; courseId: string; lessons: Lesson[]; onAdd: () => void; onChange: (section: Section) => void; onFocus: (lesson: Lesson) => void; onStatusChange: (key: string, state: SaveState) => void; section: BuilderSection }) { return <div className="mx-auto max-w-4xl"><AutosaveTitle ariaLabel="Chapter title" autoFocus={autoFocus} entityKey={`section:${section.id}:title`} key={section.id} onChange={(title) => onChange({ ...section, title })} onStatusChange={onStatusChange} save={async (title) => (await updateSection(courseId, section.id, { title: title.trim() })).data.title} value={section.title} /><p className="mt-2 text-sm text-[var(--color-text-sub-500)]">{lessons.length} lessons · {section.rolled_duration_minutes} min total</p><OverviewGrid addLabel="Add lesson" items={lessons.map((lesson) => ({ id: lesson.id, meta: `${lesson.estimated_duration_minutes ?? 0} min`, title: lesson.title }))} onAdd={onAdd} onFocus={(id) => { const lesson = lessons.find((item) => item.id === id); if (lesson) onFocus(lesson); }} /></div>; }
+function OverviewGrid({ addLabel, items, onAdd, onFocus }: { addLabel: string; items: { id: string; meta: string; title: string }[]; onAdd: () => void; onFocus: (id: string) => void }) { return <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{items.map((item) => <button className="min-h-28 rounded-md border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-4 text-left shadow-[var(--shadow-x-small)] hover:border-[var(--color-primary-base)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-base)]" key={item.id} onClick={() => onFocus(item.id)} type="button"><span className="font-semibold">{item.title}</span><span className="mt-2 block text-sm text-[var(--color-text-sub-500)]">{item.meta}</span></button>)}<button className="grid min-h-28 place-content-center rounded-md border border-dashed border-[var(--color-stroke-sub-300)] bg-[var(--color-bg-white-0)] text-sm font-semibold text-[var(--color-primary-base)] hover:bg-[var(--color-primary-lighter)]" onClick={onAdd} type="button"><span className="inline-flex items-center gap-2"><Plus className="size-4" /> {addLabel}</span></button></div>; }
+function SettingsPanel({ course, focus, lesson, onClose, onCourse, onLesson, onSection, onStatusChange, open, section }: { course: Course; focus: Focus; lesson: Lesson | null; onClose: () => void; onCourse: (course: Course) => void; onLesson: (lesson: Lesson) => void; onSection: (section: Section) => void; onStatusChange: (key: string, state: SaveState) => void; open: boolean; section: BuilderSection | null }) { const title = focus.level === "course" ? "Course settings" : focus.level === "chapter" ? "Chapter settings" : "Lesson settings"; return <SlideOver onClose={onClose} open={open} title={title}>{focus.level === "course" ? <CourseDetailsForm course={course} onSaved={onCourse} onStatusChange={onStatusChange} /> : null}{focus.level === "chapter" && section ? <ChapterMetadataForm courseId={course.id} duration={section.rolled_duration_minutes} onSaved={onSection} onStatusChange={onStatusChange} section={section} /> : null}{focus.level === "lesson" && lesson ? <LessonMetadataForm courseId={course.id} key={lesson.id} lesson={lesson} onSaved={onLesson} onStatusChange={onStatusChange} /> : null}</SlideOver>; }
+function ActionButton({ icon, label, onClick }: { icon: ReactNode; label: string; onClick: () => void }) { return <Button className="shrink-0 gap-2" onClick={onClick} size="small" variant="secondary">{icon}{label}</Button>; }
+function DeleteButton({ label, onClick }: { label: string; onClick: () => void }) { return <Button aria-label={label} className="shrink-0 text-[var(--color-state-error)]" iconOnly onClick={onClick} size="small" variant="secondary"><Trash2 /></Button>; }
+function MoveButtons({ down, label, onDown, onUp, up }: { down: boolean; label: string; onDown: () => void; onUp: () => void; up: boolean }) { return <><Button aria-label={`Move ${label} up`} className="shrink-0" disabled={up} iconOnly onClick={onUp} size="small" variant="secondary"><ArrowUp /></Button><Button aria-label={`Move ${label} down`} className="shrink-0" disabled={down} iconOnly onClick={onDown} size="small" variant="secondary"><ArrowDown /></Button></>; }
+function sectionValue(section: CourseStructure["sections"][number]): BuilderSection { return { course_id: section.course_id, description: section.description, id: section.id, image_url: section.image_url, position: section.position, rolled_duration_minutes: section.rolled_duration_minutes, title: section.title }; }
+function lessonValue(lesson: CourseStructure["sections"][number]["lessons"][number]): Lesson { return { body: lesson.body, course_id: lesson.course_id, estimated_duration_minutes: lesson.estimated_duration_minutes, id: lesson.id, image_url: lesson.image_url, position: lesson.position, required_for_completion: lesson.required_for_completion, section_id: lesson.section_id, summary: lesson.summary, title: lesson.title }; }
+function byPosition<T extends { position: number }>(a: T, b: T) { return a.position - b.position; }
+function move<T>(items: T[], index: number, direction: -1 | 1) { const next = [...items]; const target = index + direction; if (target < 0 || target >= next.length) return next; [next[index], next[target]] = [next[target], next[index]]; return next; }
+function rollupStatus(states: SaveState[]): SaveState { if (states.includes("error")) return "error"; if (states.includes("saving")) return "saving"; if (states.includes("dirty")) return "dirty"; return "saved"; }

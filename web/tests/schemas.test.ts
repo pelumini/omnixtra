@@ -302,6 +302,15 @@ describe("coursePageEnvelopeSchema", () => {
               title: "Security Basics",
               slug: "security-basics",
               description: "Required onboarding",
+              thumbnail_url: null,
+              category: null,
+              tags: [],
+              language: null,
+              learning_outcomes: [],
+              target_audience: null,
+              difficulty: null,
+              delivery_format: null,
+              estimated_duration_minutes: null,
               status: "draft",
               lesson_count: 1,
             },
@@ -317,7 +326,12 @@ describe("coursePageEnvelopeSchema", () => {
 
 describe("blockContentSchema", () => {
   it("validates authoring block content variants", () => {
-    expect(blockContentSchema.parse({ type: "text", markdown: "Welcome" }).type).toBe("text");
+    expect(
+      blockContentSchema.parse({ type: "text", markdown: "Welcome" }).type,
+    ).toBe("text");
+    expect(blockContentSchema.parse({ type: "text" })).toEqual({ type: "text" });
+    expect(blockContentSchema.parse({ type: "text", markdown: "" })).toEqual({ type: "text", markdown: "" });
+    expect(blockContentSchema.parse({ type: "text", doc: { type: "doc", content: [] } })).toEqual({ type: "text" });
     expect(
       blockContentSchema.parse({
         type: "quiz",
@@ -329,6 +343,17 @@ describe("blockContentSchema", () => {
         correct_option_id: "yes",
       }).type,
     ).toBe("quiz");
+  });
+
+  it.each([
+    { type: "image", url: "https://example.com/image.png", alt_text: "Example" },
+    { type: "video", url: "https://example.com/video.mp4", caption: null },
+    { type: "audio", url: "https://example.com/audio.mp3", caption: null },
+    { type: "file", url: "https://example.com/file.pdf", file_name: "file.pdf", size_bytes: null },
+  ])("accepts backend null media references for $type blocks", (content) => {
+    expect(
+      blockContentSchema.parse({ ...content, asset_id: null, object_key: null }),
+    ).toMatchObject({ asset_id: null, object_key: null, type: content.type });
   });
 });
 
@@ -370,6 +395,15 @@ describe("courseDetailEnvelopeSchema", () => {
       courseDetailEnvelopeSchema.parse({
         data: {
           description: "Required onboarding",
+          thumbnail_url: "https://cdn.example.com/security.png",
+          category: "Security",
+          tags: ["required"],
+          language: "en",
+          learning_outcomes: ["Recognize common threats"],
+          target_audience: "All employees",
+          difficulty: "beginner",
+          delivery_format: "self_paced",
+          estimated_duration_minutes: 45,
           id: "00000000-0000-0000-0000-000000000001",
           lesson_count: 1,
           lessons: [
@@ -499,11 +533,19 @@ describe("myCoursesEnvelopeSchema", () => {
 
 describe("learning workflow schemas", () => {
   it("validates lesson progress and quiz attempt payloads", () => {
-    expect(lessonProgressRequestSchema.parse({ last_position: 30, percent_complete: 80 })).toEqual({
+    expect(
+      lessonProgressRequestSchema.parse({
+        last_position: 30,
+        percent_complete: 80,
+      }),
+    ).toEqual({
       last_position: 30,
       percent_complete: 80,
     });
-    expect(quizAttemptRequestSchema.parse({ selected_option_id: "a" }).selected_option_id).toBe("a");
+    expect(
+      quizAttemptRequestSchema.parse({ selected_option_id: "a" })
+        .selected_option_id,
+    ).toBe("a");
   });
 
   it("accepts course completion envelopes", () => {

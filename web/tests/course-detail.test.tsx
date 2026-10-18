@@ -22,9 +22,13 @@ describe("course detail authoring slice", () => {
             {
               body: "This is the learner-readable first lesson.",
               course_id: courseId,
+              estimated_duration_minutes: null,
               id: lessonId,
+              image_url: null,
               position: 0,
               section_id: sectionId,
+              summary: null,
+              required_for_completion: false,
               title: "Welcome",
             },
           ],
@@ -41,18 +45,36 @@ describe("course detail authoring slice", () => {
 
   it("renders created courses with lesson count on the admin course list", () => {
     const html = renderToStaticMarkup(
-      <AdminCourseList initialCourses={[draftCourse]} loadError={null} viewerRole="tenant_admin" />,
+      <AdminCourseList
+        initialCourses={[draftCourse]}
+        loadError={null}
+        viewerRole="tenant_admin"
+      />,
     );
 
     expect(html).toContain("Onboarding Essentials");
     expect(html).toContain("1 lesson");
     expect(html).toContain("Add course");
+    expect(html).toContain('role="link"');
+    expect(html).toContain('tabindex="0"');
+    expect(html).toContain("Open Onboarding Essentials in builder");
+    expect(html).toContain("Publish Onboarding Essentials");
+    expect(html).toContain("Delete Onboarding Essentials");
+    expect(html).toContain('role="tooltip"');
+    expect(html).not.toContain("More actions for Onboarding Essentials");
+    expect(html).not.toContain("Builder");
+    expect(html).not.toContain("1 visible");
     expect(html).not.toContain("First content type");
+    expect(html).not.toContain("First lesson title");
   });
 
   it("does not auto-open course creation for a new academy", () => {
     const html = renderToStaticMarkup(
-      <AdminCourseList initialCourses={[]} loadError={null} viewerRole="tenant_admin" />,
+      <AdminCourseList
+        initialCourses={[]}
+        loadError={null}
+        viewerRole="tenant_admin"
+      />,
     );
 
     expect(html).toContain("Add course");

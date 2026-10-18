@@ -1,5 +1,6 @@
 import {
   apiUrl,
+  fetchWithRefresh,
   postJson,
   requestHeaders,
   type RequestContext,
@@ -25,7 +26,7 @@ export async function acceptInvitation(request: InvitationAcceptRequest, context
 }
 
 export async function getInvitationPreview(token: string, context: RequestContext = {}) {
-  const response = await fetch(
+  const response = await fetchWithRefresh(
     `${apiUrl()}/api/v1/auth/invitations/${encodeURIComponent(token)}`,
     {
       cache: "no-store",
@@ -42,7 +43,7 @@ export async function getInvitationPreview(token: string, context: RequestContex
 }
 
 export async function getMemberships(context: RequestContext = {}) {
-  const response = await fetch(`${apiUrl()}/api/v1/tenant/memberships`, {
+  const response = await fetchWithRefresh(`${apiUrl()}/api/v1/tenant/memberships`, {
     cache: "no-store",
     credentials: "include",
     headers: requestHeaders(context),

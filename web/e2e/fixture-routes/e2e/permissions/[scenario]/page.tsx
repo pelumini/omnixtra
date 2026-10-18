@@ -1,7 +1,12 @@
 import { notFound } from "next/navigation";
 
 import { AppShell } from "@/components/layout/app-shell";
-import { AdminCourseList, CourseBuilder, type Course } from "@/features/courses";
+import {
+  AdminCourseList,
+  CourseBuilder,
+  type Course,
+  type CourseStructure,
+} from "@/features/courses";
 import { LearnerCoursePlayer, type CoursePlayer } from "@/features/learning";
 import { MembersView, type Membership } from "@/features/members";
 import { e2eFixturesEnabled } from "@/lib/e2e-fixtures";
@@ -23,13 +28,27 @@ const branding: TenantBranding = {
 };
 
 const course: Course = {
+  access: "enrolled_only",
+  certificate_on_completion: false,
+  category: null,
+  complete_in_order: false,
   description: "Role-gated onboarding course",
+  delivery_format: null,
+  difficulty: null,
+  estimated_duration_minutes: null,
   id: "00000000-0000-0000-0000-000000000901",
+  language: null,
+  learning_outcomes: [],
   lesson_count: 1,
   slug: "role-gated-onboarding",
   status: "draft",
+  tags: [],
+  target_audience: null,
+  thumbnail_url: null,
   title: "Role Gated Onboarding",
 };
+
+const structure: CourseStructure = { ...course, rolled_duration_minutes: 0, sections: [] };
 
 const memberships: Membership[] = [
   {
@@ -82,7 +101,9 @@ const player: CoursePlayer = {
   title: "Learner Course A",
 };
 
-export default async function PermissionFixturePage({ params }: PermissionFixturePageProps) {
+export default async function PermissionFixturePage({
+  params,
+}: PermissionFixturePageProps) {
   if (!e2eFixturesEnabled()) {
     notFound();
   }
@@ -92,7 +113,11 @@ export default async function PermissionFixturePage({ params }: PermissionFixtur
   if (scenario === "admin") {
     return (
       <AppShell branding={branding} viewerRole="tenant_admin">
-        <AdminCourseList initialCourses={[course]} loadError={null} viewerRole="tenant_admin" />
+        <AdminCourseList
+          initialCourses={[course]}
+          loadError={null}
+          viewerRole="tenant_admin"
+        />
       </AppShell>
     );
   }
@@ -100,7 +125,11 @@ export default async function PermissionFixturePage({ params }: PermissionFixtur
   if (scenario === "member") {
     return (
       <AppShell branding={branding} viewerRole="member">
-        <AdminCourseList initialCourses={[course]} loadError={null} viewerRole="member" />
+        <AdminCourseList
+          initialCourses={[course]}
+          loadError={null}
+          viewerRole="member"
+        />
       </AppShell>
     );
   }
@@ -130,15 +159,33 @@ export default async function PermissionFixturePage({ params }: PermissionFixtur
   }
 
   if (scenario === "learner-course") {
-    return <LearnerCoursePlayer courseId={course.id} initialPlayer={player} loadError={null} />;
+    return (
+      <LearnerCoursePlayer
+        courseId={course.id}
+        initialPlayer={player}
+        loadError={null}
+      />
+    );
   }
 
   if (scenario === "learner-builder") {
-    return <CourseBuilder course={course} courseRole="learner" />;
+    return (
+      <CourseBuilder
+        course={course}
+        courseRole="learner"
+        initialStructure={structure}
+      />
+    );
   }
 
   if (scenario === "course-owner-builder") {
-    return <CourseBuilder course={course} courseRole="course_owner" />;
+    return (
+      <CourseBuilder
+        course={course}
+        courseRole="course_owner"
+        initialStructure={structure}
+      />
+    );
   }
 
   notFound();

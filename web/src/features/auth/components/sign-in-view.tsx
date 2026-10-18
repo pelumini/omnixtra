@@ -1,14 +1,11 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 
-import { FieldError, FormError, SubmitButton } from "@/components/ui/form-controls";
-import { Input } from "@/components/ui/input";
+import { Field, FormError, SubmitButton } from "@/components/ui/form-controls";
 import { login } from "@/lib/api/auth";
 import { resolveMessage } from "@/lib/forms/messages";
 import { useFormSubmit } from "@/lib/forms/use-form-submit";
@@ -19,7 +16,6 @@ type SignInViewProps = {
 };
 
 export function SignInView({ academyName }: SignInViewProps = {}) {
-  const [showPassword, setShowPassword] = useState(false);
   const {
     formState: { errors },
     handleSubmit,
@@ -55,17 +51,8 @@ export function SignInView({ academyName }: SignInViewProps = {}) {
 
           <form className="mt-10 space-y-5" noValidate onSubmit={handleSubmit(submit)}>
             <fieldset className="space-y-5" disabled={isSubmitting}>
-              <LoginField error={fieldError("email")} label="Email Address" name="email">
-                <Input {...register("email")} autoComplete="email" className="text-sm" hasError={Boolean(fieldError("email"))} id="email" placeholder="Enter email" type="email" />
-              </LoginField>
-              <LoginField error={fieldError("password")} label="Password" name="password">
-                <div className="relative">
-                  <Input {...register("password")} autoComplete="current-password" className="pr-11 text-sm" hasError={Boolean(fieldError("password"))} id="password" placeholder="Enter password" type={showPassword ? "text" : "password"} />
-                  <button aria-label={showPassword ? "Hide password" : "Show password"} className="absolute inset-y-0 right-0 grid w-10 place-items-center text-[var(--color-text-soft-400)] hover:text-[var(--foreground)]" onClick={() => setShowPassword((visible) => !visible)} type="button">
-                    {showPassword ? <EyeOff aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
-                  </button>
-                </div>
-              </LoginField>
+              <Field autoComplete="email" error={fieldError("email")} label="Email Address" placeholder="Enter email" registration={register("email")} type="email" />
+              <Field autoComplete="current-password" error={fieldError("password")} label="Password" placeholder="Enter password" registration={register("password")} type="password" />
             </fieldset>
 
             <Link className="inline-block text-sm font-medium text-[var(--color-text-sub-500)] hover:text-[var(--primary)]" href="/forgot-password">Forgot Password?</Link>
@@ -80,12 +67,4 @@ export function SignInView({ academyName }: SignInViewProps = {}) {
       </div>
     </main>
   );
-}
-
-function LoginField({ children, error, label, name }: { children: React.ReactNode; error?: string; label: string; name: string }) {
-  return <div>
-    <label className="mb-2 block text-sm font-semibold text-[var(--foreground)]" htmlFor={name}>{label}</label>
-    {children}
-    {error ? <div className="mt-1"><FieldError id={`${name}-error`}>{error}</FieldError></div> : null}
-  </div>;
 }
