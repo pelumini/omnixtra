@@ -280,7 +280,7 @@ function CourseActions({
   onPublish: (course: Course) => Promise<void>;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-end gap-1">
+    <div className="flex flex-wrap items-center gap-1">
       <IconAction
         ariaLabel={`Open ${course.title} in builder`}
         icon={<Pencil aria-hidden="true" className="size-4" />}
