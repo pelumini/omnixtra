@@ -20,7 +20,7 @@ const extensions = [
 
 function legacyContent(markdown?: string): RichTextDoc {
   const paragraphs = (markdown ?? "").split(/\r?\n/).filter(Boolean);
-  return { type: "doc", content: paragraphs.map((line) => ({ type: "paragraph", content: [{ type: "text", text: line }] })) };
+  return { type: "doc", content: paragraphs.length > 0 ? paragraphs.map((line) => ({ type: "paragraph", content: [{ type: "text", text: line }] })) : [{ type: "paragraph" }] };
 }
 
 export default function RichTextEditor({ doc, markdown, onChange }: Props) {
