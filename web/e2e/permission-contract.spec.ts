@@ -82,5 +82,5 @@ test("course owner sees authoring entry and can reach builder controls", async (
     "Role Gated Onboarding",
   );
   await expect(page.getByRole("button", { name: "Publish" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Add chapter" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add chapter" }).first()).toBeVisible();
 });
