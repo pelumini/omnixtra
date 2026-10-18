@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { Field, SelectField, TextareaField } from "@/components/ui/form-controls";
-import { Input, SearchInput, Select, controlSurface } from "@/components/ui/input";
+import { Input, SearchInput, Select, Textarea, controlSurface } from "@/components/ui/input";
 
 describe("input primitives", () => {
   it("keeps element and wrapper focus styles on one surface contract", () => {
@@ -31,7 +31,11 @@ describe("input primitives", () => {
       expect(markup).toContain("top-[-10px]");
       expect(markup).toContain("left-4");
       expect(markup).toContain("bg-[var(--color-bg-white-0)]");
+      expect(markup).toContain("text-[13px]");
+      expect(markup).toContain("text-sm");
+      expect(markup).toContain("leading-5");
     }
+    expect(textarea).toContain("focus:placeholder:text-transparent");
     expect(select).toContain("lucide-chevron-down");
   });
 
@@ -40,6 +44,9 @@ describe("input primitives", () => {
     expect(markup).toContain("focus-within:border-[var(--color-primary-base)]");
     expect(markup).toContain("lucide-chevron-down");
     expect(markup).toContain("appearance-none");
+    expect(markup).toContain("h-11");
+    expect(markup).toContain("text-sm");
+    expect(markup).toContain("leading-5");
   });
 
   it("provides password visibility from the shared field primitive", () => {
@@ -49,6 +56,9 @@ describe("input primitives", () => {
     expect(markup).toContain('type="password"');
     expect(markup).toContain('aria-label="Show password"');
     expect(markup).toContain("lucide-eye");
+    expect(markup).toContain("h-11");
+    expect(markup).toContain("text-[13px]");
+    expect(markup).toContain("focus:placeholder:text-transparent");
   });
 
   it("wires invalid state to the native control", () => {
@@ -56,6 +66,18 @@ describe("input primitives", () => {
 
     expect(markup).toContain('aria-invalid="true"');
     expect(markup).toContain('name="email"');
+    expect(markup).toContain("h-11");
+    expect(markup).toContain("text-sm");
+    expect(markup).toContain("leading-5");
+    expect(markup).toContain("focus:placeholder:text-transparent");
+  });
+
+  it("hides textarea placeholders on focus", () => {
+    const markup = renderToStaticMarkup(<Textarea placeholder="Course summary" />);
+
+    expect(markup).toContain("text-sm");
+    expect(markup).toContain("leading-5");
+    expect(markup).toContain("focus:placeholder:text-transparent");
   });
 
   it("gives search controls an accessible label and the shared focus surface", () => {
@@ -64,5 +86,9 @@ describe("input primitives", () => {
     expect(markup).toContain("Search courses");
     expect(markup).toContain("focus-within:border-[var(--color-primary-base)]");
     expect(markup).toContain('type="search"');
+    expect(markup).toContain("h-11");
+    expect(markup).toContain("text-sm");
+    expect(markup).toContain("leading-5");
+    expect(markup).toContain("focus:placeholder:text-transparent");
   });
 });

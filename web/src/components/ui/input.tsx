@@ -46,7 +46,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       aria-invalid={props["aria-invalid"] ?? (hasError || undefined)}
       className={cn(
         !bare &&
-          "h-10 w-full py-2.5 pl-3 pr-2.5 text-xs leading-4 text-[var(--color-text-main-900)] placeholder:text-[var(--color-text-soft-400)] focus:outline-none disabled:cursor-not-allowed disabled:placeholder:text-[var(--color-text-disabled-300)]",
+          "h-11 w-full py-2.5 pl-3 pr-2.5 text-sm leading-5 text-[var(--color-text-main-900)] placeholder:text-[var(--color-text-soft-400)] focus:placeholder:text-transparent focus:outline-none disabled:cursor-not-allowed disabled:placeholder:text-[var(--color-text-disabled-300)]",
         !bare && controlSurface({ disabled, hasError }),
         className,
       )}
@@ -69,7 +69,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
       {...props}
       aria-invalid={props["aria-invalid"] ?? (hasError || undefined)}
       className={cn(
-        "min-h-24 w-full resize-y px-3 py-2.5 text-xs leading-4 text-[var(--color-text-main-900)] placeholder:text-[var(--color-text-soft-400)] focus:outline-none disabled:cursor-not-allowed disabled:placeholder:text-[var(--color-text-disabled-300)]",
+        "min-h-24 w-full resize-y px-3 py-2.5 text-sm leading-5 text-[var(--color-text-main-900)] placeholder:text-[var(--color-text-soft-400)] focus:placeholder:text-transparent focus:outline-none disabled:cursor-not-allowed disabled:placeholder:text-[var(--color-text-disabled-300)]",
         controlSurface({ disabled, hasError }),
         className,
       )}
@@ -90,7 +90,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
   return (
     <div
       className={cn(
-        "relative flex h-10 w-full items-center",
+        "relative flex h-11 w-full items-center",
         controlSurface({ disabled, focusWithin: true, hasError }),
         className,
       )}
@@ -98,7 +98,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
       <select
         {...props}
         aria-invalid={props["aria-invalid"] ?? (hasError || undefined)}
-        className="h-full min-w-0 flex-1 appearance-none bg-transparent py-2.5 pl-3 pr-10 text-xs leading-4 text-[var(--color-text-main-900)] outline-none disabled:cursor-not-allowed disabled:text-[var(--color-text-disabled-300)]"
+        className="h-full min-w-0 flex-1 appearance-none bg-transparent py-2.5 pl-3 pr-10 text-sm leading-5 text-[var(--color-text-main-900)] outline-none disabled:cursor-not-allowed disabled:text-[var(--color-text-disabled-300)]"
         disabled={disabled}
         ref={ref}
       />
@@ -128,7 +128,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(functi
       <Input
         {...props}
         bare
-        className="min-w-0 flex-1 bg-transparent text-[var(--color-text-main-900)] outline-none placeholder:text-[var(--color-text-soft-400)]"
+        className="min-w-0 flex-1 bg-transparent text-sm leading-5 text-[var(--color-text-main-900)] outline-none placeholder:text-[var(--color-text-soft-400)] focus:placeholder:text-transparent"
         disabled={disabled}
         ref={ref}
         type="search"

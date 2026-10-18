@@ -55,13 +55,13 @@ export function Field({
     <div className="grid gap-1">
       <div
         className={cn(
-          "group relative mt-2 flex h-10 items-stretch",
+          "group relative mt-2 flex h-11 items-stretch",
           controlSurface({ disabled, focusWithin: true, hasError: Boolean(error) }),
         )}
       >
         <label
           className={cn(
-            "absolute left-4 top-[-10px] z-10 bg-[var(--color-bg-white-0)] px-1 text-xs font-medium leading-4 text-[var(--color-text-main-900)]",
+            "absolute left-4 top-[-10px] z-10 bg-[var(--color-bg-white-0)] px-1 text-[13px] font-medium leading-4 text-[var(--color-text-main-900)]",
             error ? "text-[var(--color-state-error)]" : "",
             disabled ? "bg-[var(--color-bg-weak-100)] text-[var(--color-text-disabled-300)]" : "",
           )}
@@ -76,7 +76,7 @@ export function Field({
           hasError={Boolean(error)}
           autoComplete={autoComplete}
           className={cn(
-            "min-w-0 flex-1 rounded-[10px] bg-transparent py-2.5 pl-3 pr-2.5 text-xs leading-4 text-[var(--color-text-main-900)] placeholder:text-[var(--color-text-soft-400)] focus:outline-none disabled:cursor-not-allowed disabled:text-[var(--color-text-disabled-300)] disabled:placeholder:text-[var(--color-text-disabled-300)]",
+            "min-w-0 flex-1 rounded-[10px] bg-transparent py-2.5 pl-3 pr-2.5 text-sm leading-5 text-[var(--color-text-main-900)] placeholder:text-[var(--color-text-soft-400)] focus:placeholder:text-transparent focus:outline-none disabled:cursor-not-allowed disabled:text-[var(--color-text-disabled-300)] disabled:placeholder:text-[var(--color-text-disabled-300)]",
             suffix ? "rounded-r-none" : "",
           )}
           disabled={disabled}
@@ -133,7 +133,7 @@ export function TextareaField({
   return (
     <div className="grid gap-1">
       <div className="group relative mt-2">
-        <label className={cn("absolute left-4 top-[-10px] z-10 bg-[var(--color-bg-white-0)] px-1 text-xs font-medium leading-4 text-[var(--color-text-main-900)]", error ? "text-[var(--color-state-error)]" : "", disabled ? "bg-[var(--color-bg-weak-100)] text-[var(--color-text-disabled-300)]" : "")} htmlFor={registration.name}>{label}</label>
+        <label className={cn("absolute left-4 top-[-10px] z-10 bg-[var(--color-bg-white-0)] px-1 text-[13px] font-medium leading-4 text-[var(--color-text-main-900)]", error ? "text-[var(--color-state-error)]" : "", disabled ? "bg-[var(--color-bg-weak-100)] text-[var(--color-text-disabled-300)]" : "")} htmlFor={registration.name}>{label}</label>
         <Textarea {...registration} aria-describedby={describedBy} hasError={Boolean(error)} autoComplete={autoComplete} disabled={disabled} id={registration.name} placeholder={placeholder} rows={rows} />
       </div>
       {error ? (
@@ -167,7 +167,7 @@ export function SelectField({
   return (
     <div className="grid gap-1">
       <div className="group relative mt-2">
-        <label className={cn("absolute left-4 top-[-10px] z-10 bg-[var(--color-bg-white-0)] px-1 text-xs font-medium leading-4 text-[var(--color-text-main-900)]", error ? "text-[var(--color-state-error)]" : "", disabled ? "bg-[var(--color-bg-weak-100)] text-[var(--color-text-disabled-300)]" : "")} htmlFor={registration.name}>{label}</label>
+        <label className={cn("absolute left-4 top-[-10px] z-10 bg-[var(--color-bg-white-0)] px-1 text-[13px] font-medium leading-4 text-[var(--color-text-main-900)]", error ? "text-[var(--color-state-error)]" : "", disabled ? "bg-[var(--color-bg-weak-100)] text-[var(--color-text-disabled-300)]" : "")} htmlFor={registration.name}>{label}</label>
         <Select {...registration} aria-describedby={describedBy} hasError={Boolean(error)} disabled={disabled} id={registration.name}>{children}</Select>
       </div>
       {error ? (
