@@ -96,24 +96,6 @@ const blocks: Block[] = [
 ];
 
 describe("course learner preview", () => {
-  it("renders allowlisted rich text and strips unsafe links and nodes", () => {
-    const section = courseStructure.sections[0];
-    const richBlock: Block = { ...blocks[0], content: { type: "text", doc: { type: "doc", content: [
-      { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Rich heading" }] },
-      { type: "paragraph", content: [
-        { type: "text", text: "Safe link", marks: [{ type: "link", attrs: { href: "https://example.com" } }] },
-        { type: "text", text: " Unsafe link", marks: [{ type: "link", attrs: { href: "javascript:alert(1)" } }] },
-      ] },
-      { type: "script", content: [{ type: "text", text: "not rendered" }] },
-    ] } } };
-    const html = renderToStaticMarkup(<LearnerPreview blocks={[richBlock]} course={draftCourse} initialLessonId={lessonId} lessons={section.lessons} onBack={() => undefined} sections={[section]} />);
-    expect(html).toContain("Rich heading");
-    expect(html).toContain('href="https://example.com"');
-    expect(html).toContain("Unsafe link");
-    expect(html).not.toContain("javascript:");
-    expect(html).not.toContain("not rendered");
-  });
-
   it("renders learner navigation, safe markdown, media placeholders, and a read-only quiz", () => {
     const section = courseStructure.sections[0];
     const html = renderToStaticMarkup(

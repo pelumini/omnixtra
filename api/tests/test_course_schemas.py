@@ -19,33 +19,20 @@ from app.courses.schemas import (
 
 def test_course_block_content_schemas_cover_mvp_block_types() -> None:
     assert TextBlockContent(markdown="Welcome").type == "text"
-    assert (
-        TextBlockContent(
-            doc={
-                "type": "doc",
-                "content": [
-                    {"type": "paragraph", "content": [{"type": "text", "text": "Welcome"}]}
-                ],
-            }
-        ).doc
-        is not None
-    )
     assert VideoBlockContent(url="https://cdn.example.com/intro.mp4").type == "video"
     assert (
         ImageBlockContent(url="https://cdn.example.com/hero.png", alt_text="Hero").type == "image"
     )
 
 
-def test_text_block_requires_bounded_tiptap_or_legacy_content() -> None:
+def test_text_block_accepts_empty_markdown_and_ignores_legacy_doc() -> None:
     assert TextBlockContent().markdown is None
     assert TextBlockContent(markdown="").markdown == ""
-    assert TextBlockContent(doc={"type": "doc", "content": [{"type": "paragraph"}]}).doc is not None
-    with pytest.raises(ValidationError):
-        TextBlockContent(doc={"type": "paragraph", "content": []})
-    with pytest.raises(ValidationError):
-        TextBlockContent(doc={"type": "doc", "content": "not-a-list"})
-    with pytest.raises(ValidationError):
-        TextBlockContent(doc={"type": "doc", "content": [{"type": "text", "text": "x" * 100_001}]})
+    legacy = TextBlockContent.model_validate(
+        {"type": "text", "doc": {"type": "doc", "content": [{"type": "paragraph"}]}}
+    )
+    assert legacy.markdown is None
+    assert legacy.model_dump() == {"type": "text", "markdown": None}
     assert AudioBlockContent(url="https://cdn.example.com/intro.mp3").type == "audio"
     assert (
         FileBlockContent(
