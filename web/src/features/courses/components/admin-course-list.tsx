@@ -162,9 +162,7 @@ export function AdminCourseList({
                 <th className="px-4 py-3 font-semibold">Code</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
                 <th className="px-4 py-3 font-semibold">Lessons</th>
-                <th className="w-36 px-4 py-3 text-right font-semibold">
-                  Actions
-                </th>
+                <th className="px-4 py-3 font-semibold">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -209,7 +207,7 @@ export function AdminCourseList({
                     {course.lesson_count === 1 ? "lesson" : "lessons"}
                   </td>
                   <td
-                    className="w-36 rounded-r-md px-4 py-4 text-right"
+                    className="rounded-r-md px-4 py-4"
                     onClick={(event) => event.stopPropagation()}
                     onKeyDown={(event) => event.stopPropagation()}
                   >
