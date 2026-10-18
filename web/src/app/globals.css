@@ -59,6 +59,11 @@ th {
   font-family: var(--font-mulish), Arial, Helvetica, sans-serif;
 }
 
+input:focus::placeholder,
+textarea:focus::placeholder {
+  color: transparent;
+}
+
 .font-secondary {
   font-family: var(--font-mulish), Arial, Helvetica, sans-serif;
 }

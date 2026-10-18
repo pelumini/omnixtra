@@ -21,6 +21,7 @@ describe("course builder UI", () => {
     expect(html).toContain("Course settings");
     expect(html).toContain("Preview");
     expect(html).toContain("Publish");
+    expect(html).toContain("capitalize");
     expect(html).toContain("Getting Started");
     expect(html).toContain("Welcome");
     expect(html).toContain("Saved");

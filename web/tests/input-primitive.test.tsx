@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
@@ -35,7 +38,6 @@ describe("input primitives", () => {
       expect(markup).toContain("text-sm");
       expect(markup).toContain("leading-5");
     }
-    expect(textarea).toContain("focus:placeholder:text-transparent");
     expect(select).toContain("lucide-chevron-down");
   });
 
@@ -58,7 +60,6 @@ describe("input primitives", () => {
     expect(markup).toContain("lucide-eye");
     expect(markup).toContain("h-11");
     expect(markup).toContain("text-[13px]");
-    expect(markup).toContain("focus:placeholder:text-transparent");
   });
 
   it("wires invalid state to the native control", () => {
@@ -69,15 +70,14 @@ describe("input primitives", () => {
     expect(markup).toContain("h-11");
     expect(markup).toContain("text-sm");
     expect(markup).toContain("leading-5");
-    expect(markup).toContain("focus:placeholder:text-transparent");
   });
 
-  it("hides textarea placeholders on focus", () => {
+  it("keeps textarea placeholder styling at rest", () => {
     const markup = renderToStaticMarkup(<Textarea placeholder="Course summary" />);
 
     expect(markup).toContain("text-sm");
     expect(markup).toContain("leading-5");
-    expect(markup).toContain("focus:placeholder:text-transparent");
+    expect(markup).toContain("placeholder:text-[var(--color-text-soft-400)]");
   });
 
   it("gives search controls an accessible label and the shared focus surface", () => {
@@ -89,6 +89,12 @@ describe("input primitives", () => {
     expect(markup).toContain("h-11");
     expect(markup).toContain("text-sm");
     expect(markup).toContain("leading-5");
-    expect(markup).toContain("focus:placeholder:text-transparent");
+  });
+
+  it("hides native input and textarea placeholders through global focus styles", () => {
+    const globalStyles = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+
+    expect(globalStyles).toMatch(/input:focus::placeholder,\s*textarea:focus::placeholder/);
+    expect(globalStyles).toMatch(/textarea:focus::placeholder\s*{\s*color: transparent;/);
   });
 });

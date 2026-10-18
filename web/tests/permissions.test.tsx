@@ -181,6 +181,7 @@ describe("ADR-003 frontend permissions", () => {
     expect(listHtml.match(/placeholder="Search courses"/g)).toHaveLength(1);
     expect(listHtml).toContain("Add course");
     expect(listHtml).toContain("Filter by status");
+    expect(listHtml).toContain("capitalize");
     expect(listHtml).not.toContain("1 visible");
     expect(listHtml).not.toContain("Course operations");
     expect(listHtml).not.toContain('role="dialog"');
