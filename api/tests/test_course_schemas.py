@@ -19,10 +19,34 @@ from app.courses.schemas import (
 
 def test_course_block_content_schemas_cover_mvp_block_types() -> None:
     assert TextBlockContent(markdown="Welcome").type == "text"
+    assert (
+        TextBlockContent(
+            doc={
+                "type": "doc",
+                "content": [
+                    {"type": "paragraph", "content": [{"type": "text", "text": "Welcome"}]}
+                ],
+            }
+        ).doc
+        is not None
+    )
     assert VideoBlockContent(url="https://cdn.example.com/intro.mp4").type == "video"
     assert (
         ImageBlockContent(url="https://cdn.example.com/hero.png", alt_text="Hero").type == "image"
     )
+
+
+def test_text_block_requires_bounded_tiptap_or_legacy_content() -> None:
+    with pytest.raises(ValidationError):
+        TextBlockContent()
+    with pytest.raises(ValidationError):
+        TextBlockContent(doc={"type": "paragraph", "content": []})
+    with pytest.raises(ValidationError):
+        TextBlockContent(doc={"type": "doc", "content": []})
+    with pytest.raises(ValidationError):
+        TextBlockContent(doc={"type": "doc", "content": "not-a-list"})
+    with pytest.raises(ValidationError):
+        TextBlockContent(doc={"type": "doc", "content": [{"type": "text", "text": "x" * 100_001}]})
     assert AudioBlockContent(url="https://cdn.example.com/intro.mp3").type == "audio"
     assert (
         FileBlockContent(

@@ -1,4 +1,5 @@
-from typing import Annotated, Literal, Self
+import json
+from typing import Annotated, Any, Literal, Self
 from uuid import UUID
 
 from pydantic import AfterValidator, BaseModel, Field, HttpUrl, TypeAdapter, model_validator
@@ -7,6 +8,18 @@ from app.courses.models import CourseAccess, CourseDeliveryFormat, CourseDifficu
 
 TAG_MAX_LENGTH = 50
 LEARNING_OUTCOME_MAX_LENGTH = 500
+RICH_TEXT_DOC_MAX_LENGTH = 100_000
+
+
+def _rich_text_doc_has_content(value: object) -> bool:
+    if isinstance(value, dict):
+        text = value.get("text")
+        if isinstance(text, str) and text.strip():
+            return True
+        return any(_rich_text_doc_has_content(item) for item in value.get("content", []))
+    if isinstance(value, list):
+        return any(_rich_text_doc_has_content(item) for item in value)
+    return False
 
 
 def _validate_media_reference(value: str) -> str:
@@ -25,7 +38,25 @@ MediaReference = Annotated[
 
 class TextBlockContent(BaseModel):
     type: Literal["text"] = "text"
-    markdown: str = Field(min_length=1, max_length=20_000)
+    markdown: str | None = Field(default=None, min_length=1, max_length=20_000)
+    doc: dict[str, Any] | None = None
+
+    @model_validator(mode="after")
+    def validate_body(self) -> Self:
+        if self.markdown is None and self.doc is None:
+            message = "text content requires markdown or doc"
+            raise ValueError(message)
+        if self.doc is not None:
+            if self.doc.get("type") != "doc" or not isinstance(self.doc.get("content"), list):
+                message = "doc must be a TipTap document with a content list"
+                raise ValueError(message)
+            if not _rich_text_doc_has_content(self.doc):
+                message = "doc must contain text"
+                raise ValueError(message)
+            if len(json.dumps(self.doc, separators=(",", ":"))) > RICH_TEXT_DOC_MAX_LENGTH:
+                message = "doc must not exceed 100000 serialized characters"
+                raise ValueError(message)
+        return self
 
 
 class VideoBlockContent(BaseModel):

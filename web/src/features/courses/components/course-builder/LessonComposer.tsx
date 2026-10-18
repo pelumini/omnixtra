@@ -1,6 +1,7 @@
 "use client";
 
 import { File, Headphones, Image, Type, Video } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,8 @@ const choices = [
   { icon: Headphones, label: "Audio", type: "audio" },
   { icon: File, label: "File", type: "file" },
 ] as const;
+
+const RichTextEditor = dynamic(() => import("./RichTextEditor"), { ssr: false });
 
 export function LessonComposer({ actionsRef, blocks, courseId, lesson, onBlocksChange, onMessage, onSelectedBlockChange, onStatusChange, selectedBlockId }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -168,7 +171,7 @@ function BlockEditor({ block, courseId, onChange, onSelect, onStatusChange, sele
     onSaved: (saved) => onChange({ ...block, content: saved }),
     onStatusChange: (state) => onStatusChange?.(`block:${block.id}`, state),
     save: async (value) => (await updateBlock(courseId, block.lesson_id, block.id, value)).data.content,
-    validate: (value) => value.type === "text" || value.type === "quiz" || Boolean(value.url && value.asset_id && value.object_key),
+    validate: (value) => value.type === "text" ? Boolean(value.doc || value.markdown?.trim()) : value.type === "quiz" || Boolean(value.url && value.asset_id && value.object_key),
   });
   const autosaveStatus = useRef(autosave.status);
   autosaveStatus.current = autosave.status;
@@ -193,7 +196,7 @@ function BlockEditor({ block, courseId, onChange, onSelect, onStatusChange, sele
 }
 
 function contentFields(content: BlockContent, setContent: (value: BlockContent, immediate?: boolean) => void, courseId: string) {
-  if (content.type === "text") return <Textarea aria-label="Text content" maxLength={20000} onChange={(e) => setContent({ ...content, markdown: e.target.value })} rows={7} value={content.markdown} />;
+  if (content.type === "text") return <RichTextEditor doc={content.doc} markdown={content.markdown} onChange={(doc) => setContent({ type: "text", doc })} />;
   if (content.type === "quiz") return <Textarea aria-label="Quiz question" maxLength={1000} onChange={(e) => setContent({ ...content, question: e.target.value })} rows={4} value={content.question} />;
   const uploaded = content.asset_id ? { assetId: content.asset_id, deliveryUrl: "", fileName: content.type === "file" ? content.file_name : `${content.type} upload`, objectKey: content.object_key ?? content.url } : null;
   const upload = <MediaUploadField courseId={courseId} kind={content.type} label={`${labelFor(content.type)} File`} onChange={(media) => setContent(media ? { ...content, asset_id: media.assetId, object_key: media.objectKey, url: media.objectKey } : { ...content, asset_id: null, object_key: null, url: "" }, true)} value={uploaded} />;

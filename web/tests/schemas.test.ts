@@ -330,6 +330,12 @@ describe("blockContentSchema", () => {
       blockContentSchema.parse({ type: "text", markdown: "Welcome" }).type,
     ).toBe("text");
     expect(
+      blockContentSchema.parse({ type: "text", doc: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Welcome" }] }] } }).type,
+    ).toBe("text");
+    expect(() => blockContentSchema.parse({ type: "text" })).toThrow();
+    expect(() => blockContentSchema.parse({ type: "text", doc: { type: "doc", content: [] } })).toThrow();
+    expect(() => blockContentSchema.parse({ type: "text", doc: { type: "paragraph", content: [] } })).toThrow();
+    expect(
       blockContentSchema.parse({
         type: "quiz",
         question: "Ready?",

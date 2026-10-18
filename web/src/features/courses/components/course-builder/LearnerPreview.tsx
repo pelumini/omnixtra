@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { getMediaUrl } from "../../api";
 import { formatBytes, uploadedMediaFromReference } from "../MediaUploadField";
 
+import { RichTextContent } from "./RichTextContent";
+
 import type { Block, Course, Lesson, Section } from "../../schemas";
 import type { ReactNode } from "react";
 
@@ -143,7 +145,7 @@ export function LearnerPreview({
 
 function PreviewBlock({ block, courseId }: { block: Block; courseId: string }) {
   const content = block.content;
-  if (content.type === "text") return <SafeMarkdown markdown={content.markdown} />;
+  if (content.type === "text") return content.doc ? <RichTextContent doc={content.doc} /> : <SafeMarkdown markdown={content.markdown ?? ""} />;
   if (content.type === "quiz") return <section aria-label="Quiz preview" className="rounded-[8px] border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-5"><p className="text-xs font-semibold uppercase text-[var(--color-primary-base)]">Quiz preview</p><h3 className="mt-2 text-lg font-semibold">{content.question}</h3><ol className="mt-4 grid gap-2">{content.options.map((option, index) => <li className="rounded-[6px] border border-[var(--color-stroke-soft-200)] px-3 py-2 text-sm" key={option.id}>{String.fromCharCode(65 + index)}. {option.text}</li>)}</ol><p className="mt-3 text-xs text-[var(--color-text-sub-500)]">Responses are disabled in preview.</p></section>;
   return <ResolvedMedia assetId={content.asset_id ?? assetIdFromReference(content.object_key ?? content.url)} courseId={courseId}>{(media) => {
     if (content.type === "image") return <figure className="grid gap-2"><div className="aspect-video overflow-hidden rounded-[8px] bg-[var(--color-bg-soft-200)]"><Image alt={content.alt_text} className="h-full w-full object-contain" height={675} src={media.url} unoptimized width={1200} /></div></figure>;
