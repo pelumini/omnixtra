@@ -120,7 +120,7 @@ export function LessonComposer({ actionsRef, blocks, courseId, lesson, onBlocksC
   }
 
   return (
-    <section className="min-w-0 p-4 sm:p-6 lg:h-full lg:overflow-y-auto lg:p-8">
+    <section className="min-w-0 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-3xl">
         {pickerOpen ? (
           <div className="mb-6 grid grid-cols-2 gap-2 border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-3 sm:grid-cols-5">
