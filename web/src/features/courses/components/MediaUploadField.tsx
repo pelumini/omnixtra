@@ -79,7 +79,7 @@ export function MediaUploadField({ courseId, kind, label, onChange, value }: {
     setCurrent(null); onChange(null); setProgress(0);
   }
 
-  return <div className="grid gap-2">
+  return <div className="relative grid gap-2">
     <span className="text-xs font-medium text-[var(--color-text-main-900)]">{label}</span>
     <label className="grid min-h-24 cursor-pointer place-items-center rounded-[10px] border border-dashed border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-4 text-center shadow-[var(--shadow-x-small)] hover:border-[var(--color-primary-base)]" htmlFor={id}>
       <input accept={accepts[kind]} className="sr-only" disabled={uploading} id={id} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); }} type="file" />

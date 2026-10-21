@@ -1,7 +1,7 @@
 "use client";
 
-import { File, Headphones, Image, Type, Video } from "lucide-react";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { File, Headphones, Image, Plus, Type, Video } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -44,25 +44,37 @@ const choices = [
 ] as const;
 
 export function LessonComposer({ actionsRef, blocks, courseId, lesson, onBlocksChange, onMessage, onSelectedBlockChange, onStatusChange, selectedBlockId }: Props) {
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerPosition, setPickerPosition] = useState<number | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Block | null>(null);
+  const [revealBlockId, setRevealBlockId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const lessonBlocks = lesson
+  const scrollContainerRef = useRef<HTMLElement | null>(null);
+  const blockRefs = useRef(new Map<string, HTMLElement>());
+  const lessonBlocks = useMemo(() => lesson
     ? blocks.filter((block) => block.lesson_id === lesson.id).sort(byPosition)
-    : [];
+    : [], [blocks, lesson]);
 
   function add(type: ComposerType) {
     if (!lesson) return;
     startTransition(async () => {
       try {
+        const insertionPosition = pickerPosition ?? lessonBlocks.length;
         const response = await createBlock(courseId, {
           block_type: type,
           content: emptyContent(type),
           lesson_id: lesson.id,
           position: lessonBlocks.length,
         });
-        onBlocksChange([...blocks, response.data]);
-        setPickerOpen(false);
+        const reordered = [...lessonBlocks];
+        reordered.splice(insertionPosition, 0, response.data);
+        if (insertionPosition < lessonBlocks.length) {
+          await reorderBlocks(courseId, lesson.id, reordered.map(({ id }) => id));
+        }
+        const positioned = reordered.map((block, position) => ({ ...block, position }));
+        onBlocksChange(blocks.filter((block) => block.lesson_id !== lesson.id).concat(positioned));
+        onSelectedBlockChange(response.data.id);
+        setPickerPosition(null);
+        setRevealBlockId(response.data.id);
         onMessage(`${labelFor(type)} block added`);
       } catch (error) {
         onMessage(error instanceof Error ? error.message : "Content could not be added");
@@ -112,38 +124,43 @@ export function LessonComposer({ actionsRef, blocks, courseId, lesson, onBlocksC
       const index = lessonBlocks.findIndex(({ id }) => id === blockId);
       if (index >= 0) moveBlock(index, direction);
     },
-    openAddContent: () => setPickerOpen(true),
+    openAddContent: () => {
+      const selectedIndex = lessonBlocks.findIndex(({ id }) => id === selectedBlockId);
+      setPickerPosition(selectedIndex >= 0 ? selectedIndex + 1 : lessonBlocks.length);
+    },
   };
+
+  useEffect(() => {
+    if (!revealBlockId) return;
+    const container = scrollContainerRef.current;
+    const block = blockRefs.current.get(revealBlockId);
+    if (!container || !block) return;
+    const containerRect = container.getBoundingClientRect();
+    const blockRect = block.getBoundingClientRect();
+    if (blockRect.top < containerRect.top) {
+      container.scrollTop += blockRect.top - containerRect.top;
+    } else if (blockRect.bottom > containerRect.bottom) {
+      container.scrollTop += blockRect.bottom - containerRect.bottom;
+    }
+    setRevealBlockId(null);
+  }, [lessonBlocks, revealBlockId]);
 
   if (!lesson) {
     return <EmptyState title="Add your first lesson" body="Choose a chapter, then add a lesson to start composing." />;
   }
 
   return (
-    <section className="min-w-0 p-4 sm:p-6 lg:p-8">
+    <section className="min-h-0 min-w-0 overflow-y-auto p-4 pb-8 sm:p-6 sm:pb-10 lg:p-8 lg:pb-12" ref={scrollContainerRef}>
       <div className="mx-auto max-w-3xl">
-        {pickerOpen ? (
-          <div className="mb-6 grid grid-cols-2 gap-2 border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-3 sm:grid-cols-5">
-            {choices.map(({ icon: Icon, label, type }) => (
-              <Button className="h-auto flex-col gap-2 py-3" disabled={pending} key={type} onClick={() => add(type)} variant="secondary">
-                <Icon aria-hidden="true" /> {label}
-              </Button>
-            ))}
-          </div>
-        ) : null}
         <div className="grid gap-4">
-          {lessonBlocks.map((block) => (
-            <BlockEditor
-              block={block}
-              courseId={courseId}
-              key={block.id}
-              onChange={(next) => onBlocksChange(blocks.map((item) => item.id === next.id ? next : item))}
-              onSelect={() => onSelectedBlockChange(block.id)}
-              onStatusChange={onStatusChange}
-              selected={selectedBlockId === block.id}
-            />
-          ))}
-          {lessonBlocks.length === 0 ? <EmptyState title="Add your first content block" body="Text, media, and files can be mixed in any order." /> : null}
+          {pickerPosition === 0 ? <ContentPicker disabled={pending} onAdd={add} /> : null}
+          {lessonBlocks.map((block, index) => <div className="grid gap-4" key={block.id}>
+            <div ref={(element) => { if (element) blockRefs.current.set(block.id, element); else blockRefs.current.delete(block.id); }}><BlockEditor block={block} courseId={courseId} onChange={(next) => onBlocksChange(blocks.map((item) => item.id === next.id ? next : item))} onSelect={() => onSelectedBlockChange(block.id)} onStatusChange={onStatusChange} selected={selectedBlockId === block.id} /></div>
+            {pickerPosition === index + 1 ? <ContentPicker disabled={pending} onAdd={add} /> : null}
+            {selectedBlockId === block.id && pickerPosition !== index + 1 ? <InlineAddButton onClick={() => setPickerPosition(index + 1)} /> : null}
+          </div>)}
+          {lessonBlocks.length === 0 && pickerPosition === null ? <EmptyState body="Text, media, and files can be mixed in any order." onClick={() => setPickerPosition(0)} title="Add your first content block" /> : null}
+          {lessonBlocks.length > 0 && selectedBlockId !== lessonBlocks.at(-1)?.id && pickerPosition !== lessonBlocks.length ? <InlineAddButton onClick={() => setPickerPosition(lessonBlocks.length)} /> : null}
         </div>
       </div>
       <Dialog description="This removes the block from the lesson. This action cannot be undone." onClose={() => setDeleteTarget(null)} open={deleteTarget !== null} title="Delete content block?">
@@ -211,4 +228,6 @@ function emptyContent(type: ComposerType): BlockContent {
 function labelFor(type: string) { return type.charAt(0).toUpperCase() + type.slice(1); }
 function byPosition(a: Block, b: Block) { return a.position - b.position; }
 function move<T>(items: T[], index: number, direction: -1 | 1) { const next = [...items]; const target = index + direction; if (target < 0 || target >= next.length) return next; [next[index], next[target]] = [next[target], next[index]]; return next; }
-function EmptyState({ body, title }: { body: string; title: string }) { return <div className="grid min-h-48 place-content-center border border-dashed border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-weak-100)] p-8 text-center"><h3 className="font-semibold text-[var(--color-text-main-900)]">{title}</h3><p className="mt-1 text-sm text-[var(--color-text-sub-500)]">{body}</p></div>; }
+function ContentPicker({ disabled, onAdd }: { disabled: boolean; onAdd: (type: ComposerType) => void }) { return <div aria-label="Choose content type" className="grid grid-cols-2 gap-2 border border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-white-0)] p-3 sm:grid-cols-5">{choices.map(({ icon: Icon, label, type }) => <Button className="h-auto flex-col gap-2 py-3" disabled={disabled} key={type} onClick={() => onAdd(type)} variant="secondary"><Icon aria-hidden="true" /> {label}</Button>)}</div>; }
+function InlineAddButton({ onClick }: { onClick: () => void }) { return <Button className="w-full gap-2 border-dashed" onClick={onClick} variant="secondary"><Plus aria-hidden="true" /> Add content</Button>; }
+function EmptyState({ body, onClick, title }: { body: string; onClick?: () => void; title: string }) { const className = "grid min-h-48 w-full place-content-center border border-dashed border-[var(--color-stroke-soft-200)] bg-[var(--color-bg-weak-100)] p-8 text-center"; const content = <><h3 className="font-semibold text-[var(--color-text-main-900)]">{title}</h3><p className="mt-1 text-sm text-[var(--color-text-sub-500)]">{body}</p></>; return onClick ? <button className={`${className} hover:border-[var(--color-primary-base)] hover:bg-[var(--color-primary-lighter)]`} onClick={onClick} type="button">{content}</button> : <div className={className}>{content}</div>; }
