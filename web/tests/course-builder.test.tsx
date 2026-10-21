@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -34,5 +37,24 @@ describe("course builder UI", () => {
     expect(html).not.toContain("Save chapter details");
     expect(html).not.toContain("Save lesson details");
     expect(html).not.toContain("Save setup");
+  });
+
+  it("keeps lesson scrolling contained and exposes inline content creation", () => {
+    const builder = readFileSync(
+      join(process.cwd(), "src/features/courses/components/course-builder.tsx"),
+      "utf8",
+    );
+    const composer = readFileSync(
+      join(process.cwd(), "src/features/courses/components/course-builder/LessonComposer.tsx"),
+      "utf8",
+    );
+
+    expect(builder).toContain('grid h-full min-h-0 w-full');
+    expect(builder).toContain('focus.level === "lesson" ? "min-h-0 overflow-hidden"');
+    expect(composer).toContain("min-h-0 min-w-0 overflow-y-auto");
+    expect(composer).toContain('title="Add your first content block"');
+    expect(composer).toContain("<InlineAddButton");
+    expect(composer).not.toContain("scrollIntoView");
+    expect(composer).not.toContain("document.scrollingElement");
   });
 });
